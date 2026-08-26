@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>study-room-2 · 에이전트 시대의 AI 시스템 설계 — 도서 스터디 지도</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:900px;margin:0 auto;padding:44px 24px 80px}
+
+  header{text-align:center;margin-bottom:14px}
+  .kick{color:var(--gr);letter-spacing:.3em;font-size:.74rem;font-weight:700;text-transform:uppercase}
+  h1{font-size:clamp(1.8rem,4.6vw,2.7rem);font-weight:800;letter-spacing:-.02em;margin:12px 0 8px}
+  .lead{color:var(--soft);font-size:1.02rem}
+
+  .prog{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:22px 0 30px}
+  .chip{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:7px 15px;font-size:.83rem;color:var(--soft);box-shadow:var(--sh)}
+  .chip b{color:var(--gr)}
+
+  .sec{margin-bottom:26px}
+  .sechead{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .sechead .dno{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-weight:800;font-size:1.05rem}
+  .sechead h2{font-size:clamp(1.15rem,2.8vw,1.55rem);font-weight:800;letter-spacing:-.01em}
+  .sechead .tag{margin-left:auto;font-size:.75rem;color:var(--soft);background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:4px 11px}
+
+  .rows{display:grid;gap:8px}
+  .row{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh);text-decoration:none;color:inherit}
+  .row .n{flex:none;width:25px;height:25px;border-radius:7px;background:var(--bg2);border:1px solid var(--line);
+    display:grid;place-items:center;font-weight:800;font-size:.78rem;color:var(--soft)}
+  .row .t{font-size:clamp(.9rem,1.6vw,1.04rem);color:var(--ink);font-weight:600}
+  .row .meta{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+  .done{background:var(--gr);color:#fff;border:none;border-radius:11px;padding:3px 10px;font-size:.72rem;font-weight:750}
+  .soon{color:var(--soft);font-size:.74rem}
+  .pj{font-size:.68rem;color:var(--gold);border:1px solid var(--gold);border-radius:10px;padding:2px 7px;font-weight:700}
+
+  .lessons{display:grid;gap:8px;margin:8px 0 2px 38px}
+  .lesson{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--line);
+    border-radius:12px;padding:11px 15px;text-decoration:none;color:inherit;transition:border-color .15s,transform .1s}
+  .lesson:hover{border-color:var(--gr);transform:translateX(2px)}
+  .lesson .ln{flex:none;width:22px;height:22px;border-radius:6px;background:var(--card);border:1px solid var(--line);
+    display:grid;place-items:center;font-weight:800;font-size:.72rem;color:var(--gr)}
+  .lesson .t{font-size:.96rem;color:var(--ink);font-weight:600}
+  .lesson .meta{margin-left:auto;display:flex;gap:6px;align-items:center}
+  .lesson .dl{font-size:.7rem;color:var(--gr);border:1px solid var(--gr);border-radius:10px;
+    padding:2px 8px;text-decoration:none;font-weight:800;white-space:nowrap}
+  .lesson .dl:hover{background:var(--gr);color:#fff}
+
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:6px 13px;font-size:.75rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .topR{position:fixed;top:14px;right:16px;z-index:10}
+  footer{text-align:center;color:var(--soft);font-size:.82rem;margin-top:40px;border-top:1px solid var(--line);padding-top:22px}
+  .hint{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;padding:12px 16px;font-size:.86rem;color:var(--soft);margin:14px 0 22px}
+  .hint b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="topR"><button class="btn" onclick="tgT()">&#127763; 테마</button></div>
+<div class="wrap">
+
+<header>
+  <span class="kick">도서 스터디 · study-room-2</span>
+  <h1>&#129513; 에이전트 시대의<br>AI 시스템 설계</h1>
+  <p class="lead">기초 모델 위에 프로덕션 애플리케이션을 짓는 32가지 설계 패턴</p>
+</header>
+
+<div class="prog">
+  <span class="chip">전체 <b>10</b>개 장</span>
+  <span class="chip">설계 패턴 <b>32</b>개</span>
+  <span class="chip">완료 <b>1</b>개 장</span>
+  <span class="chip">웹 슬라이드 <b>2</b>개 덱</span>
+</div>
+
+<div class="hint">
+  &#128161; <b>읽는 법</b> — 각 장 아래의 <b>덱</b>을 클릭하면 웹 슬라이드가 열립니다.
+  슬라이드에서 <b>&larr; &rarr;</b> 로 이동, <b>S</b> 로 학습노트(발표자 노트) 토글, <b>F</b> 로 전체화면.
+  텍스트로 읽고 싶으면 <b>&#128209; 노트</b> 링크의 마크다운 요약을 보세요.
+</div>
+
+<!-- 1부 -->
+<section class="sec">
+  <div class="sechead"><div class="dno">1</div><h2>서론</h2><span class="tag">&#9989; 완결</span></div>
+  <div class="rows">
+    <div class="row"><span class="n">1</span><span class="t">서론 — 생성형 AI 설계 패턴과 기초 모델</span><span class="meta"><span class="done">완료</span></span></div>
+  </div>
+  <div class="lessons">
+    <a class="lesson" href="ch01-1-patterns-and-models/">
+      <span class="ln">1</span>
+      <span class="t">프로토타입은 쉽고 프로덕션은 어렵다 <small style="color:var(--soft)">— 설계 패턴 · 기초 모델 · 모델 지형도</small></span>
+      <span class="meta"><span class="done">25장</span></span>
+    </a>
+    <a class="lesson" href="ch01-2-agentic-and-control/">
+      <span class="ln">2</span>
+      <span class="t">에이전트, 그리고 모델을 내 쪽으로 당기는 법 <small style="color:var(--soft)">— 제어 · 컨텍스트 내 학습 · 사후훈련</small></span>
+      <span class="meta"><span class="done">29장</span></span>
+    </a>
+    <a class="lesson" href="https://github.com/inseoklee-ai/study-room-2/blob/main/notes/ch01.md">
+      <span class="ln">&#128209;</span>
+      <span class="t">1장 텍스트 학습노트 <small style="color:var(--soft)">— 마크다운 요약 · 용어집 · 자가점검</small></span>
+      <span class="meta"><span class="soon">읽기용</span></span>
+    </a>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="sec">
+  <div class="sechead"><div class="dno">2</div><h2>스타일과 형식 제어</h2><span class="tag">패턴 1–5</span></div>
+  <div class="rows">
+    <div class="row"><span class="n">1</span><span class="t">로짓 마스킹 (패턴 1)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">2</span><span class="t">문법 (패턴 2)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">3</span><span class="t">스타일 전이 (패턴 3)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">4</span><span class="t">역중립화 (패턴 4)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">5</span><span class="t">콘텐츠 최적화 (패턴 5)</span><span class="meta"><span class="soon">예정</span></span></div>
+  </div>
+</section>
+
+<!-- 3·4 -->
+<section class="sec">
+  <div class="sechead"><div class="dno">3</div><h2>외부 지식 활용 — RAG와 검색</h2><span class="tag">패턴 6–12 · 3·4장</span></div>
+  <div class="rows">
+    <div class="row"><span class="n">6</span><span class="t">기본 RAG (패턴 6)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">7</span><span class="t">의미 기반 색인화 (패턴 7)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">8</span><span class="t">대규모 색인화 (패턴 8)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">9</span><span class="t">색인 인식 검색 (패턴 9)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">10</span><span class="t">노드 후처리 (패턴 10)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">11</span><span class="t">신뢰할 수 있는 생성 (패턴 11)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">12</span><span class="t">심층 탐색 (패턴 12)</span><span class="meta"><span class="soon">예정</span></span></div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="sec">
+  <div class="sechead"><div class="dno">5</div><h2>추론과 전문 역량 강화</h2><span class="tag">패턴 13–16</span></div>
+  <div class="rows">
+    <div class="row"><span class="n">13</span><span class="t">사고 연쇄 (패턴 13)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">14</span><span class="t">사고 트리 (패턴 14)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">15</span><span class="t">어댑터 조정 (패턴 15)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">16</span><span class="t">지시사항 진화 (패턴 16)</span><span class="meta"><span class="soon">예정</span></span></div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="sec">
+  <div class="sechead"><div class="dno">6</div><h2>신뢰할 수 있는 시스템</h2><span class="tag">패턴 17–20</span></div>
+  <div class="rows">
+    <div class="row"><span class="n">17</span><span class="t">심판형 LLM (패턴 17)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">18</span><span class="t">성찰 (패턴 18)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">19</span><span class="t">의존성 주입 (패턴 19)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">20</span><span class="t">프롬프트 최적화 (패턴 20)</span><span class="meta"><span class="soon">예정</span></span></div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="sec">
+  <div class="sechead"><div class="dno">7</div><h2>행동하는 AI — 도구와 다중 에이전트</h2><span class="tag">패턴 21–23</span></div>
+  <div class="rows">
+    <div class="row"><span class="n">21</span><span class="t">도구 호출 (패턴 21)</span><span class="meta"><span class="pj">핵심</span><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">22</span><span class="t">코드 실행 (패턴 22)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">23</span><span class="t">다중 에이전트 협업 (패턴 23)</span><span class="meta"><span class="soon">예정</span></span></div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="sec">
+  <div class="sechead"><div class="dno">8</div><h2>비용 · 지연시간 · 자원</h2><span class="tag">패턴 24–28</span></div>
+  <div class="rows">
+    <div class="row"><span class="n">24</span><span class="t">소규모 언어 모델 (패턴 24)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">25</span><span class="t">프롬프트 캐싱 (패턴 25)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">26</span><span class="t">인퍼런스 최적화 (패턴 26)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">27</span><span class="t">성능 저하 테스트 (패턴 27)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">28</span><span class="t">장기 기억 (패턴 28)</span><span class="meta"><span class="soon">예정</span></span></div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="sec">
+  <div class="sechead"><div class="dno">9</div><h2>안전 · 윤리 · 가드레일</h2><span class="tag">패턴 29–32</span></div>
+  <div class="rows">
+    <div class="row"><span class="n">29</span><span class="t">템플릿 생성 (패턴 29)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">30</span><span class="t">조립 후 재구성 (패턴 30)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">31</span><span class="t">자체점검 (패턴 31)</span><span class="meta"><span class="soon">예정</span></span></div>
+    <div class="row"><span class="n">32</span><span class="t">가드레일 (패턴 32)</span><span class="meta"><span class="pj">핵심</span><span class="soon">예정</span></span></div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="sec">
+  <div class="sechead"><div class="dno">10</div><h2>종합 — 프로덕션 에이전트형 애플리케이션</h2><span class="tag">조합</span></div>
+  <div class="rows">
+    <div class="row"><span class="n">1</span><span class="t">앞의 패턴들을 조합한 실전 예제</span><span class="meta"><span class="soon">예정</span></span></div>
+  </div>
+</section>
+
+<footer>
+  study-room-2 &middot; 도서 『에이전트 시대의 AI 시스템 설계』 학습 정리<br>
+  <small>커리큘럼 학습 정리는 &rarr; <a href="https://inseoklee-ai.github.io/study-room/" style="color:var(--gr)">study-room</a></small>
+</footer>
+
+</div>
+<script>
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+</script>
+</body>
+</html>

@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>에이전트, 그리고 모델을 내 쪽으로 당기는 법 · 제어·컨텍스트 내 학습·사후훈련 (1장 2/2)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <span class="kick">에이전트 시대의 AI 시스템 설계 · 1장 (2/2)</span>
+    <h1 style="margin:18px 0">에이전트, 그리고<br>모델을 내 쪽으로 당기는 법</h1>
+    <p class="sub">세밀한 제어 · 컨텍스트 내 학습 · 사후훈련</p>
+  </div>
+  <aside>1장 서론의 뒷부분(1.3 에이전트형 AI ~ 1.7 책의 구성)입니다. 앞 덱이 "재료"였다면 이번은 "그 재료를 내 문제에 맞추는 세 가지 레버"입니다.</aside>
+</section>
+
+<!-- 2 여정 -->
+<section class="slide" data-part="표지">
+  <h2>&#128506;&#65039; 이 덱의 여정</h2>
+  <div class="chain">
+    <div class="cell" style="min-width:110px;border-color:var(--pp)"><small>무엇을 만드나</small><b class="p">에이전트</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="min-width:110px;border-color:var(--bl)"><small>레버 1</small><b class="b">세밀한 제어</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="min-width:110px;border-color:var(--gr)"><small>레버 2</small><b class="g">컨텍스트 내 학습</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="min-width:110px;border-color:var(--gold)"><small>레버 3</small><b>사후훈련</b></div>
+  </div>
+  <div class="box" style="margin-top:6px">
+    <h3>&#127919; 세 레버를 한눈에 — <span class="g">비용과 효과의 순서</span></h3>
+    <table class="t">
+      <tr><th style="width:24%">레버</th><th style="width:22%">무엇을 바꾸나</th><th style="width:18%">비용</th><th>언제</th></tr>
+      <tr><td class="b">세밀한 제어</td><td><b>초매개변수</b><br><small>온도 · Top-K/P · 벌점</small></td><td class="g">거의 0</td><td>제일 먼저 시도</td></tr>
+      <tr><td class="g">컨텍스트 내 학습</td><td><b>프롬프트</b><br><small>예시 · 지시사항</small></td><td class="g">낮음</td><td>대부분의 문제</td></tr>
+      <tr><td>사후훈련</td><td><b>가중치</b><br><small>SFT · LoRA · DPO</small></td><td class="r">높음</td><td>앞 둘로 안 될 때</td></tr>
+    </table>
+  </div>
+  <div class="hl">&#128161; 실무 원칙 — <b>싼 레버부터</b>. 초매개변수 &rarr; 프롬프트 &rarr; 가중치 순으로 올라갑니다.</div>
+  <aside>이 표가 이 덱의 뼈대입니다. 초보 팀이 가장 자주 저지르는 실수가 "일단 파인튜닝부터"인데, 책은 정확히 반대 순서를 권합니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="PART 1">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">에이전트형 AI</h2>
+    <p style="margin-top:11px">대신 일하는 소프트웨어, 그리고 자율성이라는 분기점</p>
+    <span class="who">1.3</span>
+  </div>
+  <aside>책 제목이 "에이전트 시대"인 만큼, 이 절이 책 전체의 방향을 정합니다.</aside>
+</section>
+
+<!-- 4 에이전트란 -->
+<section class="slide" data-part="PART 1">
+  <h2>&#129302; 에이전트 = <span class="g">대신 일하는 자</span></h2>
+  <ul class="pts">
+    <li>컴퓨터 과학에서 <b>오래된 용어</b> — 사용자나 다른 프로그램을 <b>대신해 행동하는</b> 소프트웨어 개체</li>
+    <li>모델에 <b>역할을 주고, 맥락을 주고, 지시를 수행하게</b> 하는 순간 그 LLM은 이미 나의 <b>대리인</b></li>
+    <li>그래서 파이댄틱 AI의 클래스 이름이 <code>Agent</code>인 것</li>
+  </ul>
+  <div class="plabel">재고 관리자 에이전트 — 목표만 준다</div>
+  <pre>agent = Agent(
+    f"anthropic:{MODEL_ID}",
+    system_prompt="당신은 재고 관리자입니다. 물품을 적시에 주문해야 합니다.",
+)</pre>
+  <div class="hl">주목할 점 — <b>"어떻게" 관리하라는 말이 한 줄도 없습니다.</b> 목표만 주었습니다.</div>
+  <aside>여기서 "요즘 말하는 에이전트"의 정의로 넘어갑니다. 자율적으로 계획하고, 도구를 고르고, 오류를 복구하고, 완료 여부를 스스로 평가하며 반복하는 것.</aside>
+</section>
+
+<!-- 5 자율성 -->
+<section class="slide" data-part="PART 1">
+  <h2>&#127919; 자율성 — <span class="g">전통 소프트웨어와의 분기점</span></h2>
+  <pre>@dataclass
+class InventoryItem:
+    name: str
+    quantity_on_hand: int
+    weekly_quantity_sold_past_n_weeks: list[int]
+    weeks_to_deliver: int
+
+items = [
+    InventoryItem("itemA", 300, [50, 70, 80, 100], 2),
+    InventoryItem("itemB", 100, [70, 80, 90, 70], 2),
+    InventoryItem("itemC", 200, [80, 70, 90, 80], 1),
+]
+
+result = agent.run_sync(f"다음 품목 중 이번 주에 다시 주문해야 하는 것들을 파악하세요.\n{items}")</pre>
+  <div class="chain">
+    <div class="cell" style="min-width:130px;border-color:var(--red)"><small>전통 프로그래밍</small><b class="r">재주문 규칙을<br>사람이 코딩</b></div>
+    <span class="ar">vs</span>
+    <div class="cell" style="min-width:130px;border-color:var(--gr)"><small>AI 에이전트</small><b class="g">목표만 주면<br>스스로 판단</b></div>
+  </div>
+  <div class="hl">사람이 계속 안내하거나 명시적으로 프로그래밍하지 않아도 독립적으로 작동하는 것 &mdash; 이 <b>자율성</b>이 전통 소프트웨어와 AI 에이전트를 가르는 <b>핵심 차별점</b>입니다.</div>
+  <aside>itemB가 위험한 이유를 에이전트가 알아서 짚습니다 — 재고 100개, 주간 최대 90개, 배송 2주. 사람이 "최대 판매량 × 배송 주수"를 코딩한 적이 없는데도 그렇게 계산합니다.</aside>
+</section>
+
+<!-- 6 4특징 -->
+<section class="slide" data-part="PART 1">
+  <h2>&#129513; 에이전트에 기대하는 <span class="g">네 가지</span></h2>
+  <table class="t">
+    <tr><th style="width:20%">특징</th><th>뜻</th><th style="width:24%">재고 관리자 예</th></tr>
+    <tr><td class="g">목표 지향성</td><td>프롬프트에 <b>반응</b>하는 게 아니라 <b>목표를 향해</b> 작동</td><td>"적시에 주문한다"를 시스템 프롬프트로</td></tr>
+    <tr><td class="b">계획 및 추론</td><td>목표 달성 <b>단계를 스스로 계획</b></td><td>판매량 범위 파악 &rarr; 배송기간 고려 &rarr; 최대 수요 예측 &rarr; 수량 계산</td></tr>
+    <tr><td class="p">인지 및 행동</td><td>데이터를 <b>수집(인지)</b>하고 환경에 <b>행동</b> — 외부 함수 호출</td><td>DB에서 재고 직접 조회, API로 <b>주문까지 실행</b></td></tr>
+    <tr><td>적응 및 학습</td><td>자기 출력을 <b>평가하고 스스로 수정</b></td><td>"300개가 정말 맞나" 재검증</td></tr>
+  </table>
+  <div class="hl">&#128279; 각각 이 책의 패턴으로 이어집니다 &mdash; 인지·행동은 <b>도구 호출(패턴 21, 7장)</b>, 적응·학습은 <b>성찰(패턴 18, 6장)</b>과 <b>자체점검(패턴 31, 9장)</b>.</div>
+  <aside>"인지 및 행동"이 실무에서 가장 무거운 항목입니다. 에이전트가 실제로 주문을 넣는 순간, 잘못된 판단의 대가가 텍스트 오류가 아니라 돈이 되기 때문입니다.</aside>
+</section>
+
+<!-- 7 현실 -->
+<section class="slide" data-part="PART 1">
+  <h2>&#9888;&#65039; 그런데 <span class="r">아직 목표일 뿐</span>이다</h2>
+  <div class="big">에이전트형 행동 방식은<br>기초 모델 기반 애플리케이션이 <span class="y">지향하는 목표</span>일 뿐<br><span class="y">완전히 실현되지는 못했다</span></div>
+  <ul class="pts" style="margin-top:14px">
+    <li><b class="r">비결정성</b> &mdash; 매번 재주문 목록과 수량이 다르게 나올 수 있다 (직접 돌려 보면 안다)</li>
+    <li><b class="r">환각</b> 등 여러 실패 모드 &mdash; 완전 자율 애플리케이션을 만들기 어렵게 한다</li>
+    <li>간단한 문제엔 계획을 잘 세우지만 <b>복잡해지면 무너진다</b></li>
+  </ul>
+  <div class="hl">&#128161; 그래서 이 책의 패턴들은 <b>"에이전트답게 만들거나, 최소한 만들 수 있는 것의 범위를 넓히는"</b> 방법입니다. 5장의 <b>사고 연쇄(패턴 13)</b>가 계획·추론 능력을 끌어올리는 대표적인 예입니다.</div>
+  <aside>저자들이 과장하지 않는 지점입니다. "에이전트가 다 해준다"가 아니라 "아직 안 되는데, 이런 패턴으로 범위를 넓힌다"는 태도가 이 책의 신뢰를 만듭니다.</aside>
+</section>
+
+<!-- 8 PART 2 -->
+<section class="slide" data-part="PART 2">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">레버 1 — 세밀한 제어</h2>
+    <p style="margin-top:11px">로짓 · 온도 · Top-K · Top-P · 빔 탐색</p>
+    <span class="who">1.4 · 초매개변수</span>
+  </div>
+  <aside>저자들의 말이 인상적입니다 — "수학적 토대를 이해하면 뒷부분의 설계 패턴을 쓰는 것보다도 더 간단하고 효과적으로 모델을 제어할 수 있다." 즉 가장 싼 레버입니다.</aside>
+</section>
+
+<!-- 9 로짓 -->
+<section class="slide" data-part="PART 2">
+  <h2>&#128290; 로짓 — 마지막 층이 뱉는 <span class="g">원시 점수</span></h2>
+  <ul class="pts">
+    <li>언어 모델은 수백 개 층이지만, <b>다음 토큰을 예측하는 건 마지막 층 하나</b></li>
+    <li>토큰 <b>하나</b>를 고르는 게 아니라 <b>후보 집합 전체</b>와 각 후보의 <b>확률</b>을 함께 내놓는다</li>
+    <li>마지막 층의 출력 = <b>로짓(logit)</b>, 정규화되지 않은 원시 수치</li>
+  </ul>
+  <div class="chain">
+    <div class="cell" style="min-width:120px"><small>마지막 층</small><b>로짓 (원시 점수)</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="min-width:120px;border-color:var(--gr)"><small>정규화</small><b class="g">소프트맥스</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="min-width:120px"><small>결과</small><b>선택 확률</b></div>
+  </div>
+  <pre>P(token_i) = exp(logit_i) / Σ_j exp(logit_j)</pre>
+  <div class="hl">소프트맥스는 <b>높은 값(peak)은 더 부각하고 낮은 값(tail)은 억제</b>합니다. 분포가 원래 덜 뾰족하면 그 효과도 덜 두드러집니다.</div>
+  <aside>토큰 확률은 9장 자체점검(패턴 31)에서 다시 등장합니다 — 사실 기반 응답의 환각을 값싸게 탐지하는 데 이 확률을 씁니다. 그래서 로짓을 아는 게 뒤에서 값을 합니다.</aside>
+</section>
+
+<!-- 10 탐욕표집 -->
+<section class="slide" data-part="PART 2">
+  <h2>&#128169; <span class="r">탐욕 표집</span>의 함정</h2>
+  <div class="grid2">
+    <div class="box"><h3>&#128200; 탐욕 표집(greedy)</h3><p style="margin:0">항상 <b>로짓이 가장 큰</b> 토큰만 선택</p></div>
+    <div class="box"><h3 class="r">&#128683; 문제</h3><p style="margin:0">매우 <b>반복적이고 재미없는</b> 텍스트가 나오기 쉽다</p></div>
+  </div>
+  <div class="big" style="margin-top:14px">그래서 언어 모델은<br><span class="y">어떤 후속 단어라도 확률이 0이 되지 않는</span> 표집 전략을 쓴다<br><small>가끔은 의외의 문장이 나오게</small></div>
+  <div class="hl">&#128161; 여기서 갈림길이 생깁니다 &mdash; <b>결정론적이고 품질 높은 출력</b> ↔ <b>창의적이고 다양한 응답</b>. 다음 세 슬라이드가 그 균형을 맞추는 손잡이입니다.</div>
+  <aside>이 트레이드오프를 이해하면 "왜 RAG에서는 온도를 0으로 두는가" 같은 질문이 저절로 풀립니다.</aside>
+</section>
+
+<!-- 11 온도 -->
+<section class="slide" data-part="PART 2">
+  <h2>&#127777;&#65039; 온도(T) — <span class="g">무작위성 손잡이</span></h2>
+  <pre>P(token_i) = exp(logit_i / T) / Σ_j exp(logit_j / T)</pre>
+  <p style="margin-top:4px">소프트맥스를 적용하기 <b>전에</b> 로짓의 크기를 조절한다.</p>
+  <table class="t">
+    <tr><th style="width:16%">T</th><th>효과</th><th style="width:34%">'The trade war caused...' 실측</th></tr>
+    <tr><td>0.0</td><td>사실상 <b>탐욕 표집</b> &mdash; 가장 안전하고 짧고 반복적</td><td>공급망 혼란 · 가격 상승 <b>한 문장으로 끝</b></td></tr>
+    <tr><td>0.5</td><td>균형 &mdash; 문장이 이어지고 내용이 늘어남</td><td>제조업체 · 농가 · 장기 효과까지 <b>3문장</b></td></tr>
+    <tr><td>0.8</td><td><b>가능성 낮은 '꼬리' 단어</b>의 선택 확률이 오름 &rarr; 더 창의적</td><td>기업 이익 · 금융시장 변동성 · <b>외교 관계</b>까지 확장</td></tr>
+  </table>
+  <div class="hl">&#9888;&#65039; 단, 애초에 <b>후속 단어 분포가 덜 뾰족했다면</b> 온도를 올려도 변화가 덜 두드러집니다. 온도는 만능 손잡이가 아닙니다.</div>
+  <aside>3장 RAG와 6장 심판형 LLM에서는 온도를 낮게 혹은 0으로 둡니다. 근거에 충실해야 하거나 채점이 일관돼야 하는 작업에서 창의성은 곧 오류이기 때문입니다.</aside>
+</section>
+
+<!-- 12 온도 코드 -->
+<section class="slide" data-part="PART 2">
+  <h2>&#128187; 온도 설정 <span class="g">코드</span></h2>
+  <div class="plabel">파이댄틱 AI</div>
+  <pre>agent = Agent('anthropic:claude-sonnet-4-5',
+              model_settings={"temperature": 0.5},
+              system_prompt="문장을 완성하세요.")</pre>
+  <div class="plabel">앤트로픽 API 직접</div>
+  <pre>completion = client.messages.create(
+    model="claude-sonnet-4-5",
+    system="문장을 완성하세요.",
+    temperature=0.5,
+    messages=[ ... ]
+)</pre>
+  <div class="hl">&#128161; 이름이 <b>초매개변수(hyperparameter)</b>인 이유 &mdash; 모델의 <b>매개변수</b>(신경망 가중치)와 구분하기 위해서입니다. 가중치는 못 건드려도 이건 매 호출마다 바꿀 수 있습니다.</div>
+  <aside>이것이 "가장 싼 레버"인 이유입니다. 재훈련도, 배포도, 데이터 수집도 필요 없이 한 줄로 모델의 성격이 바뀝니다.</aside>
+</section>
+
+<!-- 13 Top-K -->
+<section class="slide" data-part="PART 2">
+  <h2>&#9986; 상위 K 표집 — <span class="g">긴 꼬리를 잘라낸다</span></h2>
+  <p>어휘집에서 <b>가장 가능성 높은 토큰 k개</b>로만 선택을 제한. 확률 분포의 <b>긴 꼬리(long tail)</b>가 사실상 잘려 나간다.</p>
+  <table class="t">
+    <tr><th style="width:12%">K</th><th>'The spaceship...' 실측 결과의 성격</th></tr>
+    <tr><td>1</td><td>"zoomed through the vast expanse..." &mdash; <b>기존 SF에서 흔히 보던 상투구</b>에 가장 가깝다</td></tr>
+    <tr><td>10</td><td>"glided silently through the vast emptiness..." &mdash; 조금 더 다양</td></tr>
+    <tr><td>100</td><td>"soared through the starry expanse, gleaming hull reflecting alien suns..." &mdash; <b>가장 풍부한 표현</b></td></tr>
+  </table>
+  <div class="hl">&#128161; 온도와 함께 쓰는 이유 &mdash; <b>온도가 높을 때 엉뚱한 후속 단어가 튀어나오는 것을 K가 막아줍니다.</b> 창의성은 열되, 말이 안 되는 후보는 애초에 배제.</div>
+  <aside>K를 낮추면 안전하지만 상투적이 되고, 높이면 표현은 풍부해지지만 위험이 늘어납니다. 온도 = 얼마나 과감하게, K = 어디까지를 후보로.</aside>
+</section>
+
+<!-- 14 Top-P -->
+<section class="slide" data-part="PART 2">
+  <h2>&#127919; 상위 P 표집 — <span class="g">모델의 확신도에 맞춰 적응</span></h2>
+  <p><b>누적 확률이 임곗값 p를 넘는 최소 집합</b>을 동적으로 선택. 확률 질량의 대부분을 차지하는 토큰들의 <b>중핵(nucleus)</b>이라 <b>중핵 표집</b>이라고도 한다.</p>
+  <div class="grid2">
+    <div class="box"><h3 class="g">모델이 확신할 때</h3><p style="margin:0"><b>적은 수의 토큰</b>만 고려<br><small>&rarr; K 낮은 Top-K와 비슷</small></p></div>
+    <div class="box"><h3 class="b">모델이 헷갈릴 때</h3><p style="margin:0"><b>더 많은 토큰</b>을 고려<br><small>&rarr; K 높은 Top-K와 비슷</small></p></div>
+  </div>
+  <div class="chain" style="margin-top:14px">
+    <div class="cell" style="min-width:150px;border-color:var(--red)"><small>Top-K</small><b class="r">항상 k개<br><small style="color:var(--soft)">고정</small></b></div>
+    <span class="ar">vs</span>
+    <div class="cell" style="min-width:150px;border-color:var(--gr)"><small>Top-P</small><b class="g">상황마다 개수 달라짐<br><small style="color:var(--soft)">적응적</small></b></div>
+  </div>
+  <div class="hl">한 줄 요약 &mdash; <b>Top-K는 "몇 개"를 고정하고, Top-P는 "얼마만큼의 확률"을 고정합니다.</b></div>
+  <aside>실무에서 Top-P가 더 자주 기본값으로 쓰이는 이유가 이 적응성입니다. 문장의 어떤 지점은 답이 뻔하고(고유명사 뒤), 어떤 지점은 열려 있는데(문단 시작) K는 그걸 구분하지 못합니다.</aside>
+</section>
+
+<!-- 15 빔 탐색 -->
+<section class="slide" data-part="PART 2">
+  <h2>&#128301; 빔 탐색 — <span class="g">토큰 하나가 아니라 시퀀스 전체</span></h2>
+  <ul class="pts">
+    <li>모델은 후속 토큰을 <b>한 번에 하나씩만</b> 고르지 않는다</li>
+    <li><b>결정론적 탐색 알고리즘</b>으로 여러 후속 시퀀스를 <b>병렬로</b> 탐색해 <b>확률이 가장 높은 시퀀스</b>를 찾는다</li>
+    <li>덕분에 <b>다음 토큰</b>이 아니라 <b>전체 시퀀스의 확률</b>을 고려할 수 있다</li>
+  </ul>
+  <div class="grid2" style="margin-top:6px">
+    <div class="box">
+      <h3 class="r">&#128260; 반복 벌점</h3>
+      <p style="margin:0"><b>빈도 벌점</b> &mdash; 반복 <b>횟수에 비례</b>해 벌점 증가<br><b>출현 벌점</b> &mdash; <b>한 번이라도</b> 반복되면 동일 벌점 &rarr; 더 다양한 토큰 유도</p>
+    </div>
+    <div class="box">
+      <h3 class="b">&#128207; 길이 벌점</h3>
+      <p style="margin:0"><b>최소 길이</b> &mdash; 최소 토큰 수 강제<br><b>최대 길이</b> &mdash; 넘기면 생성 종료<br><b>길이 정규화</b> &mdash; 짧은 시퀀스 선호 편향 방지</p>
+    </div>
+  </div>
+  <div class="warn">&#9888;&#65039; <b>지원 현황을 반드시 확인하세요.</b> 집필 시점 기준 오픈AI · 구글은 반복 벌점을 지원하지만 <b>앤트로픽은 지원하지 않습니다.</b> 허깅페이스 Transformers는 길이 벌점과 빔 너비 변경을 지원하지만, <b>허깅페이스에 호스팅된 모델 중에는 이를 지원하는 것이 없습니다.</b></div>
+  <aside>빔 탐색의 "너비(width)"는 생성 중 동시에 고려하는 병렬 시퀀스 개수입니다. 빔 탐색을 활용하는 패턴은 2장과 6장에 나옵니다. 이 슬라이드의 경고는 실무에서 진짜 발목을 잡는 부분이라 강의 때 꼭 짚어주세요.</aside>
+</section>
+
+<!-- 16 PART 3 -->
+<section class="slide" data-part="PART 3">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">레버 2 — 컨텍스트 내 학습</h2>
+    <p style="margin-top:11px">가중치를 건드리지 않고 새 작업을 가르치기</p>
+    <span class="who">1.5</span>
+  </div>
+  <aside>전통 ML에서 가장 놀라운 차이가 여기 있습니다. 새 작업 = 재훈련이었던 세계에서, 프롬프트만 바꾸면 되는 세계로.</aside>
+</section>
+
+<!-- 17 ICL -->
+<section class="slide" data-part="PART 3">
+  <h2>&#127891; 컨텍스트 내 학습이란</h2>
+  <div class="chain">
+    <div class="cell" style="min-width:170px;border-color:var(--red)"><small>전통 ML</small><b class="r">새 작업 = 재훈련<br><small style="color:var(--soft)">가중치 변경 필요</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="min-width:170px;border-color:var(--gr)"><small>LLM</small><b class="g">새 작업 = 프롬프트 변경<br><small style="color:var(--soft)">가중치 그대로</small></b></div>
+  </div>
+  <p style="margin-top:10px"><b>기초 모델이 프롬프트의 예시나 지시사항만으로 새 작업에 적응하는 능력.</b> 애초에 다양한 작업 형식과 지시사항이 섞인 데이터셋으로 훈련된 덕분에 생긴 능력이다.</p>
+  <div class="grid2">
+    <div class="box"><h3 class="b">&#127919; 제로샷</h3><p style="margin:0"><b>예시 없이</b> 작업만 지시. 사전훈련 지식 + 자연어 이해력에 의존</p></div>
+    <div class="box"><h3 class="g">&#127919; 퓨샷</h3><p style="margin:0"><b>예시 몇 개를 추가.</b> 작업의 구조와 <b>출력 형식</b>을 시연(demonstration)</p></div>
+  </div>
+  <div class="hl">중요한 건 이것 &mdash; <b>모델의 가중치는 전혀 변경되지 않습니다.</b> 이미 지닌 지식을 활용해 새 작업을 수행할 뿐입니다.</div>
+  <aside>"학습"이라는 단어가 오해를 부릅니다. 모델이 배워서 기억하는 게 아니라, 그 요청 안에서만 패턴을 흉내 내는 것입니다. 다음 요청에는 남아 있지 않습니다.</aside>
+</section>
+
+<!-- 18 퓨샷 예시 -->
+<section class="slide" data-part="PART 3">
+  <h2>&#127912; 퓨샷 실전 — <span class="g">그림 알아맞히기</span></h2>
+  <pre>agent = Agent(MODEL_ID, system_prompt="""당신은 미술사 전문가입니다.
+사용자가 어떤 그림을 설명하면 무슨 그림인지 알아내야 합니다.""")
+
+result = agent.run_sync("""
+Example:
+설명: 전경에 작은 조각배 두 척과 붉은 태양이 보인다.
+답변:
+  그림: 인상, 해돋이
+  화가: 클로드 모네
+  연도: 1872
+  의의: 인상주의 운동에 이름을 붙여 준 작품...
+
+설명: 야외 텐트 아래 테이블에서 한 무리의 사람들이 식사를 한다.
+      남자들은 보팅 햇(boating hat)을 쓰고 있다.
+""")</pre>
+  <div class="hl">&#9989; 결과 &mdash; 모델은 설명과 일치하는 <b>르누아르의 그림</b>을 정확히 짚었습니다. <b>도메인 특화 모델을 만들지도, 훈련 데이터를 모으지도 않고</b>요.</div>
+  <aside>예시 하나가 한 일: ① 무슨 형식으로 답할지(그림/화가/연도/의의) ② 어느 정도 깊이로 답할지를 동시에 알려줬습니다. 그래서 퓨샷은 "정답을 가르치는 것"이 아니라 "형식과 태도를 보여주는 것"에 가깝습니다.</aside>
+</section>
+
+<!-- 19 컨텍스트 엔지니어링 + 한계 -->
+<section class="slide" data-part="PART 3">
+  <h2>&#9878;&#65039; 컨텍스트 엔지니어링과 <span class="r">그 한계</span></h2>
+  <p><b>컨텍스트 엔지니어링</b> = 잘 다듬은 데이터와 지시사항을 프롬프트의 컨텍스트에 넣어 모델이 원하는 방식으로 작동하게 만드는 일. <b>퓨샷 학습은 그 가장 간단하고 효과적인 형태.</b></p>
+  <div class="grid2">
+    <div class="box">
+      <h3 class="g">&#9989; 강점</h3>
+      <p style="margin:0">방대한 데이터셋 선별 <b>불필요</b><br>프로토타이핑이 <b>빠르다</b><br>프로덕션에서도 유리 &mdash; <b>예시 갱신</b>이 재훈련·재배포보다 <b>훨씬 빠르다</b></p>
+    </div>
+    <div class="box">
+      <h3 class="r">&#9888; 한계 네 가지</h3>
+      <p style="margin:0">① 모델이 <b>이미 지식·역량을 갖춘 경우에만</b> 작동<br>② 예시가 많아지면 <b>컨텍스트 창의 토큰을 소모</b>하고 <b>느려진다</b><br>③ 소수 예시로는 <b>복잡한 문제 일반화가 어렵다</b><br>④ 그럴 땐 <b>사후훈련</b>이 나은 접근</p>
+    </div>
+  </div>
+  <div class="hl">&#128161; 한계 ④가 다음 파트로 가는 다리입니다 &mdash; <b>프롬프트로 안 되면 그때 가중치를 건드린다.</b></div>
+  <aside>②는 비용 문제이기도 합니다. 예시를 20개 붙이면 매 호출마다 그 토큰 값을 냅니다. 그래서 8장에 프롬프트 캐싱(패턴 25)이 나옵니다.</aside>
+</section>
+
+<!-- 20 PART 4 -->
+<section class="slide" data-part="PART 4">
+  <div class="part">
+    <div class="pno">4</div>
+    <h2 style="margin:0">레버 3 — 사후훈련</h2>
+    <p style="margin-top:11px">가중치를 실제로 바꾸는, 가장 비싼 레버</p>
+    <span class="who">1.6</span>
+  </div>
+  <aside>사후훈련(post-training)은 사전훈련된 모델의 가중치를 새 작업·도메인에 맞게 수정하는 방법들의 총칭입니다. 훈련 후에는 재배포해야 하고, 종단점도 기초 모델과 달라집니다.</aside>
+</section>
+
+<!-- 21 4방법 -->
+<section class="slide" data-part="PART 4">
+  <h2>&#128296; 사후훈련 <span class="g">네 가지 방법</span></h2>
+  <table class="t">
+    <tr><th style="width:18%">방법</th><th>내용</th><th style="width:26%">주의</th></tr>
+    <tr><td class="r">CPT<br><small>후속 사전훈련</small></td><td>기존 훈련에 없던 <b>어휘·연관 관계</b>를 추가 학습. 기반 모델의 <b>가중치 전체와 아키텍처 접근</b> 필요</td><td>비용·시간 막대. <b>한 단계를 다시 하면 나머지 단계도 다시</b> 해야 함. 블룸버그 사례 이후 <b>선택하는 조직이 거의 없다</b></td></tr>
+    <tr><td class="g">SFT<br><small>지도학습 미세조정</small></td><td>(프롬프트, 응답) 쌍으로 추가 훈련. 다양한 지시로 훈련하면 <b>제로샷 능력 강화</b> = <b>지시사항 조정</b></td><td><b>한 가지 작업만</b> SFT하면 이전 작업을 <b>잊고 일반화도 실패</b></td></tr>
+    <tr><td class="b">PeFT<br><small>LoRA · QLoRA</small></td><td>원천 가중치는 <b>동결</b>하고 작은 <b>어댑터 행렬</b>만 훈련. 훈련 매개변수 <b>최대 1/10,000</b>, GPU 메모리 <b>최대 1/3</b></td><td>지연시간을 늘리지 않으면서 <b>전체 미세조정에 가까운 성능</b>. QLoRA는 양자화 &rarr; 훈련은 느리지만 메모리 효율↑, 실행은 더 빠름</td></tr>
+    <tr><td class="p">선호도 조정</td><td>같은 프롬프트에 두 결과를 만들고 <b>어느 쪽이 나은지</b> 피드백. 사람 + RL = <b>RLHF</b></td><td>효율 때문에 <b>DPO</b>를 많이 씀. 딥시크는 <b>GRPO</b>(그룹 평균 보상으로 정규화)로 좋은 결과</td></tr>
+  </table>
+  <aside>블룸버그 사례가 교훈적입니다. 2023년 3월 금융 문서로 CPT를 했는데, 불과 몇 달 뒤 범용 기초 모델이 그 도메인 특화 모델을 가뿐히 능가했습니다. 기초 모델의 발전 속도가 도메인 특화의 이점을 삼켜버린 것입니다.</aside>
+</section>
+
+<!-- 22 데이터셋 매칭 -->
+<section class="slide" data-part="PART 4">
+  <h2>&#128193; <span class="g">데이터셋의 모양</span>이 방법을 정한다</h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t">순수한 <b>텍스트 완성</b> 항목뿐 &rarr; <b class="r">CPT</b> (비지도) &mdash; 새 어휘·새 연관 관계를 가르칠 수 있다</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>입력-출력 쌍</b>(이상적 응답) &rarr; <b class="g">SFT · 지시사항 조정</b></span></div>
+    <div class="st"><span class="n">3</span><span class="t">입력 + <b>두 응답</b> + <b>어느 쪽이 선호되는지</b> &rarr; <b class="p">선호도 조정</b></span></div>
+  </div>
+  <div class="hl">&#128161; 이 셋 <b>모두</b> 매개변수 효율적인 방식(PeFT)으로 수행하거나 <b>양자화된 모델에 적용</b>할 수 있습니다. PeFT는 별개의 선택지가 아니라 <b>위에 겹쳐 쓰는 방식</b>입니다.</div>
+  <div class="warn">&#9888;&#65039; 집필 시점(2025-06) 기준 <b>모든 형태의 사후훈련을 지원하는 것은 가중치 공개 모델뿐</b>입니다. 호스팅 모델을 쓴다면 제공업체 문서에서 지원 여부를 확인해야 합니다.</div>
+  <aside>실무 순서: "내가 가진 데이터가 어떤 모양인가"를 먼저 보면 방법이 자동으로 좁혀집니다. 거꾸로 "LoRA 해보자"부터 시작하면 데이터를 억지로 맞추게 됩니다.</aside>
+</section>
+
+<!-- 23 코드 -->
+<section class="slide" data-part="PART 4">
+  <h2>&#128187; 실제로는 <span class="g">이 정도로 짧다</span></h2>
+  <div class="plabel">프런티어 모델 &mdash; JSONL 업로드 후 작업 생성 (최소 100쌍, 수천 쌍이면 더 좋음)</div>
+  <pre>training_file = client.files.create(file=open("training_data.jsonl","rb"),
+                                    purpose="fine-tune")
+job = client.fine_tuning.jobs.create(training_file=training_file.id,
+                                     model="gpt-3.5-turbo")
+# 완료되면 ft:&lt;BASE&gt;-0125:&lt;ORG&gt;::&lt;JOB_ID&gt; 형식의 모델 ID를 받아
+# model 필드만 바꿔 평소처럼 호출한다</pre>
+  <div class="plabel">가중치 공개 모델 &mdash; 언슬로스 + LoRA</div>
+  <pre>model, tokenizer = FastLanguageModel.from_pretrained(
+    model_name="unsloth/Meta-Llama-3.1-8B-bnb-4bit",
+    max_seq_length=2048, load_in_4bit=True, dtype=None)
+
+model = FastLanguageModel.get_peft_model(model, r=16,
+    target_modules=["q_proj","k_proj","v_proj","up_proj",
+                    "down_proj","o_proj","gate_proj"])
+
+SFTTrainer(model=model, tokenizer=tokenizer,
+           train_dataset=dataset, dataset_text_field="text").train()</pre>
+  <div class="hl">&#128161; 코드가 짧다고 <b>쉬운 게 아닙니다.</b> 어려운 것은 <b>데이터 준비와 이후의 운영</b>입니다 &mdash; 다음 슬라이드.</div>
+  <aside>r=16은 LoRA 계층의 계수(행렬 차원), target_modules는 어디에 어댑터를 붙일지 — 주의 메커니즘 행렬(Q,K,V)과 여러 사영 계층입니다. 아마존 베드록의 클로드, GCP 버텍스 AI의 제미나이도 과정이 매우 비슷합니다.</aside>
+</section>
+
+<!-- 24 고려사항 -->
+<section class="slide" data-part="PART 4">
+  <h2>&#9888;&#65039; 미세조정의 <span class="r">진짜 비용 네 가지</span></h2>
+  <table class="t">
+    <tr><th style="width:20%">항목</th><th>내용과 완화책</th></tr>
+    <tr><td class="r">데이터 요구사항</td><td>컨텍스트 내 학습은 예시 몇 개면 되지만 미세조정은 <b>100개 이상</b> 필요. &rarr; <b>일단 컨텍스트 내 학습으로 시작해 데이터를 모으고</b>, 나중에 미세조정</td></tr>
+    <tr><td class="r">파국적 망각</td><td>미세조정 예시를 <b>너무 중요하게 여긴 나머지 기존 지식을 잃는</b> 현상. LLM 최대 장점인 <b>포괄적 세상 지식</b>이 무력화됨. &rarr; 작은 데이터셋으로 <b>몇 에포크만</b> 먼저, 이후 <b>학습률</b>을 적절히 (사전훈련 종료 시점 값, 보통 <b>1e-5 부근</b>)</td></tr>
+    <tr><td class="r">추가적 복잡성</td><td>배포 전 <b>성능 평가</b>(편향된 언어 등 역효과 확인) · 기초 모델 <b>새 버전마다 재조정</b> · 훈련/검증 데이터 <b>계보 추적</b></td></tr>
+    <tr><td class="r">추가 비용</td><td>제공업체는 미세조정 모델에 <b>토큰당 더 높은 요금</b>. 가중치 공개는 실행비는 줄지만 <b>훈련 GPU 비용</b> &mdash; 몇 달러에서 <b>버전별 수백 달러</b>까지</td></tr>
+  </table>
+  <div class="hl">&#127919; 저자들의 결론 &mdash; <b>"미세조정으로 얻는 이득이 이 골칫거리들을 능가하는지 미리 확인하라."</b></div>
+  <aside>파국적 망각은 특히 무섭습니다. 우리 도메인 성능은 올랐는데 그 외 모든 게 조금씩 나빠지고, 그 사실을 배포 후에야 알게 되는 경우가 많습니다.</aside>
+</section>
+
+<!-- 25 책 지도 -->
+<section class="slide" data-part="PART 5">
+  <h2>&#128218; 이 책의 <span class="g">지도</span> &mdash; 32패턴 · 9개 장</h2>
+  <table class="t">
+    <tr><th style="width:9%">장</th><th style="width:26%">주제</th><th>대표 패턴</th></tr>
+    <tr><td>2</td><td>스타일 · 형식 제어</td><td>로짓 마스킹(1) · 문법(2) · 스타일 전이(3) · 역중립화(4) · 콘텐츠 최적화(5)</td></tr>
+    <tr><td>3·4</td><td>외부 지식 활용<br><small>지식 단절 · 기밀 · 환각</small></td><td>기본 RAG(6) · 의미 기반 색인화(7) · 대규모 색인화(8) · 색인 인식 검색(9) · 노드 후처리(10) · 신뢰할 수 있는 생성(11) · 심층 탐색(12)</td></tr>
+    <tr><td>5</td><td>추론 · 전문 역량 강화</td><td>사고 연쇄(13) · 사고 트리(14) · 어댑터 조정(15) · 지시사항 진화(16)</td></tr>
+    <tr><td>6</td><td>신뢰성</td><td>심판형 LLM(17) · 성찰(18) · 의존성 주입(19) · 프롬프트 최적화(20)</td></tr>
+    <tr><td>7</td><td>행동하는 AI</td><td><b>도구 호출(21)</b> · 코드 실행(22) · 다중 에이전트 협업(23)</td></tr>
+    <tr><td>8</td><td>비용 · 지연시간 · 자원</td><td>소규모 언어 모델(24) · 프롬프트 캐싱(25) · 인퍼런스 최적화(26) · 성능 저하 테스트(27) · 장기 기억(28)</td></tr>
+    <tr><td>9</td><td>안전 · 윤리 · 가드레일</td><td>템플릿 생성(29) · 조립 후 재구성(30) · 자체점검(31) · <b>가드레일(32)</b></td></tr>
+    <tr><td>10</td><td colspan="2">앞의 패턴들을 <b>조합해 프로덕션에 바로 쓸 에이전트형 애플리케이션</b>을 만든다</td></tr>
+  </table>
+  <aside>이 표를 인쇄해 책상에 붙여두면 좋습니다. 문제가 생겼을 때 "몇 장을 펼 것인가"를 정하는 색인 역할을 합니다.</aside>
+</section>
+
+<!-- 26 정리 -->
+<section class="slide" data-part="마무리">
+  <h2>&#128218; 1장 <span class="g">전체 정리</span></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>문제</b> &mdash; 프로토타입은 쉽고 프로덕션은 어렵다. 환각·비결정성은 <b>훈련 방식에서 오는 고유 성질</b></span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>형식</b> &mdash; 반복되는 문제의 검증된 해법에 이름을 붙인 것이 <b>설계 패턴</b> (32개)</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>재료</b> &mdash; 기초 모델은 <b>사전훈련 → SFT → RL</b>로 만들어지고, <b>프런티어 · 증류 · 가중치 공개 · 로컬</b> 네 부류</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>목표</b> &mdash; <b>에이전트</b>: 목표 지향 · 계획 추론 · 인지 행동 · 적응 학습. 단 <b>아직 완전히 실현되지 않았다</b></span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>수단</b> &mdash; 싼 레버부터: <b>초매개변수 → 프롬프트(ICL) → 가중치(사후훈련)</b></span></div>
+  </div>
+  <div class="big" style="margin-top:14px">1장이 남기는 태도<br><span class="y">모델을 믿지 말고, 다룰 구조를 설계하라</span></div>
+  <aside>강의 마무리로 이 슬라이드 하나만 다시 보여줘도 충분합니다.</aside>
+</section>
+
+<!-- 27 퀴즈 -->
+<section class="slide" data-part="마무리">
+  <h2>&#10067; 스스로 점검</h2>
+  <div class="qa">
+    <div class="q"><b>Q1.</b> AI 에이전트가 전통 소프트웨어와 갈라지는 <b>핵심 차별점</b>은? 재고 관리자 예로 설명해 보세요.</div>
+    <div class="q"><b>Q2.</b> 에이전트에 기대하는 네 특징을 말하고, 그중 <b>"인지 및 행동"</b>이 어떤 패턴으로 이어지는지 답하세요.</div>
+    <div class="q"><b>Q3.</b> 온도를 0으로 두면 무슨 일이 일어나며, <b>어떤 상황</b>에서 그렇게 하나?</div>
+    <div class="q"><b>Q4.</b> <b>Top-K와 Top-P</b>의 차이를 한 문장으로.</div>
+    <div class="q"><b>Q5.</b> 컨텍스트 내 학습에서 <b>모델의 가중치는 어떻게 되나?</b> 그리고 한계 네 가지 중 둘을 말해 보세요.</div>
+    <div class="q"><b>Q6.</b> <b>파국적 망각</b>이란 무엇이고, 왜 특히 위험한가? 완화책은?</div>
+    <div class="q"><b>Q7.</b> 내가 가진 데이터가 <b>(입력, 두 응답, 선호 표시)</b> 형태라면 어떤 사후훈련 방법을 쓰나?</div>
+  </div>
+  <aside>Q4와 Q7은 실무 즉답형입니다. Q6은 미세조정을 결정하기 전에 반드시 팀이 공유해야 할 리스크입니다.</aside>
+</section>
+
+<!-- 28 정답 -->
+<section class="slide" data-part="마무리">
+  <h2>&#9989; 정답 &amp; 해설</h2>
+  <div class="qa">
+    <div class="q a"><b>A1.</b> <b>자율성.</b> "적시에 주문한다"는 <b>목표만</b> 주면 재고·판매량·배송기간을 스스로 엮어 재주문 수량을 계산한다 &mdash; 사람이 그 규칙을 <b>명시적으로 프로그래밍하지 않았는데도</b>.</div>
+    <div class="q a"><b>A2.</b> 목표 지향성 · 계획 및 추론 · 인지 및 행동 · 적응 및 학습. "인지 및 행동" &rarr; <b>도구 호출(패턴 21, 7장)</b>. (적응·학습 &rarr; 성찰(18)·자체점검(31))</div>
+    <div class="q a"><b>A3.</b> 사실상 <b>탐욕 표집</b>이 되어 가장 확률 높은 토큰만 고른다. <b>RAG(3장)</b>나 <b>심판형 LLM(6장)</b>처럼 근거 충실성·채점 일관성이 중요한 곳에서 그렇게 한다.</div>
+    <div class="q a"><b>A4.</b> <b>Top-K는 "몇 개"를 고정</b>(항상 k개), <b>Top-P는 "확률 질량"을 고정</b>해 모델의 확신도에 따라 후보 수가 <b>적응적으로</b> 변한다.</div>
+    <div class="q a"><b>A5.</b> <b>전혀 변경되지 않는다</b> &mdash; 이미 지닌 지식을 활용할 뿐. 한계: ①모델이 이미 역량을 갖춘 경우만 ②토큰 소모·속도 저하 ③복잡한 문제 일반화 어려움 ④그럴 땐 사후훈련.</div>
+    <div class="q a"><b>A6.</b> 미세조정 예시를 과대평가해 <b>기존 지식을 잃는</b> 현상. LLM의 최대 장점인 <b>포괄적 세상 지식</b>을 무력화하므로 위험. 완화 &mdash; 작은 데이터셋으로 <b>몇 에포크만</b> 먼저, 학습률은 <b>1e-5 부근</b>에서 시작.</div>
+    <div class="q a"><b>A7.</b> <b>선호도 조정</b> (RLHF · DPO · GRPO).</div>
+  </div>
+  <aside>A1과 A5를 자기 말로 설명할 수 있으면 1장의 핵심을 잡은 것입니다.</aside>
+</section>
+
+<!-- 29 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>에이전트와 세 레버 &#127899;&#65039;</h1>
+    <div class="big" style="margin-top:26px">싼 레버부터 &mdash; <span class="y">초매개변수 → 프롬프트 → 가중치</span><br>에이전트는 아직 <span class="y">목표</span>이고,<br>그 범위를 넓히는 것이 <span class="y">32가지 패턴</span><br><br>다음 &mdash; <span class="y">2장, 스타일과 형식 제어</span></div>
+    <p class="sub" style="margin-top:24px">1장 (2/2) &mdash; 여기까지</p>
+  </div>
+  <aside>2장은 로짓 마스킹(1)·문법(2)·스타일 전이(3)·역중립화(4)·콘텐츠 최적화(5)입니다. 이번 덱에서 배운 로짓과 퓨샷·선호도 조정이 그대로 재료로 쓰입니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

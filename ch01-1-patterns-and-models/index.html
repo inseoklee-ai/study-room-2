@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>프로토타입은 쉽고 프로덕션은 어렵다 · 생성형 AI 설계 패턴과 기초 모델 (1장 1/2)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <span class="kick">에이전트 시대의 AI 시스템 설계 · 1장 (1/2)</span>
+    <h1 style="margin:18px 0">프로토타입은 쉽고<br>프로덕션은 어렵다</h1>
+    <p class="sub">생성형 AI 설계 패턴 · 그리고 기초 모델이라는 재료</p>
+  </div>
+  <aside>1장 서론의 앞부분(1.1 설계 패턴 ~ 1.2 기초 모델 기반 애플리케이션 구축)을 다룹니다. 이 책이 왜 "패턴"이라는 형식을 택했는지, 그리고 우리가 쓰는 재료인 기초 모델이 어떻게 만들어지고 어떤 종류가 있는지를 봅니다.</aside>
+</section>
+
+<!-- 2 여정 -->
+<section class="slide" data-part="표지">
+  <h2>&#128506;&#65039; 이 덱의 여정</h2>
+  <div class="chain">
+    <div class="cell" style="min-width:120px;border-color:var(--red)"><small>문제</small><b class="r">프로토타입 → 프로덕션</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="min-width:120px;border-color:var(--gr)"><small>해법의 형식</small><b class="g">설계 패턴 32개</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="min-width:120px"><small>재료 다루기</small><b>프롬프트 · API</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="min-width:120px;border-color:var(--gold)"><small>재료의 정체</small><b>훈련 · 지형도</b></div>
+  </div>
+  <ul class="pts">
+    <li>왜 "잘 되는 데모"가 <b>프로덕션에서는 안 되는가</b></li>
+    <li>설계 패턴이란 무엇이고, <b>AI 엔지니어링</b>은 기존 ML과 어떻게 다른가</li>
+    <li>프롬프트 = <b>지시사항 + 컨텍스트</b>, 시스템 프롬프트와 사용자 프롬프트</li>
+    <li>기초 모델은 <b>사전훈련 → SFT → 강화학습</b>으로 만들어진다</li>
+    <li>프런티어 · 증류 · 가중치 공개 · 로컬 — <b>무엇을 언제 고르나</b></li>
+  </ul>
+  <div class="hl">&#127919; 1장을 관통하는 한 줄 — <b>모델은 뛰어나지만 믿을 수 없다.</b> 그 간극을 메우는 것이 이 책의 32가지 패턴이다.</div>
+  <aside>1장은 2개 덱으로 나눕니다. 지금(1/2)은 "패턴이라는 형식 + 기초 모델이라는 재료", 다음(2/2)은 "에이전트 + 모델을 내 쪽으로 당기는 세 가지 레버".</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="PART 1">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">왜 설계 패턴인가</h2>
+    <p style="margin-top:11px">인상적인 데모와 신뢰할 수 있는 제품 사이의 거리</p>
+    <span class="who">1.1 생성형 AI 설계 패턴</span>
+  </div>
+  <aside>이 책의 존재 이유가 담긴 절입니다. 문제 정의가 정확해야 해법(패턴)이 왜 그 모양인지 이해됩니다.</aside>
+</section>
+
+<!-- 4 문제 -->
+<section class="slide" data-part="PART 1">
+  <h2>&#128165; 데모는 하루, <span class="r">프로덕션은 반년</span></h2>
+  <ul class="pts">
+    <li>생성형 AI는 <b>강력하면서도 쉽다</b> — 비전문가도 인상적인 프로토타입을 만든다</li>
+    <li>그런데 그 프로토타입을 <b>프로덕션 수준으로 끌어올리기가 어렵다</b></li>
+    <li>이유는 하나로 모인다 — <b>모델을 신뢰하기 어렵다</b></li>
+  </ul>
+  <div class="grid2" style="margin-top:14px">
+    <div class="box"><h3 class="r">&#128128; 환각(hallucination)</h3><p style="margin:0">없는 사실을 <b>확신 있게</b> 지어낸다</p></div>
+    <div class="box"><h3 class="r">&#127922; 비결정성</h3><p style="margin:0">같은 입력에 <b>매번 다른 답</b>을 내놓는다</p></div>
+  </div>
+  <div class="warn">&#9888;&#65039; 핵심은 이것이 <b>버그가 아니라는 점</b>입니다. 대부분 생성형 AI 고유의 <b>훈련 방식에서 기인</b>하므로 "고쳐서 없애는" 대상이 아니라 <b>설계로 감싸 다뤄야 하는</b> 성질입니다.</div>
+  <aside>모니터링 에이전트를 만들 때 "조용히 실패하지 않기"가 중요한 것과 같은 맥락입니다. 모델의 불확실성을 없앨 수 없다면, 그것을 드러내고 다루는 구조를 짜야 합니다.</aside>
+</section>
+
+<!-- 5 설계 패턴이란 -->
+<section class="slide" data-part="PART 1">
+  <h2>&#128218; 설계 패턴 = <span class="g">검증된 해법</span>에 붙인 이름</h2>
+  <p>소프트웨어를 만들며 <b>반복해서 만나는 공통 문제</b>에 대한, 집단 경험으로 다듬어진 표준 모범관행</p>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>공통의 어휘</b>를 만든다 — "여기 RAG 쓰자" 한마디로 설계 의도가 전달된다</span></div>
+    <div class="st"><span class="n">2</span><span class="t">소프트웨어의 <b>품질 · 유지보수성 · 확장성</b>을 개선한다</span></div>
+    <div class="st"><span class="n">3</span><span class="t">바퀴를 다시 발명하지 않게 한다 — <b>이미 검증된 해법</b>에서 출발</span></div>
+  </div>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell"><small>1977</small><b>건축<br><small style="color:var(--soft)">알렉산더</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>1994</small><b>GoF<br><small style="color:var(--soft)">객체지향</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>이후</small><b>자바 EE · ML<br><small style="color:var(--soft)">분야별 확장</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>지금</small><b class="g">생성형 AI<br><small style="color:var(--soft)">이 책 32패턴</small></b></div>
+  </div>
+  <aside>패턴의 뿌리는 건축가 크리스토퍼 알렉산더의 『A Pattern Language』(1977)입니다. 소프트웨어로 옮겨온 것이 감마·헬름·존슨·블리시디스의 GoF 책(1994)이고요. 분야가 성숙하면 패턴 목록이 생긴다 — 생성형 AI도 이제 그 단계에 왔다는 뜻입니다.</aside>
+</section>
+
+<!-- 6 용어 -->
+<section class="slide" data-part="PART 1">
+  <h2>&#128295; 용어 네 개만 <span class="g">확실히</span></h2>
+  <table class="t">
+    <tr><th style="width:22%">용어</th><th>뜻</th></tr>
+    <tr><td>기초 모델<br><small>foundation model</small></td><td><b>대규모 범용 데이터셋</b>으로 미리 훈련된 모델. GPT · 제미나이 · 클로드 · 라마 · 딥시크 · 큐원 · 미스트랄</td></tr>
+    <tr><td>AI 엔지니어링</td><td>모델을 <b>처음부터 훈련하지 않고</b>, 기초 모델 <b>위에</b> 애플리케이션을 짓는 접근법 <small>(칩 후옌 『AI Engineering』 용어)</small></td></tr>
+    <tr><td>프롬프트</td><td>기초 모델에 주는 <b>텍스트 입력</b>. 가장 기본적인 조작 수단</td></tr>
+    <tr><td>에이전트</td><td>기초 모델의 도움으로 <b>작은 문제 하나</b>를 해결하는 소프트웨어 구성 요소</td></tr>
+  </table>
+  <div class="hl">&#128260; <b>발상의 전환</b> — 전통 ML은 "내 데이터로 내 모델을 훈련"했지만, AI 엔지니어링은 <b>남이 훈련한 범용 모델을 내 문제에 맞게 다루는</b> 일입니다.</div>
+  <aside>이 전환이 왜 중요하냐면, 할 수 있는 일과 할 수 없는 일이 통째로 달라지기 때문입니다. 가중치를 못 건드리니 프롬프트·컨텍스트·오케스트레이션이 주 무기가 되고, 그래서 "패턴"이 필요해집니다.</aside>
+</section>
+
+<!-- 7 패턴 구조 -->
+<section class="slide" data-part="PART 1">
+  <h2>&#129513; 프롬프트 한 번으로 <span class="r">안 되는 것들</span></h2>
+  <ul class="pts">
+    <li>생성된 콘텐츠가 <b>원하는 스타일과 다르다</b> &rarr; 2장 (스타일 · 형식 제어)</li>
+    <li>모델이 <b>우리 회사 내부 지식을 모른다</b> &rarr; 3 · 4장 (RAG · 검색)</li>
+    <li>특정 <b>역량 자체가 부족</b>하다 (추론 · 도메인) &rarr; 5장 (추론 강화)</li>
+    <li>기초 모델 <b>한 번 호출로는 감당 안 되는 복잡한 작업</b> &rarr; 작게 쪼개 <b>에이전트</b>로</li>
+  </ul>
+  <div class="box" style="margin-top:14px">
+    <h3>&#128221; 각 패턴 절의 고정 구조</h3>
+    <div class="chain" style="margin:6px 0 0">
+      <div class="cell"><small>1</small><b>문제</b></div><span class="ar">&rarr;</span>
+      <div class="cell"><small>2</small><b>검증된 해법</b></div><span class="ar">&rarr;</span>
+      <div class="cell"><small>3</small><b>구체적 예시</b></div><span class="ar">&rarr;</span>
+      <div class="cell"><small>4</small><b>대안 · 고려사항</b></div>
+    </div>
+  </div>
+  <div class="hl">그래서 이 책은 <b>처음부터 끝까지 읽는 책이 아닙니다.</b> 지금 내가 겪는 문제를 찾아 그 장을 펴는 <b>사전</b>에 가깝습니다.</div>
+  <aside>32개 패턴이 8개 장에 나뉘어 있습니다. 자율적인 에이전트들을 조율해 복잡한 작업을 처리하는 방식을 "에이전트형(agentic)"이라 부르고, 이 패턴들은 더 나은 에이전트를 만드는 데도 그대로 쓰입니다.</aside>
+</section>
+
+<!-- 8 PART 2 -->
+<section class="slide" data-part="PART 2">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">기초 모델을 부르는 세 가지 길</h2>
+    <p style="margin-top:11px">프롬프트와 컨텍스트, 그리고 API · 프레임워크 · 로컬</p>
+    <span class="who">1.2.1 ~ 1.2.4</span>
+  </div>
+  <aside>여기부터는 실제 코드입니다. 세 가지 호출 방식은 각각 트레이드오프가 다릅니다 — 직접 API는 통제력, 프레임워크는 이식성, 로컬은 프라이버시와 비용.</aside>
+</section>
+
+<!-- 9 프롬프트 = 지시 + 컨텍스트 -->
+<section class="slide" data-part="PART 2">
+  <h2>&#128172; 프롬프트 = <span class="g">지시사항</span> + <span class="g">컨텍스트</span></h2>
+  <div class="grid2">
+    <div class="box">
+      <h3>&#128204; 지시사항 (instruction)</h3>
+      <p style="margin:0">모델이 <b>수행할 작업</b>. 가장 단순한 형태의 프롬프트는 지시사항 하나뿐이다.</p>
+    </div>
+    <div class="box">
+      <h3 class="g">&#127760; 컨텍스트 (context)</h3>
+      <p style="margin:0">맥락 정보 — 생성 시 <b>활용할 자료</b>이거나, 모델에게 맡기는 <b>역할 · 성격</b></p>
+    </div>
+  </div>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell" style="min-width:120px"><small>보낸다</small><b>프롬프트</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="min-width:120px;border-color:var(--gr)"><small>기초 모델</small><b class="g">API 호출</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="min-width:120px"><small>받는다</small><b>응답</b></div>
+  </div>
+  <div class="hl">&#127917; 프롬프트도 응답도 <b>다중 모달(multimodal)</b>일 수 있습니다 — 텍스트뿐 아니라 이미지 · 비디오 · 오디오를 주고받습니다.</div>
+  <aside>챗GPT 텍스트 상자에 입력하는 것과 API 호출은 같은 일입니다. 다른 점은 API에서는 컨텍스트를 우리가 프로그램으로 구성한다는 것 — 이 "구성"이 뒤에 나올 컨텍스트 엔지니어링입니다.</aside>
+</section>
+
+<!-- 10 시스템 vs 사용자 -->
+<section class="slide" data-part="PART 2">
+  <h2>&#127970; 제공업체 API — <span class="g">시스템</span> vs <span class="b">사용자</span> 프롬프트</h2>
+  <pre>import anthropic
+client = anthropic.Anthropic()   # 생략 시 ANTHROPIC_API_KEY 환경변수 사용
+
+completion = client.messages.create(
+    model="claude-sonnet-4-5",
+    system="당신은 파이썬 프로그래밍 전문가입니다.",        # ← 시스템 프롬프트
+    messages=[{
+        "role": "user",
+        "content": [{"type": "text",
+                     "text": "주어진 정수 목록의 중앙값을 구하는 코드를 작성하세요."}]
+    }]                                                    # ← 사용자 프롬프트
+)
+print(completion.content[0].text)</pre>
+  <table class="t">
+    <tr><th style="width:26%">구분</th><th>역할</th><th style="width:20%">성격</th></tr>
+    <tr><td class="g">시스템 프롬프트</td><td>모델의 <b>전반적인 동작</b>을 안내 (역할 · 톤 · 원칙)</td><td>상대적으로 <b>고정적</b></td></tr>
+    <tr><td class="b">사용자 프롬프트</td><td>이번에 수행할 <b>구체적인 지시</b>와 자료</td><td>매 요청 <b>동적</b></td></tr>
+  </table>
+  <aside>이 구분이 실무에서 중요한 이유: 시스템 프롬프트는 캐싱 대상이 되고(8장 프롬프트 캐싱), 가드레일을 걸어두는 자리이며(9장), 사용자 입력이 침범해서는 안 되는 경계이기도 합니다.</aside>
+</section>
+
+<!-- 11 프레임워크 -->
+<section class="slide" data-part="PART 2">
+  <h2>&#128257; LLM 비종속 프레임워크 — <span class="g">한 줄만 바꾸면 된다</span></h2>
+  <pre>from pydantic_ai import Agent
+
+agent = Agent('anthropic:claude-sonnet-4-5',
+              system_prompt="당신은 파이썬 프로그래밍 전문가입니다.")
+result = agent.run_sync("주어진 정수 목록의 중앙값을 구하는 코드를 작성하세요.")
+print(result.data)</pre>
+  <div class="plabel">제공업체를 바꾸려면 — 모델 식별 문자열만 교체</div>
+  <pre>'anthropic:claude-sonnet-4-5'
+'openai:gpt-4o-mini'
+'google-vertex:gemini-2.0-flash'
+'groq:llama3-70b-8192'</pre>
+  <div class="hl">&#128161; 클래스 이름이 <code>Agent</code>인 것에 주목 — 프레임워크는 이미 <b>모델 호출을 "에이전트"로 부릅니다.</b> (다음 덱 PART 1에서 이어집니다)</div>
+  <aside>이 책이 특정 벤더에 묶이지 않으려 애쓴 이유이기도 합니다. 전작 『Machine Learning Design Patterns』가 텐서플로·GCP에 치우쳤다는 평을 받아서, 이번에는 여러 제공업체와 프레임워크를 섞어 씁니다. 코드 예제는 "시작점"으로만 삼으라는 것이 저자들의 당부입니다.</aside>
+</section>
+
+<!-- 12 로컬 -->
+<section class="slide" data-part="PART 2">
+  <h2>&#128187; 로컬 실행 — <span class="g">올라마</span></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t">올라마 클라이언트 설치 &rarr; 명령줄에서 <code>ollama run llama3.2</code> 로 모델 내려받아 실행</span></div>
+    <div class="st"><span class="n">2</span><span class="t">올라마는 <b>오픈AI API 규격을 지원</b>하므로, base_url만 바꿔 붙이면 끝</span></div>
+  </div>
+  <pre>from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.providers.openai import OpenAIProvider
+
+model = OpenAIModel(
+    model_name='llama3.2',
+    provider=OpenAIProvider(base_url='http://localhost:11434/v1')
+)</pre>
+  <div class="grid2" style="margin-top:6px">
+    <div class="box"><h3 class="g">&#9989; 얻는 것</h3><p style="margin:0">데이터가 <b>내 컴퓨터를 벗어나지 않음</b> · API 비용 0</p></div>
+    <div class="box"><h3 class="r">&#9888; 잃는 것</h3><p style="margin:0">클라우드 모델보다 <b>기능이 현저히 떨어짐</b></p></div>
+  </div>
+  <aside>가중치 공개 모델(open-weight model)이기에 가능한 방식입니다. "오픈소스"가 아니라 "가중치 공개"라고 부르는 이유는, 훈련 데이터와 코드까지 공개된 것은 아니기 때문입니다.</aside>
+</section>
+
+<!-- 13 PART 3 -->
+<section class="slide" data-part="PART 3">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">기초 모델은 어떻게 만들어지나</h2>
+    <p style="margin-top:11px">사전훈련 → 지도학습 미세조정 → 강화학습</p>
+    <span class="who">1.2.5 · 딥시크 공개 정보 기준</span>
+  </div>
+  <aside>2025년 봄 기준 훈련 방식이 가장 많이 공개된 모델이 딥시크입니다. GPT·제미나이·클로드·라마가 정확히 같지는 않겠지만 대체로 비슷하다는 것이 저자들의 설명입니다. 이 3단계를 알아야 뒤의 "사후훈련"이 이해됩니다.</aside>
+</section>
+
+<!-- 14 3단계 -->
+<section class="slide" data-part="PART 3">
+  <h2>&#127981; 모델 공장의 <span class="g">세 공정</span></h2>
+  <div class="chain">
+    <div class="cell" style="min-width:150px;border-color:var(--bl)"><small>1단계</small><b class="b">사전훈련<br><small style="color:var(--soft)">다음 토큰 예측</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="min-width:150px;border-color:var(--gr)"><small>2단계</small><b class="g">지도학습 미세조정<br><small style="color:var(--soft)">전문가가 쓴 모범답안</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="min-width:150px;border-color:var(--gold)"><small>3단계</small><b>강화학습<br><small style="color:var(--soft)">인간 선호 정렬</small></b></div>
+  </div>
+  <table class="t">
+    <tr><th style="width:20%">단계</th><th>얻는 능력</th><th style="width:26%">재료</th></tr>
+    <tr><td class="b">사전훈련</td><td>일반적인 <b>언어 이해</b> — 앞 토큰들을 보고 다음 토큰 예측</td><td>방대한 말뭉치 <b>14.8조 토큰</b></td></tr>
+    <tr><td class="g">SFT</td><td><b>지시를 따르는</b> 능력 — 프롬프트에 대한 이상적 응답 모방</td><td>사람이 쓴 <b>선별된 예시</b></td></tr>
+    <tr><td>RLHF</td><td>인간의 <b>기대와 가치에 정렬</b></td><td>결과물 쌍의 <b>선호 판정</b></td></tr>
+  </table>
+  <div class="hl">그래서 LLM을 <b>"다음 토큰 예측기"</b>라 부르지만, 그건 <b>1단계일 뿐</b>입니다. 우리가 쓰는 모델의 성격은 2·3단계에서 만들어집니다.</div>
+  <aside>이 표를 기억해 두면 다음 덱의 "사후훈련"이 쉽게 이해됩니다 — 사후훈련이란 결국 이 세 단계 중 어디에 다시 손을 대느냐의 문제이기 때문입니다.</aside>
+</section>
+
+<!-- 15 숫자 감각 -->
+<section class="slide" data-part="PART 3">
+  <h2>&#128200; 숫자 감각 — <span class="gold">14.8조 토큰</span>은 얼마나 큰가</h2>
+  <div class="big">셰익스피어 전집 &asymp; <span class="y">120만 토큰</span><br>14.8조 토큰 = <span class="y">셰익스피어 1,200만 명</span>분</div>
+  <ul class="pts" style="margin-top:14px">
+    <li>초기 LLM은 <b>단어</b> 단위로 훈련했지만, 현대 LLM은 <b>토큰</b>(짧은 문자열 조각) 단위</li>
+    <li>덕분에 <b>고유명사처럼 사전에 없는 것</b>도 학습할 수 있다</li>
+    <li>크기만이 답은 아니다 — 딥시크 팀은 <b>엄격한 중복 제거</b>를 포함한 <b>신중한 데이터 큐레이션</b>이 품질에 기여했다고 밝혔다</li>
+  </ul>
+  <div class="hl">&#128173; <b>데이터의 양보다 선별</b>이라는 메시지는 뒤의 미세조정 절에서 그대로 반복됩니다.</div>
+  <aside>토큰 단위 학습의 실무적 의미: 한국어는 영어보다 토큰을 많이 먹습니다. 같은 문장이라도 비용과 컨텍스트 소모가 달라진다는 뜻입니다.</aside>
+</section>
+
+<!-- 16 MoE -->
+<section class="slide" data-part="PART 3">
+  <h2>&#129504; 전문가 혼합(MoE) — <span class="g">다 켜지 않는다</span></h2>
+  <div class="bars">
+    <div class="brow"><span class="lb">총 매개변수</span><div class="bx" style="width:78%"></div><span class="vv">6,710억 개</span></div>
+    <div class="brow"><span class="lb">토큰당 활성</span><div class="bx d" style="width:4.3%"></div><span class="vv">370억 개 (약 5.5%)</span></div>
+  </div>
+  <ul class="pts">
+    <li>MoE는 각 토큰에 대해 <b>매개변수 중 일부만 활성화</b>하는 최적화 기법 <small>(DeepSeek-V3 기준)</small></li>
+    <li>덕분에 모델은 <b>지시사항 유형마다 다른 경로</b>를 쓸 수 있다</li>
+    <li>거대한 모델을 <b>거대한 비용 없이</b> 돌리는 방법</li>
+  </ul>
+  <div class="hl">&#128161; "매개변수 수 = 실행 비용"이 <b>더 이상 성립하지 않는다</b>는 뜻입니다. 모델 비교 시 총 파라미터 수만 보면 오해합니다.</div>
+  <aside>MoE는 지도학습 미세조정 단계와 함께 언급되지만, 성격은 아키텍처 최적화입니다. 실무에서는 "이 모델 671B래" 같은 말이 실제 추론 비용과 직결되지 않는다는 점만 챙기면 됩니다.</aside>
+</section>
+
+<!-- 17 R1 -->
+<section class="slide" data-part="PART 3">
+  <h2>&#128293; DeepSeek-R1의 <span class="g">5단계</span>와 그 안의 돌파구</h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>콜드 스타트</b> — 기반 모델(V3-Base)을 수천 개의 다양한 자료점으로 미세조정해 기초를 마련</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b class="r">순수 강화학습</b> — SFT 없이 기반 모델에 <b>RL을 직접</b> 적용해 추론 능력 향상 &#11088;</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>기각 표집</b> — 성공한 RL 실행에서 가장 좋은 예시를 골라 <b>레이블 데이터를 합성</b></span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>SFT</b> — 합성 데이터를 V3-Base의 지도학습 데이터와 병합 (글쓰기 · 사실 QA · 자기 인지)</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>최종 RL</b> — 다양한 프롬프트와 시나리오에 걸친 마무리 강화학습</span></div>
+  </div>
+  <div class="hl">&#127919; <b>2단계가 왜 사건인가</b> — 오랫동안 "추론 능력을 끌어내려면 SFT가 먼저"라고 믿었는데, <b>순수 RL만으로도 사고 연쇄(CoT) 추론이 창발</b>했습니다(R1-Zero). 사람이 예시를 쓰는 비용이 사라지니 <b>훨씬 다양한 문제로 더 오래</b> 훈련할 수 있게 됐습니다.</div>
+  <aside>덧붙여 R1은 증류(distillation) 버전도 나왔습니다. 이름에 'Distill'이 붙은 것들로, 원천 모델의 추론 능력을 상당 부분 유지하면서 일상적인 하드웨어에서 돌아갑니다. 큐원·라마 아키텍처 기반으로 1.5B/7B/8B/14B 등 여러 크기가 있습니다.</aside>
+</section>
+
+<!-- 18 PART 4 -->
+<section class="slide" data-part="PART 4">
+  <div class="part">
+    <div class="pno">4</div>
+    <h2 style="margin:0">모델 지형도</h2>
+    <p style="margin-top:11px">수많은 모델 중 무엇을, 무슨 기준으로 고르나</p>
+    <span class="who">1.2.6</span>
+  </div>
+  <aside>모델 선택은 AI 엔지니어링에서 가장 자주, 가장 반복적으로 하게 되는 의사결정입니다.</aside>
+</section>
+
+<!-- 19 평가 -->
+<section class="slide" data-part="PART 4">
+  <h2>&#127942; 어떻게 평가하나 — <span class="r">벤치마크는 포화</span></h2>
+  <div class="grid2">
+    <div class="box"><h3 class="r">&#10060; 학술적 벤치마크</h3><p style="margin:0"><b>포화 상태</b>에 이르렀고 <b>조작 가능성</b>도 크다</p></div>
+    <div class="box"><h3 class="g">&#9989; 블라인드 쌍 비교</h3><p style="margin:0">현재 <b>가장 널리 인정받는</b> 방식 — 대표 프로젝트가 <b>LMArena</b></p></div>
+  </div>
+  <div class="box" style="margin-top:14px">
+    <h3>&#128202; LMArena 리더보드 읽는 법 <small style="color:var(--soft)">(2025-04 기준)</small></h3>
+    <ul class="pts" style="margin-top:6px">
+      <li><b>y축 = 엘로 점수</b>, <b>x축 = 비용</b> — <b class="r">둘 다 로그 축척</b></li>
+      <li>x축 기준으로 보면 → <b>내 예산에 맞는 최고의 모델</b></li>
+      <li>y축 기준으로 보면 → <b>이 성능을 얻으려면 최소 얼마</b></li>
+    </ul>
+  </div>
+  <div class="hl">순위는 매일 바뀌지만 <b>놀랍도록 일관</b>합니다 — 구글 · 오픈AI · 앤트로픽의 주력 모델이 거의 항상 최상위권. 이들을 <b>프런티어 모델</b>이라 부릅니다.</div>
+  <aside>로그 축척이라는 점이 실무적으로 매우 중요합니다. 그래프상 조금 왼쪽인 모델이 실제로는 20배 싼 경우가 있습니다(제미나이 프로 vs 플래시).</aside>
+</section>
+
+<!-- 20 4분류 -->
+<section class="slide" data-part="PART 4">
+  <h2>&#127760; 모델 <span class="g">네 부류</span></h2>
+  <table class="t">
+    <tr><th style="width:16%">부류</th><th style="width:24%">예</th><th>특징</th><th style="width:22%">언제 쓰나</th></tr>
+    <tr><td class="p">프런티어</td><td>GPT-5, 제미나이 2.5 프로, 클로드</td><td>최첨단(SOTA). 추론 · 지식 · 다중모달 <b>최고 성능</b>, 컨텍스트 최대 200만 토큰. 단 <b>비싸고 무겁고 독점적</b>이라 로컬 불가</td><td>정교한 추론이 필요하고 <b>속도가 급하지 않은</b> 엔터프라이즈</td></tr>
+    <tr><td class="b">증류</td><td>제미나이 플래시, 클로드 소네트, GPT 미니</td><td>성능과 효율의 균형. <b>싸고 빠르다</b> (플래시는 프로보다 <b>20배 저렴</b>)</td><td>콘텐츠 생성 · 요약 등 <b>고용량</b> 일반 작업</td></tr>
+    <tr><td class="g">가중치 공개</td><td>라마, 미스트랄, 딥시크, 큐원, 팰컨</td><td>가중치 공개 → <b>투명성 · 자체 최적화 · 독점 데이터로 미세조정</b> 가능. 성능은 대개 프런티어에 못 미치고 <b>호스팅에 전문 지식</b> 필요</td><td>커스텀이 필요하거나 <b>모델을 소유</b>해야 할 때</td></tr>
+    <tr><td>로컬</td><td>라마 8B, 젬마 2B</td><td>클라우드 연결 없이 소비자/기업 하드웨어에서 실행. <b>완벽한 프라이버시 · API 비용 0</b>, 대신 <b>기능이 현저히 낮음</b></td><td>데이터 반출 금지 · 오프라인</td></tr>
+  </table>
+  <aside>NVIDIA NIM으로 하드웨어 최적화 버전을 쓸 수 있고, 가중치 공개 모델은 Together.ai 같은 호스팅 API나 하이퍼스케일러의 완전 관리형 종단점으로 호스팅 부담을 덜 수 있습니다.</aside>
+</section>
+
+<!-- 21 에어갭 -->
+<section class="slide" data-part="PART 4">
+  <h2>&#128274; 프런티어를 <span class="g">담장 안</span>으로 — 에어 갭</h2>
+  <p>인터넷과 단절된 <b>에어 갭(air-gapped)</b> 환경에서도 최고 성능 모델을 쓰고 싶다는 수요가 생기자, 독점 모델 공급업체도 온프레미스 옵션을 내놓기 시작했습니다.</p>
+  <div class="grid2">
+    <div class="box"><h3 class="b">구글</h3><p style="margin:0"><b>Google Distributed Cloud</b>로 제미나이 온프레미스 실행</p></div>
+    <div class="box"><h3 class="g">오픈AI</h3><p style="margin:0"><b>MS 애저 온프레미스 제품</b>으로 GPT 실행</p></div>
+  </div>
+  <div class="hl">&#128161; "프라이버시가 필요하면 작은 로컬 모델뿐"이라는 <b>이분법이 깨지는 중</b>입니다. 규제 산업에서 특히 중요한 변화입니다.</div>
+  <aside>금융·의료·공공처럼 데이터 반출이 막힌 곳에서 "그러면 성능을 포기해야 하나"라는 질문의 답이 바뀌고 있다는 뜻입니다.</aside>
+</section>
+
+<!-- 22 정리 -->
+<section class="slide" data-part="마무리">
+  <h2>&#128218; 여기까지 <span class="g">한 장으로</span></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t">생성형 AI는 <b>프로토타입이 쉽고 프로덕션이 어렵다</b> — 환각 · 비결정성은 훈련 방식에서 오는 <b>고유 성질</b></span></div>
+    <div class="st"><span class="n">2</span><span class="t">그래서 <b>설계 패턴</b>이 필요하다. 32개 패턴 = 반복되는 문제에 대한 <b>검증된 해법 + 공통 어휘</b></span></div>
+    <div class="st"><span class="n">3</span><span class="t">기초 모델 위에 앱을 짓는 일 = <b>AI 엔지니어링</b>. 프롬프트는 <b>지시사항 + 컨텍스트</b></span></div>
+    <div class="st"><span class="n">4</span><span class="t">호출 방식 셋 — <b>제공업체 API</b>(통제) · <b>비종속 프레임워크</b>(이식성) · <b>로컬</b>(프라이버시)</span></div>
+    <div class="st"><span class="n">5</span><span class="t">모델 제작은 <b>사전훈련 → SFT → RL</b>. 딥시크는 <b>순수 RL만으로 추론 창발</b>을 보였다</span></div>
+    <div class="st"><span class="n">6</span><span class="t">모델은 <b>프런티어 · 증류 · 가중치 공개 · 로컬</b> 네 부류. 고르는 축은 <b>성능 · 비용 · 통제권</b></span></div>
+  </div>
+  <aside>강의에서는 이 슬라이드를 먼저 보여 주고 각 항목을 되짚는 식으로 복습하면 좋습니다.</aside>
+</section>
+
+<!-- 23 퀴즈 -->
+<section class="slide" data-part="마무리">
+  <h2>&#10067; 스스로 점검</h2>
+  <div class="qa">
+    <div class="q"><b>Q1.</b> 생성형 AI 프로토타입을 프로덕션으로 올리기 어려운 <b>근본 이유</b>는? 그것이 "버그"가 아닌 이유는?</div>
+    <div class="q"><b>Q2.</b> 설계 패턴이 주는 이득 <b>두 가지</b>를 말해 보세요. (힌트: 하나는 코드가 아니라 사람에 관한 것)</div>
+    <div class="q"><b>Q3.</b> 전통적 ML과 <b>AI 엔지니어링</b>의 결정적 차이는?</div>
+    <div class="q"><b>Q4.</b> 시스템 프롬프트와 사용자 프롬프트는 각각 무엇을 담고, 성격이 어떻게 다른가?</div>
+    <div class="q"><b>Q5.</b> DeepSeek-R1의 <b>순수 강화학습</b>이 왜 돌파구로 평가되나?</div>
+    <div class="q"><b>Q6.</b> 총 매개변수 6,710억인 모델의 실행 비용을 <b>파라미터 수로 추정하면 안 되는</b> 이유는?</div>
+  </div>
+  <aside>Q5와 Q6은 실무 판단에 직결되는 문항입니다. 답이 막히면 PART 3을 다시 보세요.</aside>
+</section>
+
+<!-- 24 정답 -->
+<section class="slide" data-part="마무리">
+  <h2>&#9989; 정답 &amp; 해설</h2>
+  <div class="qa">
+    <div class="q a"><b>A1.</b> <b>모델을 신뢰하기 어렵기</b> 때문. 환각·비결정성은 생성형 AI 고유의 <b>훈련 방식에서 기인</b>하므로 제거 대상이 아니라 <b>설계로 감싸 다뤄야 할 성질</b>이다.</div>
+    <div class="q a"><b>A2.</b> ① 개발자 간 <b>공통 어휘</b> 확립(의사소통) ② 소프트웨어의 <b>품질·유지보수성·확장성</b> 개선.</div>
+    <div class="q a"><b>A3.</b> 전통 ML은 <b>내 데이터로 모델을 처음부터 훈련</b>. AI 엔지니어링은 <b>범용 데이터로 훈련된 기초 모델 위에</b> 애플리케이션을 짓는다 — 가중치를 못 건드리므로 프롬프트·컨텍스트·오케스트레이션이 주 무기.</div>
+    <div class="q a"><b>A4.</b> 시스템 = 모델의 <b>전반적 동작</b>(역할·원칙), <b>고정적</b>. 사용자 = 이번 작업의 <b>구체적 지시와 자료</b>, <b>동적</b>.</div>
+    <div class="q a"><b>A5.</b> <b>SFT 없이 기반 모델에 RL을 직접</b> 적용해 <b>사고 연쇄 추론이 창발</b>함을 보였다. 사람이 예시를 쓰는 비용이 사라져 <b>훨씬 다양한 문제로 더 오래</b> 훈련할 수 있다.</div>
+    <div class="q a"><b>A6.</b> <b>MoE</b> 때문. 토큰당 일부만 활성화되므로(671B 중 37B) <b>총 파라미터 수 &ne; 실행 비용</b>.</div>
+  </div>
+  <aside>A3을 자기 말로 설명할 수 있으면 이 책 전체의 전제를 잡은 것입니다.</aside>
+</section>
+
+<!-- 25 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>패턴과 재료 &#129513;</h1>
+    <div class="big" style="margin-top:26px">모델은 뛰어나지만 <span class="y">믿을 수 없다</span><br>그 간극을 메우는 것이 <span class="y">32가지 패턴</span><br><br>다음 &mdash; <span class="y">에이전트, 그리고 모델을 내 쪽으로 당기는 세 레버</span></div>
+    <p class="sub" style="margin-top:24px">1장 (1/2) &mdash; 여기까지</p>
+  </div>
+  <aside>다음 덱(2/2)에서 에이전트형 AI, 세밀한 제어(온도·Top-K·Top-P·빔 탐색), 컨텍스트 내 학습, 사후훈련, 그리고 이 책 2~10장의 지도를 봅니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>
