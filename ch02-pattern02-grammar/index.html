@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부탁하지 말고 못 박아라 · 문법 Grammar (2장 패턴 2)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Generative AI Design Patterns &middot; Chapter 2 &middot; Pattern 2</div>
+    <h1 style="margin:18px 0">부탁하지 말고<br><span class="g">못 박아라</span></h1>
+    <p class="sub">문법 <b>Grammar</b> &mdash; 생성된 텍스트가 형식을 따르도록 <b>보장</b>하는 패턴</p>
+    <p class="sub" style="margin-top:6px"><small>2장 스타일과 형식 제어 &middot; 패턴 2</small></p>
+  </div>
+  <aside>2장의 다섯 패턴 중 두 번째입니다. 패턴 1 로짓 마스킹이 "내가 직접 막는다"였다면, 패턴 2는 "모델 서버에 규칙을 등록해두고 대신 막게 한다"입니다. 실무에서 가장 자주 쓰게 될 패턴이에요.</aside>
+</section>
+
+<!-- 2 여정 -->
+<section class="slide" data-part="표지">
+  <h2>&#128506;&#65039; 이 덱의 여정</h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>왜 문법인가</b> &mdash; "JSON으로 줘"라는 부탁의 3가지 죄, 패턴 1과의 차이</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>세 가지 방법</b> &mdash; BNF 문법 &middot; JSON 모드 &middot; 스키마(dataclass)</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>책 예제 넷</b> &mdash; 산술식 &middot; 파이프 구분자 &middot; JSON 한계 &middot; 인보이스</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>실무</b> &mdash; 실패의 세 얼굴 &middot; 가짜 구조화된 출력 &middot; 언제 패턴 1로 갈아타나</span></div>
+  </div>
+  <div class="hl">&#127919; <b>이 덱이 끝나면</b> &mdash; LLM 출력 형식 때문에 try-catch를 쓰는 일이 <b>왜 설계 실패인지</b> 설명할 수 있게 됩니다.</div>
+  <aside>패턴 1 덱을 보지 않았어도 따라올 수 있게 만들었습니다. 다만 로짓과 소프트맥스가 뭔지는 1장 (2/2) 덱에서 다뤘으니 헷갈리면 그쪽을 먼저 보세요.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="PART 1">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">왜 문법인가</h2>
+    <div class="who">부탁의 값은 누가 치르는가</div>
+  </div>
+  <aside>이 파트의 목표는 하나입니다. "프롬프트에 형식을 써두면 되지 않나?"라는 자연스러운 생각이 왜 안티패턴인지를 납득하는 것.</aside>
+</section>
+
+<!-- 4 부탁 -->
+<section class="slide" data-part="PART 1">
+  <h2>&#128172; 프롬프트는 <span class="r">부탁</span>이다</h2>
+  <p>LLM 출력은 대개 <b>다운스트림 애플리케이션</b>으로 넘어간다. 그쪽은 파싱·검증 없이 응답을 바로 쓰기를 기대한다.</p>
+  <pre>system: "결과를 JSON으로 출력해 줘. 키는 author, title, year."
+
+→ 이건 <b>지켜주면 좋고 아니면 마는</b> 요청이다</pre>
+  <div class="hl">Anthropic 같은 일부 제공자는 실제로 이 접근을 <b>권장</b>합니다. 문제는 이 방법이 나쁘다는 게 아니라, <b>보장이 없다는 것</b>입니다.</div>
+  <aside>여기서 중요한 건 "프롬프트로 하면 틀린다"가 아닙니다. 좋은 모델은 대부분 잘 지켜요. 문제는 "대부분"이라는 말이 프로덕션에서 무엇을 뜻하느냐입니다.</aside>
+</section>
+
+<!-- 5 3가지 죄 -->
+<section class="slide" data-part="PART 1">
+  <h2>&#9888;&#65039; 지시 이행에 기대는 것의 <span class="r">3가지 죄</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">죄</th><th>내용</th></tr>
+    <tr><td>취약함<br><small>brittle</small></td><td>LLM <b>버전이 바뀌면</b> 깨질 수 있다</td></tr>
+    <tr><td>불안정함<br><small>unstable</small></td><td>LLM 생성은 <b>확률적</b>(stochastic)이다 &mdash; 같은 입력에 같은 출력이 보장되지 않는다</td></tr>
+    <tr><td>비쌈<br><small>expensive</small></td><td>지시를 잘 따르는 것은 보통 <b>더 큰 모델</b>이다</td></tr>
+  </table>
+  <div class="warn">&#128161; 1장에서 본 <b>비결정성</b>이 여기서 비용으로 되돌아옵니다. "가끔 틀린다"는 성질은 제거 대상이 아니라 <b>설계로 감싸야 할 성질</b>이었죠.</div>
+  <aside>세 번째가 은근히 아픕니다. 형식을 지키게 하려고 더 큰 모델을 쓰는 건, 형식 하나 때문에 추론 비용 전체를 올리는 일이에요. 문법을 쓰면 작은 모델로도 형식은 100% 지켜집니다.</aside>
+</section>
+
+<!-- 6 결정적 문장 -->
+<section class="slide" data-part="PART 1">
+  <h2>&#128273; 안티패턴으로 만드는 <span class="g">결정적 한 문장</span></h2>
+  <div class="big">LLM 호출을 <span class="y">소비하는 모든 쪽</span>이<br>LLM이 지시를 안 따를 가능성에<br><span class="y">대비해야 한다</span></div>
+  <div class="grid2" style="margin-top:15px">
+    <div class="box"><h3 class="r">&#10060; 부탁했을 때</h3><p style="margin:0">응답을 받는 <b>모든 코드</b>에 try-catch와 검증 로직이 들어간다. 파서 하나가 아니라 <b>호출 지점마다</b>.</p></div>
+    <div class="box"><h3 class="g">&#9989; 못 박았을 때</h3><p style="margin:0">그게 <b>전부 사라진다.</b> 다운스트림은 타입을 믿고 바로 쓴다.</p></div>
+  </div>
+  <aside>이 문장이 이 절에서 가장 실무적입니다. 형식 검증 코드는 한 곳에 모이지 않아요. LLM 응답이 흘러가는 모든 경로에 퍼집니다. 그게 진짜 비용이에요.</aside>
+</section>
+
+<!-- 7 패턴1 비교 -->
+<section class="slide" data-part="PART 1">
+  <h2>&#129513; 패턴 1과 <span class="g">무엇이 다른가</span></h2>
+  <p><b>하는 일은 똑같다.</b> 규칙에 안 맞는 후보 토큰의 확률을 0으로 만드는 것. 차이는 <b class="g">누가 하느냐</b>다.</p>
+  <table class="t">
+    <tr><th style="width:20%"></th><th>패턴 1 로짓 마스킹</th><th>패턴 2 문법</th></tr>
+    <tr><td>실행 위치</td><td>내 코드 <b>(클라이언트)</b></td><td><b class="g">모델 서버</b></td></tr>
+    <tr><td>속도</td><td>느림 &mdash; 매 토큰 왕복</td><td><b class="g">빠름</b></td></tr>
+    <tr><td>표현력</td><td><b>아무 로직이나</b></td><td>형식 · 스키마만</td></tr>
+    <tr><td>모델 지원</td><td>제한적 (로짓 접근 필요)</td><td><b class="g">거의 전부</b></td></tr>
+    <tr><td>보장</td><td>100%</td><td>100%</td></tr>
+  </table>
+  <div class="hl">&#128209; 패턴 1 노트에서 <b>"대부분의 상용 API에서는 못 쓴다"</b>고 정리했던 벽이, 여기서는 대부분 사라집니다.</div>
+  <aside>보장 수준은 같습니다. 둘 다 100%예요. 그래서 형식·스키마로 표현 가능한 문제라면 굳이 패턴 1을 쓸 이유가 없습니다.</aside>
+</section>
+
+<!-- 8 비유 -->
+<section class="slide" data-part="PART 1">
+  <h2>&#127891; 비유 &mdash; 시험장의 <span class="g">감독관</span></h2>
+  <div class="grid2">
+    <div class="box">
+      <h3>&#128100; 패턴 1 &mdash; 내가 직접 감시</h3>
+      <p style="margin:0">학생 옆에 앉아 손을 막는다. <b>어떤 규칙이든</b> 적용할 수 있다.</p>
+      <p style="margin:8px 0 0"><b class="r">대가</b> &mdash; 내가 계속 붙어 있어야 하고(지연), 학생이 답안을 보여줘야 한다(로짓 접근).</p>
+    </div>
+    <div class="box" style="border-color:var(--gr)">
+      <h3 class="g">&#127891; 패턴 2 &mdash; 시험장에 규칙 등록</h3>
+      <p style="margin:0">감독관이 알아서 막아준다. <b>훨씬 편하다.</b></p>
+      <p style="margin:8px 0 0"><b class="r">대가</b> &mdash; <b>등록 가능한 형태</b>의 규칙만 된다.</p>
+    </div>
+  </div>
+  <div class="hl">&#128208; 책의 정의는 <b>문맥 자유 메타구문</b>(context-free metasyntax). 실제 <i>내용</i>은 거의 제약하지 않고 <b>허용되는 구조와 구성</b>만 형식적으로 기술하는 방식입니다.</div>
+  <div class="big" style="margin-top:12px">"무슨 말을 하라"가 아니라<br><span class="y">"어떤 모양이어야 한다"</span></div>
+  <aside>메타구문이라는 말이 어렵게 들리지만 뜻은 단순합니다. 내용에는 간섭 안 하고 껍데기만 지정한다는 거예요. 그래서 브랜드 금칙어 같은 "내용" 규칙은 이걸로 못 합니다.</aside>
+</section>
+
+<!-- 9 PART 2 -->
+<section class="slide" data-part="PART 2">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">세 가지 방법</h2>
+    <div class="who">BNF &middot; JSON 모드 &middot; 스키마</div>
+  </div>
+  <aside>책의 예제 노트북 3개가 이 세 방법과 정확히 하나씩 대응합니다. 나중에 실습할 때 순서 그대로 따라가면 됩니다.</aside>
+</section>
+
+<!-- 10 원리 -->
+<section class="slide" data-part="PART 2">
+  <h2>&#128295; 공통 원리 &mdash; <span class="g">후보 토큰을 제약</span>한다</h2>
+  <div class="chain">
+    <div class="cell"><small>매 스텝</small><b>후보 토큰<br>집합</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>여기</small><b class="g">문법에<br>안 맞으면</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>결과</small><b>확률 = <span class="r">0</span></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>따라서</small><b>남은 것<br>중에서만</b></div>
+  </div>
+  <p style="margin-top:14px">일부 모델 제공자와 프레임워크는 <b>이 후보 집합에 적용할 문법을 지정</b>하게 해준다. 문법이 허용하지 않는 토큰은 <b>물리적으로 뽑힐 수 없다.</b></p>
+  <div class="hl">&#128161; 패턴 1과 같은 메커니즘입니다. 다만 그 일을 <b>모델 제공자가 서버에서</b> 대신 해줍니다.</div>
+  <aside>1장에서 본 로짓 → 소프트맥스 → 표집 흐름 기억나시죠. 여기서도 개입 지점은 똑같습니다. 다만 내 코드가 아니라 제공자 인프라 안에서 일어나요.</aside>
+</section>
+
+<!-- 11 방법1 BNF -->
+<section class="slide" data-part="PART 2">
+  <h2>&#9312; <span class="g">BNF 문법</span> + 로짓 프로세서</h2>
+  <p><b>배커스-나우르 형식</b>(BNF, Backus&ndash;Naur Form)으로 구문을 쓰고, 그것을 적용하는 <code>LogitsProcessor</code>를 파이프라인에 넘긴다.</p>
+  <pre>grammar = IncrementalGrammarConstraint(
+              grammar_str, <b>"timestamp_literal"</b>, pipe.tokenizer)
+grammar_processor = GrammarConstrainedLogitsProcessor(grammar)
+
+results = pipe(input_message, max_new_tokens=256,
+               do_sample=False,
+               <b>logits_processor=[grammar_processor]</b>)</pre>
+  <ul class="pts" style="margin-top:10px">
+    <li><b>루트 요소</b>를 지정한다 &rarr; SQL 명세 전체를 넘기면서도 <b>원하는 데이터 타입만</b> 골라 쓸 수 있다</li>
+    <li>거의 모든 형식·언어에 <b>이미 만들어진 BNF</b>가 있다 &mdash; <code>"BNF for [주제]"</code>로 검색</li>
+  </ul>
+  <aside>루트 요소 지정이 은근히 실용적입니다. SQL 전체 문법을 넣어두고 "이번엔 TIMESTAMP만", "이번엔 CREATE INDEX만" 하고 뽑아 쓸 수 있어요.</aside>
+</section>
+
+<!-- 12 BNF 읽는 법 -->
+<section class="slide" data-part="PART 2">
+  <h2>&#128269; BNF는 <span class="g">겁먹을 게 없다</span></h2>
+  <p>"이건 이런 것들로 이루어진다"를 적는 <b>표기법</b>일 뿐이다.</p>
+  <pre>year ::= [1-2][0-9][0-9][0-9] | unk
+  &uarr;        &uarr;                     &uarr;
+ 이름   이런 모양이거나        아니면 unk</pre>
+  <div class="hl">&#128220; 읽으면 이렇다 &mdash; <b>"연도는 1이나 2로 시작하고 숫자가 3개 더 붙거나, 아니면 <code>unk</code>다."</b></div>
+  <div class="big" style="margin-top:14px">등록해 두면 모델은<br><span class="y">물리적으로</span> 다른 형태를 못 만든다</div>
+  <aside>정규표현식을 읽을 줄 알면 BNF도 읽을 수 있습니다. ::= 는 "~로 정의된다", | 는 "또는"이에요. 이 두 개가 전부입니다.</aside>
+</section>
+
+<!-- 13 방법2 JSON -->
+<section class="slide" data-part="PART 2">
+  <h2>&#9313; <span class="g">JSON 모드</span> &mdash; 가장 쉬운 길</h2>
+  <pre>response = client.chat.completions.create(
+    model=MODEL_ID, messages=input_message,
+    <b>response_format={"type": "json_object"}</b>)</pre>
+  <div class="warn">&#9888;&#65039; <b>필수 조건</b> &mdash; 프롬프트(시스템이든 사용자든)에서 <b>JSON 출력을 원한다고 명시</b>해야 합니다. 그래야 필요한 토큰을 생성합니다.</div>
+  <div class="hl">파라미터만 넣고 프롬프트에 아무 말도 안 하면 동작하지 않습니다. <b>둘 다</b> 필요해요.</div>
+  <aside>이 조건을 빠뜨려서 헤매는 경우가 많습니다. response_format은 "JSON이 아닌 토큰을 막는" 장치지, "JSON을 만들라"는 지시가 아니에요. 지시는 여전히 프롬프트가 합니다.</aside>
+</section>
+
+<!-- 14 방법3 스키마 -->
+<section class="slide" data-part="PART 2">
+  <h2>&#9314; <span class="g">스키마</span> &mdash; 구조화된 출력</h2>
+  <pre>@dataclass
+class LineItem:
+    description: str
+    quantity: int
+    amount: float
+
+@dataclass
+class Receipt:
+    items: LineItem[]
+    total_amount: float
+
+response = client.models.generate_content(
+    model='gemini-2.0-flash',
+    contents=["Parse the receipt contained in the image", image],
+    config={'response_mime_type': 'application/json',
+            <b>'response_schema': Receipt</b>})</pre>
+  <div class="hl">&#128161; 응답 자체는 여전히 <b>JSON 문자열</b>입니다. Pydantic 객체는 오로지 <b>구조를 지정하는 용도</b>이고, 파싱은 따로 합니다.</div>
+  <aside>여기서 헷갈리기 쉬운데, dataclass를 넘긴다고 dataclass 객체가 돌아오는 게 아닙니다. JSON 문자열이 오고, object_hook으로 파싱해야 객체가 됩니다. PydanticAI 같은 래퍼가 그걸 대신 해주는 거고요.</aside>
+</section>
+
+<!-- 15 책임 이전 -->
+<section class="slide" data-part="PART 2">
+  <h2>&#128260; 누가 <span class="g">마스킹을 하는가</span></h2>
+  <div class="chain">
+    <div class="cell"><small>내가</small><b>스키마<br>선언</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>제공자가</small><b>규칙 · 로직<br>으로 변환</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>서버에서</small><b class="g">로짓<br>마스킹</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>나에게</small><b>형식이 보장된<br>응답</b></div>
+  </div>
+  <div class="big" style="margin-top:16px">구조화된 출력이란<br><span class="y">모델 제공자가 패턴 1을 대신 해주는 것</span></div>
+  <aside>이 그림이 이 덱의 핵심입니다. 패턴 2를 따로 외울 필요가 없어요. 패턴 1을 남에게 위탁한 것, 그게 전부입니다.</aside>
+</section>
+
+<!-- 16 선택 -->
+<section class="slide" data-part="PART 2">
+  <h2>&#129517; 실무에서 <span class="g">무엇부터</span>?</h2>
+  <table class="t">
+    <tr><th style="width:8%"></th><th style="width:24%">방법</th><th>언제</th><th style="width:14%">난이도</th></tr>
+    <tr><td><b class="g">&#9312;</b></td><td><b>스키마 · dataclass</b></td><td><b class="g">여기서 시작한다.</b> 실무 대부분이 여기서 끝난다</td><td>쉬움</td></tr>
+    <tr><td>&#9313;</td><td>JSON 모드</td><td>구조는 아무래도 좋고 "JSON이기만 하면" 될 때</td><td>아주 쉬움</td></tr>
+    <tr><td>&#9314;</td><td>BNF 문법</td><td>SQL · 정규식처럼 <b>진짜 문법</b>이 필요할 때</td><td>어려움</td></tr>
+  </table>
+  <div class="box" style="margin-top:14px">
+    <h3>&#128193; 책 예제 노트북 3개가 그대로 대응</h3>
+    <div class="chain" style="margin:6px 0 0">
+      <div class="cell"><small>&#9312;</small><b>2b_structured<br>_data</b></div>
+      <div class="cell"><small>&#9313;</small><b>2a_json<br>_mode</b></div>
+      <div class="cell"><small>&#9314;</small><b>1_applying<br>_grammar</b></div>
+    </div>
+  </div>
+  <aside>노트북 번호 순서와 난이도 순서가 반대입니다. 책은 BNF부터 설명하지만, 실습은 쉬운 쪽부터 해도 됩니다.</aside>
+</section>
+
+<!-- 17 아닌 것 -->
+<section class="slide" data-part="PART 2">
+  <h2>&#128683; 이건 문법 패턴이 <span class="r">아니다</span></h2>
+  <div class="warn"><b>LangChain의 XML 파서</b> &mdash; 필요한 XML 태그를 만드는 데 <b>모델의 지시 이행 능력에 의존</b>합니다. 규격에 맞는 XML을 받는다는 <b>보장이 없습니다.</b></div>
+  <p style="margin-top:14px">이름에 "파서"가 붙었다고 강제가 아닙니다. 파서는 <b>이미 만들어진 것을 읽는 도구</b>이지, <b>만들어지는 과정을 막는 도구</b>가 아니다.</p>
+  <div class="hl">&#128269; 구별하는 질문 &mdash; <b>"생성 중에 막는가, 생성 후에 검사하는가?"</b></div>
+  <aside>이 구별이 뒤에서 다시 나옵니다. 파트 4의 "가짜 구조화된 출력"이 정확히 같은 문제예요. 도구 이름이 아니라 동작 시점을 봐야 합니다.</aside>
+</section>
+
+<!-- 18 PART 3 -->
+<section class="slide" data-part="PART 3">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">책 예제 넷</h2>
+    <div class="who">각각이 증명하는 것</div>
+  </div>
+  <aside>예제 네 개가 전부 다른 걸 증명합니다. 특히 A와 C를 나란히 보는 게 중요해요.</aside>
+</section>
+
+<!-- 19 예제A -->
+<section class="slide" data-part="PART 3">
+  <h2>&#128290; 예제 A &mdash; <span class="g">산술식</span></h2>
+  <p>초등 교육 소프트웨어. 답("36")이 아니라 <b>산술식</b>을 생성하게 하고 싶다.</p>
+  <pre>root  ::= (expr "=" ws term "\n")+
+expr  ::= term ([-+*/] term)*
+term  ::= ident | num | "(" ws expr ")" ws
+ident ::= [a-z] [a-z0-9_]* ws
+num   ::= [0-9]+ ws</pre>
+  <table class="t" style="margin-top:10px">
+    <tr><th style="width:40%">질문</th><th>응답</th><th style="width:14%">판정</th></tr>
+    <tr><td>사과가 총 몇 개?</td><td><code>bill_apples + mae_apples = total_apples</code><br><code>3 + 2 = 5</code></td><td><b class="g">&#9989; 정확</b></td></tr>
+    <tr><td>사과가 <b>오렌지보다 많나?</b></td><td><code>3 + 2 = 5</code><br><code>2 + 4 = 6</code></td><td><b class="r">&#10060; 못 냄</b></td></tr>
+  </table>
+  <aside>두 번째 질문의 정답은 (3+2) > (2+4)입니다. 그런데 문법에 > 가 없어요. 그래서 모델은 식만 나열하고 비교는 하지 못했습니다.</aside>
+</section>
+
+<!-- 20 예제A 반전 -->
+<section class="slide" data-part="PART 3">
+  <h2>&#127917; 같은 사실을 <span class="r">뒤집어 읽기</span></h2>
+  <div class="grid2">
+    <div class="box"><h3 class="g">&#9989; 저자의 해석</h3><p style="margin:0">문법에 <code>&gt;</code>가 없으니 출력할 수 없다. <b>제약이 제대로 작동하는 증거.</b></p></div>
+    <div class="box" style="border-color:var(--red)"><h3 class="r">&#9888;&#65039; 뒤집으면</h3><p style="margin:0">문법을 잘못 만들면 모델은 <b>틀린 답을 낼 수밖에 없다.</b> 그것도 <b>아주 그럴듯하게.</b></p></div>
+  </div>
+  <div class="warn" style="margin-top:15px">&#128221; <b>객관식 시험지에서 정답 보기를 빼버린 것</b>과 같습니다. 학생은 답을 알아도 고를 수 없어 오답을 찍고, 채점자는 <b>학생이 모른다고 오해합니다.</b></div>
+  <div class="hl">&#128209; 패턴 1 노트의 <b>"평가 기준을 우리가 느슨하게 만들었다"</b>와 같은 종류의 함정입니다 &mdash; <b>제약을 걸면 결과가 좋아 보이지만, 무엇을 막았는지는 결과에 안 나타납니다.</b></div>
+  <aside>이게 이 덱에서 가장 중요한 슬라이드입니다. 문법은 강력한 만큼 위험해요. 내가 만든 문법이 정답을 막고 있는지는 반례를 던져보기 전엔 모릅니다.</aside>
+</section>
+
+<!-- 21 예제B -->
+<section class="slide" data-part="PART 3">
+  <h2>&#128290; 예제 B &mdash; 문법이 <span class="g">데이터를 정제</span>한다</h2>
+  <pre>record    ::= author separator title separator year
+author    ::= [a-zA-Z ]* | unk
+title     ::= [a-zA-Z ]* | unk
+year      ::= [1-2][0-9][0-9][0-9] | unk
+unk       ::= "NULL"</pre>
+  <p style="margin-top:8px"><b>악센트·발음 구별 기호가 붙은 비영어 문자를 허용하지 않는다.</b> 다운스트림이 7비트 ASCII를 기대하는 레거시 시스템이라면 결정적이다.</p>
+  <table class="t">
+    <tr><th style="width:36%">입력</th><th>출력</th><th style="width:22%">관찰</th></tr>
+    <tr><td><i>Gabriel Garc&iacute;a M&aacute;rquez</i>, 1985</td><td><code>Gabriel Garcia Marquez | Love in the Time of Cholera |1985</code></td><td><b class="g">악센트 제거</b></td></tr>
+    <tr><td><i>Tirukkural</i> (&#3980;&#3007;&#3021;), 연도 정보 상충</td><td><code>Valluvar | The Tirukkural |NULL</code></td><td>타밀 문자 탈락<br>연도 <b>NULL</b></td></tr>
+  </table>
+  <aside>제목이 본문에 두 형태로 나오는데 문법에 맞는 건 하나뿐이라 그게 선택됐습니다. 연도는 본문에 상충하는 정보가 있어서 NULL을 골랐고요. 문법이 "모르겠으면 NULL"이라는 탈출구를 열어둔 덕분입니다.</aside>
+</section>
+
+<!-- 22 예제C -->
+<section class="slide" data-part="PART 3">
+  <h2>&#9888;&#65039; 예제 C &mdash; <span class="r">JSON 모드의 한계</span></h2>
+  <pre>{"author": "Gabriel Garc&iacute;a M&aacute;rquez",
+ "title": "Love in the Time of Cholera",
+ "year": 1985}</pre>
+  <div class="warn">필드가 <code>author</code>·<code>title</code>·<code>year</code>인 것은 <b>제약된 결과가 아니라</b> GPT-4o-mini 같은 고성능 모델에 <b>의존한 결과</b>입니다.</div>
+  <ul class="pts" style="margin-top:12px">
+    <li>저자 이름에 <b>악센트가 들어가는지 제약하지 않는다</b> &mdash; 들어갈 때도, 안 들어갈 때도 있다</li>
+    <li>제목이 영어 문자로만 되도록 <b>제약하지 않는다</b> &mdash; 가끔 타밀어 제목이 반환될 가능성에 대비해야 한다</li>
+  </ul>
+  <div class="big" style="margin-top:12px">JSON 모드는 <span class="y">"JSON임"만</span> 보장하고<br><span class="y">"무엇이 들어가는지"는</span> 보장하지 않는다</div>
+  <aside>예제 B와 나란히 놓으면 차이가 분명합니다. B는 문법이 실제로 악센트를 제거했고, C는 운에 맡겼어요. 같은 입력, 다른 보장 수준입니다.</aside>
+</section>
+
+<!-- 23 예제D -->
+<section class="slide" data-part="PART 3">
+  <h2>&#128230; 예제 D &mdash; <span class="g">보장의 맛</span></h2>
+  <pre>class CurrencyEnum(str, Enum):
+    USD = 'USD'; UKP = 'UKP'; INR = 'INR'; EUR = 'EUR'
+
+@dataclass
+class Invoice:
+    purpose: str
+    amount: float
+    currency: CurrencyEnum = CurrencyEnum.USD
+
+agent = Agent(model, <b>result_type=Invoice</b>, system_prompt=system_prompt)
+response = agent.run_sync(paragraph)   # → Invoice 객체가 <b>보장</b>된다</pre>
+  <div class="plabel">입력</div>
+  <p style="margin:0"><i>"Requesting reimbursement for taxi ride to airport. I paid $32.30."</i></p>
+  <div class="plabel">출력</div>
+  <pre style="margin-top:2px">Invoice(purpose='taxi ride to airport', amount=32.3,
+        currency=&lt;CurrencyEnum.USD: 'USD'&gt;)</pre>
+  <aside>PydanticAI를 쓰면 LLM 비종속적으로 구조화된 출력을 얻습니다. 모델을 바꿔도 이 코드는 그대로예요. 1장에서 본 "LLM 비종속 프레임워크"의 실제 이득이 여기서 나타납니다.</aside>
+</section>
+
+<!-- 24 구걸 -->
+<section class="slide" data-part="PART 3">
+  <h2>&#128683; <span class="r">구걸하지 말 것</span> <small>Don't Beg for Compliance</small></h2>
+  <div class="warn" style="font-size:1.02rem">
+    <b>&#10060; 책이 안티패턴으로 못 박는 프롬프트</b><br><br>
+    <i>"제발 추가 서식이나 긴 설명을 붙이지 마세요.<br>그냥 YES 또는 NO로만 답하세요. 반드시 대문자로 써 주세요."</i>
+  </div>
+  <p style="margin-top:16px">대신 <b class="g">보장</b>한다.</p>
+  <pre>from typing import Literal
+
+agent = Agent(model, <b>result_type=Literal["YES", "NO"]</b>)</pre>
+  <div class="hl">&#128161; 프롬프트에서 <b>애원하는 문장이 늘어날수록</b>, 그건 강제 수단을 안 쓰고 있다는 신호입니다.</div>
+  <aside>실무에서 프롬프트를 보면 이런 애원이 참 많습니다. "반드시", "절대", "제발". 그 문장들이 보이면 문법으로 바꿀 수 있는지부터 확인해보세요.</aside>
+</section>
+
+<!-- 25 PART 4 -->
+<section class="slide" data-part="PART 4">
+  <div class="part">
+    <div class="pno">4</div>
+    <h2 style="margin:0">실무</h2>
+    <div class="who">함정 · 도구 선택 · 갈아타는 시점</div>
+  </div>
+  <aside>여기부터가 이 패턴을 실제로 쓸 때 다치는 지점들입니다.</aside>
+</section>
+
+<!-- 26 BNF vs Pydantic -->
+<section class="slide" data-part="PART 4">
+  <h2>&#9878;&#65039; BNF vs Pydantic</h2>
+  <table class="t">
+    <tr><th style="width:24%">Pydantic이 나은 점</th><th>이유</th></tr>
+    <tr><td>사용 편의성</td><td><code>dataclass</code> 몇 줄이 BNF 규칙보다 쉽다</td></tr>
+    <tr><td>지연 시간</td><td>BNF는 <b>클라이언트</b> 처리, Pydantic은 <b class="g">서버</b> 처리 &rarr; 네트워크 왕복이 준다</td></tr>
+    <tr><td>모델 지원</td><td>BNF는 <code>logprobs</code> 접근 필요(보편적이지 않다). <b class="g">모든 현대 모델</b>이 dataclass 제약을 지원</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128273; <b>그럼에도 BNF가 유연하다</b> &mdash; 스타일 규칙이 단순한 데이터 형식 <b>이상</b>이면 BNF여야 합니다. <code>Enum</code>을 넘어서는 검증은 Pydantic으로 하기 어렵습니다.</div>
+  <pre style="margin-top:10px">&lt;credit_card_number&gt; ::= &lt;visa&gt; | &lt;mc&gt; | &lt;amex&gt;
+&lt;visa&gt; ::= "4" &lt;digit&gt;{12,15}
+&lt;mc&gt;   ::= ("51".."55" &lt;digit&gt;{14}) | ("2221".."2720" &lt;digit&gt;{12})
+&lt;amex&gt; ::= "34" &lt;digit&gt;{13} | "37" &lt;digit&gt;{13}</pre>
+  <aside>같은 일을 Pydantic으로 하려면 field_validator로 검증 로직을 직접 써야 하고, 책에 40행 가까운 구현이 실려 있습니다. 더 이상 단순한 dataclass가 아니게 되죠. 참고로 자바스크립트에서는 Zod로 같은 걸 합니다.</aside>
+</section>
+
+<!-- 27 실패 세 얼굴 -->
+<section class="slide" data-part="PART 4">
+  <h2>&#129519; 실패의 <span class="r">세 얼굴</span></h2>
+  <p>문법 제약을 만족하는 토큰이 <b>하나도</b> 없으면 생성이 실패한다.</p>
+  <table class="t">
+    <tr><th style="width:26%">증상</th><th>진짜 원인</th><th style="width:22%">대처</th></tr>
+    <tr><td><b class="r">끝없는 공백</b><br><small>endless whitespace</small></td><td>막혔는데 <b>공백만 허용</b>됨 &mdash; 공백은 문법이 대개 허용하고 후보에 거의 항상 있다</td><td>문법 완화<br>타임아웃</td></tr>
+    <tr><td><b class="r">거부율 증가</b><br><small>refusals</small></td><td>구조가 <b>너무 깊거나 길다</b> &rarr; 어떤 후보도 안 맞는 지점에 도달할 확률&uarr;</td><td>중첩 줄이기<br>쪼개기</td></tr>
+    <tr><td><b class="r">부정확한 결과</b><br><small>inaccurate</small></td><td><b>문법이 정답을 막고 있다</b> (예제 A)</td><td><b class="g">탈출구</b></td></tr>
+  </table>
+  <aside>첫 번째가 실무에서 제일 당황스럽습니다. 응답이 안 끝나고 공백만 계속 나와요. 원인이 문법이라는 걸 모르면 한참 헤맵니다.</aside>
+</section>
+
+<!-- 28 탈출구 -->
+<section class="slide" data-part="PART 4">
+  <h2>&#128682; <span class="g">탈출구</span>를 꼭 둔다</h2>
+  <pre><span class="r"># 나쁨 — 모르면 아무 숫자나 지어낸다</span>
+currency_rate: float
+
+<span class="g"># 좋음 — 모른다고 말할 수 있다</span>
+currency_rate: float | Literal["Unknown"]</pre>
+  <div class="big" style="margin-top:16px">이 한 줄이 <span class="y">환각을 크게 줄인다</span><br><small>"반드시 숫자를 내놔"라고 하면 없는 숫자라도 만들어 낸다</small></div>
+  <div class="hl">&#128209; 예제 B의 <code>NULL</code>도 같은 장치였습니다. 연도 정보가 상충하자 <b>지어내지 않고 NULL을 골랐죠.</b></div>
+  <aside>토론노트 4번에서 정리한 "빈칸은 빈칸으로, 그럴듯한 채움이 가장 위험하다"와 정확히 같은 원칙입니다. 스키마 레벨에서 그걸 강제하는 방법이에요.</aside>
+</section>
+
+<!-- 29 이름에 속지 말 것 -->
+<section class="slide" data-part="PART 4">
+  <h2>&#127917; <span class="r">이름에 속지 말 것</span></h2>
+  <p>이 패턴의 다른 이름 &mdash; <b>구조화된 출력</b>(structured outputs) · <b>제약 디코딩</b>(constrained decoding)</p>
+  <table class="t">
+    <tr><th style="width:16%"></th><th>구현</th><th style="width:26%">결과</th></tr>
+    <tr><td><b class="g">진짜</b></td><td><b>생성 중에</b> 토큰을 막는다</td><td><b class="g">100% 보장</b></td></tr>
+    <tr><td><b class="r">가짜</b></td><td>일단 생성하고 <b>LLM을 한 번 더 불러</b> 형식을 맞춘다</td><td><b class="r">느리고 비싸고<br>여전히 틀릴 수 있다</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">책은 집필 시점(2025년 6월) 기준 <b>LangGraph</b>를 가짜 사례로 지목합니다. 또 각주에 따르면 <b>Claude도 제약 디코딩을 쓰지 않는 것으로 보이며</b>, Anthropic 문서는 대신 응답을 원하는 형식의 시작 부분으로 미리 채우는 <b>prefill</b>을 권합니다.</div>
+  <div class="big" style="margin-top:12px">도구를 고를 때 물어야 할 질문<br><span class="y">"그거 어떻게 구현했나요?"</span></div>
+  <aside>패턴 1에서 Claude가 로짓을 안 준다는 벽을 봤는데, 여기서도 같은 벽이 다른 모습으로 나타납니다. 제공자마다 어디까지 해주는지가 다 달라요.</aside>
+</section>
+
+<!-- 30 갈아타기 -->
+<section class="slide" data-part="PART 4">
+  <h2>&#128257; 언제 <span class="g">패턴 1로 갈아타나</span></h2>
+  <ul class="pts">
+    <li>규칙을 <code>dataclass</code>로 <b>표현할 수 없다</b> &mdash; 표현이 아니라 <b>로직</b>이다</li>
+    <li>BNF가 <b>지나치게 복잡하고 디버깅이 어렵다</b></li>
+    <li>규칙이 <b>동적</b>이며 내용에 따라 달라진다 &mdash; 신제품 얘기일 땐 가리고 기출시 제품엔 안 가림</li>
+    <li>규칙을 <b>DB나 규칙 엔진에서</b> 가져와야 한다 &mdash; 가릴 대상이 고객사마다 다름</li>
+    <li>마스킹이 <b>사용자 입력에 의존</b>한다 &mdash; 자동완성 유스케이스</li>
+    <li>규칙이 <b>외부 도구·API 호출</b>을 수반한다</li>
+  </ul>
+  <div class="hl">&#129517; <b>결정 흐름</b> &mdash; ① JSON·스키마가 필요한가 &rarr; <b>방법 3, 고민 끝</b> &nbsp;② 금지어·복잡한 로직인가 &rarr; <b>패턴 1</b> &nbsp;③ 둘 다 아닌 "느낌"인가 &rarr; <b>패턴 3 스타일 전이</b></div>
+  <aside>공통점은 "규칙이 고정된 모양이 아니다"입니다. 모양이 고정이면 문법, 그때그때 달라지면 로짓 마스킹이에요.</aside>
+</section>
+
+<!-- 31 우리 프로젝트 -->
+<section class="slide" data-part="PART 4">
+  <h2>&#128279; 우리 프로젝트와 <span class="g">연결</span></h2>
+  <p>패턴 1 노트에서 모니터링 에이전트의 <b>Jinja2 템플릿 + 결정론적 치환</b>을 "로짓 마스킹을 극단까지 밀어붙인 형태"라고 정리했다. 문법은 그 축의 <b class="g">중간 지점</b>이다.</p>
+  <div class="chain">
+    <div class="cell"><small>보장 없음</small><b>부탁<br><small style="color:var(--soft)">프롬프트</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>구조 보장</small><b class="g">문법<br><small style="color:var(--soft)">스키마</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>임의 규칙</small><b>로짓<br>마스킹</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>모델 재량 0</small><b>템플릿<br><small style="color:var(--soft)">Jinja2</small></b></div>
+  </div>
+  <div class="box" style="margin-top:14px">
+    <h3>&#128221; 다이제스트에 LLM을 쓰게 된다면 &mdash; 문법이 첫 후보인 이유 셋</h3>
+    <ul class="pts" style="margin-top:6px">
+      <li>치환할 값의 <b>자리와 타입이 보장</b>된다 &rarr; 템플릿 엔진에 그대로 넘길 수 있다</li>
+      <li>서버 처리라 <b>로컬 추론이 필요 없다</b> &mdash; 패턴 1의 CPU 2~10분 문제를 피한다</li>
+      <li><code>| Literal["Unknown"]</code>로 <b>모른다고 말하게</b> 만들 수 있다 &mdash; 모니터링에서 지어낸 숫자가 가장 위험한 실패</li>
+    </ul>
+  </div>
+  <aside>토론노트 6번에서 "우리에게 급한 건 LLM을 더 잘 쓰는 패턴이 아니라 안 쓰기로 한 결정을 지켜내는 패턴"이라고 했죠. 문법은 그 결정을 지키면서 한 칸 물러설 수 있게 해주는 장치입니다. 9장 패턴 30(조립 후 재구성)과 같이 읽으면 좋습니다.</aside>
+</section>
+
+<!-- 32 자가점검 -->
+<section class="slide" data-part="마무리">
+  <h2>&#9997;&#65039; 자가 점검</h2>
+  <div class="qa">
+    <div class="q"><b>Q1.</b> JSON 모드로 받은 응답에 <b>악센트 문자가 없을 것</b>이라 믿어도 되는가?</div>
+    <div class="q"><b>Q2.</b> 문법에 <code>&gt;</code>를 넣지 않았을 때, <b>비교 질문</b>에 모델은 어떻게 반응하는가?</div>
+    <div class="q"><b>Q3.</b> 응답이 <b>끝없는 공백</b>으로 채워졌다. 무엇을 의심해야 하는가?</div>
+    <div class="q"><b>Q4.</b> BNF가 Pydantic보다 <b>확실히 나은 축</b>은 무엇인가?</div>
+    <div class="q"><b>Q5.</b> 어떤 프레임워크가 "structured output 지원"이라고 광고할 때 <b>확인할 질문</b>은?</div>
+    <div class="q"><b>Q6.</b> 실수(float) 필드에 값을 <b>못 채우는 경우</b> 스키마를 어떻게 써야 하는가?</div>
+  </div>
+  <aside>Q1과 Q5를 자기 말로 답할 수 있으면 이 패턴은 잡은 겁니다. 나머지는 쓰다 보면 자연스레 익혀져요.</aside>
+</section>
+
+<!-- 33 정답 -->
+<section class="slide" data-part="마무리">
+  <h2>&#9989; 정답 &amp; 해설</h2>
+  <div class="qa">
+    <div class="q a"><b>A1.</b> <b>아니다.</b> JSON 모드는 "JSON임"만 보장한다. 필드 이름·문자 집합은 <b>모델 성능에 기댄 결과</b>이고 악센트는 들어갈 때도 안 들어갈 때도 있다. 문자 집합을 보장하려면 <b>BNF</b>가 필요하다.</div>
+    <div class="q a"><b>A2.</b> <b>정답을 못 낸다.</b> 허용된 토큰만 나오므로 식만 나열하고 비교는 하지 못한다. 제약이 작동한 결과이자, <b>문법 설계 실수가 오답으로 나타나는 방식</b>이다.</div>
+    <div class="q a"><b>A3.</b> <b>문법에 막혔는데 공백만 허용된 상태.</b> 공백은 문법이 대개 허용하고 후보에 거의 항상 있어, 다른 길이 다 막히면 공백만 반복된다.</div>
+    <div class="q a"><b>A4.</b> <b>유연성.</b> 단순한 데이터 형식을 넘는 검증(신용카드 번호 규칙 등)을 표현할 수 있다. 편의성·지연시간·모델 지원은 <b>모두 Pydantic이 낫다.</b></div>
+    <div class="q a"><b>A5.</b> <b>"어떻게 구현했나요?"</b> &mdash; 생성 중에 토큰을 막는지(진짜), 생성 후 LLM을 한 번 더 불러 맞추는지(가짜).</div>
+    <div class="q a"><b>A6.</b> <b>탈출구를 준다.</b> <code>float | Literal["Unknown"]</code>. 반드시 숫자를 내놓으라고 하면 없는 숫자를 지어낸다.</div>
+  </div>
+  <aside>A4가 은근히 헷갈립니다. BNF가 "더 좋은 것"이 아니라 "더 유연한 것"이에요. 나머지 세 축은 전부 Pydantic이 이깁니다.</aside>
+</section>
+
+<!-- 34 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#128274; 부탁 &rarr; 강제</h1>
+    <div class="big" style="margin-top:24px">"JSON으로 줘"라고 부탁하지 말고<br><span class="y">스키마로 못 박아라</span><br><br>단 &mdash; <span class="y">문법이 정답을 막을 수 있다</span><br><small>항상 "모르겠음" 탈출구를 두고, 진짜 제약 디코딩인지 확인할 것</small></div>
+    <p class="sub" style="margin-top:22px">패턴 2 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 3 스타일 전이</b></p>
+  </div>
+  <aside>패턴 1·2는 "규칙으로 막기"였습니다. 다음 패턴 3·4는 규칙으로 못 적는 "느낌"을 예시로 가르치는 쪽으로 넘어갑니다. 강제에서 유도로 축이 바뀌어요.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

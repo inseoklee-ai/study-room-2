@@ -30,8 +30,12 @@
   🖥️ [웹 슬라이드](https://inseoklee-ai.github.io/study-room-2/ch01-1-patterns-and-models/) (25장)
 - ✅ **1장 (2/2) 에이전트, 그리고 모델을 내 쪽으로 당기는 법** — 에이전트형 AI · 세밀한 제어 · 컨텍스트 내 학습 · 사후훈련 · 책 전체 지도
   🖥️ [웹 슬라이드](https://inseoklee-ai.github.io/study-room-2/ch01-2-agentic-and-control/) (29장)
-- 📑 [1장 텍스트 학습노트](notes/ch01.md) — 요약 · 표 · 코드 · 자가점검 13문항
-- 💬 [1장 토론노트](notes/ch01-discussion.md) — **책에 답이 없는 여섯 질문** (온도 0의 재현성 · Top-K/P 충돌 · 프롬프트 vs 미세조정 · 위임의 경계 · 빔 탐색이 맞는 작업 · 우리 시스템에 급한 장)
+- ✅ **1장 복습 — 요약 · 용어집 · 자가점검** — 용어 네 개 · 모델 지형도 · 세 레버 · 사후훈련 네 방법 · 13문항과 정답
+  🖥️ [웹 슬라이드](https://inseoklee-ai.github.io/study-room-2/ch01-3-review/) (23장) — 덱 (1/2)·(2/2)를 본 뒤 **복습용**
+- ✅ **1장 토론 — 책에 답이 없는 여섯 질문** — 온도 0의 재현성 · Top-K/P 충돌 · 프롬프트 vs 미세조정 · 위임의 네 층 · 빔 탐색 · 우리 시스템에 급한 장
+  🖥️ [웹 슬라이드](https://inseoklee-ai.github.io/study-room-2/ch01-4-discussion/) (30장) — **토론용**
+- 📑 [1장 텍스트 학습노트](notes/ch01.md) — 마크다운 원본 · 요약 · 표 · 코드 · 자가점검 13문항
+- 💬 [1장 토론노트](notes/ch01-discussion.md) — 마크다운 원본 · **여섯 질문** (온도 0의 재현성 · Top-K/P 충돌 · 프롬프트 vs 미세조정 · 위임의 경계 · 빔 탐색이 맞는 작업 · 우리 시스템에 급한 장)
 
 <details>
 <summary><b>1장 핵심 정리 펼치기</b></summary>
@@ -81,7 +85,8 @@
 
 </details>
 
-- 🔨 **패턴 2 문법** — 📑 [개념 정리 · 자가점검 6문항](notes/ch02-pattern02-grammar.md)
+- 🔨 **패턴 2 문법** — 부탁하지 말고 못 박아라
+  🖥️ [웹 슬라이드](https://inseoklee-ai.github.io/study-room-2/ch02-pattern02-grammar/) (34장) · 📑 [개념 정리 · 자가점검 6문항](notes/ch02-pattern02-grammar.md)
   예제 노트북 3개 **모두 예정** (`1_applying_grammar` · `2a_json_mode` · `2b_structured_data` ⏳) — **개념 정리만** 완료
 
 <details>
@@ -136,6 +141,12 @@ study-room-2/
 ├─ ch01-1-patterns-and-models/      # 1장 (1/2) 웹 슬라이드
 │  └─ index.html
 ├─ ch01-2-agentic-and-control/      # 1장 (2/2) 웹 슬라이드
+│  └─ index.html
+├─ ch01-3-review/                   # 1장 복습 — 용어집 · 자가점검 웹 슬라이드
+│  └─ index.html
+├─ ch01-4-discussion/               # 1장 토론노트 — 여섯 질문 웹 슬라이드
+│  └─ index.html
+├─ ch02-pattern02-grammar/          # 패턴 2 문법 웹 슬라이드
 │  └─ index.html
 └─ notes/
    ├─ ch01.md                       # 1장 텍스트 학습노트
