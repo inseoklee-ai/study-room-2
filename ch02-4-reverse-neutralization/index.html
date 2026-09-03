@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>역중립화 · 패턴 4 (2장)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 2 &middot; Pattern 4</div>
+    <h1 style="margin:18px 0">역<span class="gold">중립화</span></h1>
+    <p class="sub">Reverse Neutralization &mdash; <b>참조 콘텐츠만</b> 있을 때 스타일 전이를 수행하는 방법</p>
+  </div>
+  <aside>패턴 3과 마찬가지로, 그리고 패턴 1·2와 달리 필요한 것은 예시뿐입니다. 다만 사람이 만든 입력-출력 쌍이 없어도 쓸 수 있다는 게 결정적 차이예요.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="gold">구조</span> <small>&mdash; 책 2.4의 다섯 절</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>2.4.1 문제</b> &mdash; 변환 쌍이 없다</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>2.4.2 해법</b> &mdash; 중립화 &rarr; 뒤집기 &rarr; 파인튜닝</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>2.4.3~4 예제</b> &mdash; 법률 문서 / 개인 문체</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>2.4.5 고려사항</b> &mdash; 중립 형태 고르기 · 데이터셋 · 중립화의 다른 용도</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>2.4.6 참고문헌</b></span></div>
+  </div>
+  <div class="hl">&#128161; <b>한 줄로</b> &mdash; 짝이 없으면 <b>만들면 된다.</b> 가진 결과물을 밋밋하게 바꾼 뒤 <b>화살표를 뒤집어</b> 학습 데이터로 쓴다.</div>
+  <aside>패턴 이름의 "Reverse(역)"가 전부입니다. 만들고 싶은 것에서 출발해 거꾸로 학습 데이터를 만들어요.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="2.4.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">2.4.1 문제</h2>
+    <div class="who">결과물은 있는데 그걸 만든 입력이 없다</div>
+  </div>
+  <aside>내 개인 문체로 콘텐츠를 생성하고 싶다고 합시다. 봇에게 수하물 분실에 대해 항의 편지를 쓰라고 하면서 그 편지가 내가 쓴 것처럼 보이길 원해요.</aside>
+</section>
+
+<!-- 4 두 시나리오 -->
+<section class="slide" data-part="2.4.1 문제">
+  <h2>&#10060; 앞의 패턴들이 <span class="r">전부 탈락</span>하는 상황</h2>
+  <table class="t">
+    <tr><th style="width:22%">시나리오</th><th>가진 것</th><th>왜 탈락하나</th></tr>
+    <tr><td><b>개인 문체</b><br><small>루프트한자 항의 편지</small></td><td>다른 주제에 대한 <b>내 문체 이메일들</b></td><td><b class="r">제로샷</b> &mdash; 내 문체가 아니다<br><b class="r">패턴 3</b> &mdash; <b>바꿔 볼 루프트한자 편지 자체가 없다</b></td></tr>
+    <tr><td><b>지역 법률 문체</b><br><small>인도 타밀나두주</small></td><td>인도 로펌이 쓴 <b>다른 주제의 법률 통지문</b></td><td><b class="r">제로샷</b> &mdash; LLM이 인도식 법률 문체를 낼 리 없다<br><b class="r">패턴 3</b> &mdash; 새 주제라 <b>이전 항의 편지가 없다</b></td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">패턴 3은 <span class="y">전·후 쌍</span>을 요구한다<br>그런데 현실에는 <span class="y">결과물만</span> 있다</div>
+  <div class="hl">&#128161; 내 개인 이메일은 100통 있지만, <b>"이 밋밋한 이메일을 내 스타일로 바꾼 것"이라는 짝은 없습니다.</b> 그냥 내 이메일만 있죠.</div>
+  <aside>이게 현실에서 훨씬 흔한 상황입니다. 그래서 이 패턴이 필요해요.</aside>
+</section>
+
+<!-- 5 PART 2 -->
+<section class="slide" data-part="2.4.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">2.4.2 해법</h2>
+    <div class="who">중립 형태를 다리로 쓴다</div>
+  </div>
+  <aside>GenAI 모델이 쉽게 생성할 수 있는 중간 중립 형태를 사용해 작동합니다.</aside>
+</section>
+
+<!-- 6 3단계 -->
+<section class="slide" data-part="2.4.2 해법">
+  <h2>&#128260; 학습 데이터 만들기 &mdash; <span class="gold">세 단계</span></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>중립 형태 생성</b> &mdash; 내 문체 이메일들을 파운데이션 모델에게 <b>중립적인 형태</b>(예: 두 임원 사이의 업무 이메일)로 바꿔 달라고 한다</span></div>
+    <div class="st" style="border-color:var(--gold)"><span class="n" style="background:var(--gold)">2</span><span class="t"><b class="gold">학습 데이터셋 만들기 &mdash; 입력과 출력을 뒤집는다.</b> 이제 입력은 업무용 이메일, 출력은 내 문체 이메일</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>모델 파인튜닝</b> &mdash; 그 데이터셋으로 베이스 모델을 학습시킨다</span></div>
+  </div>
+  <pre style="margin-top:12px">① 내 이메일  →[AI에게 밋밋하게 만들라고]→  중립 버전
+                                              │
+② <b>화살표를 뒤집는다!</b>                       ↓
+   중립 버전  →  내 이메일        ← <b>짝 완성</b>
+③ 이 짝으로 학습</pre>
+  <div class="hl">&#128218; <b>번역 공부와 같습니다.</b> 한영 번역 문제집이 없다면? <b>영어 원서를 한국어로 번역해 놓고, 그 한국어를 문제로 삼으면</b> 됩니다. 답(원문 영어)은 이미 있으니까요.</div>
+  <aside>기계번역에서 역번역(back translation)이라 부르는 오래된 기법입니다. 참고문헌에도 나와요.</aside>
+</section>
+
+<!-- 7 추론 -->
+<section class="slide" data-part="2.4.2 해법">
+  <h2>&#9889; 추론은 <span class="gold">두 번 호출</span></h2>
+  <div class="chain">
+    <div class="cell"><small>1차</small><b>파운데이션<br>모델</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gold)"><small>중간</small><b class="gold">중립 형태<br><small style="color:var(--soft)">변호사→임원 편지</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>2차</small><b>파인튜닝<br>모델</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>결과</small><b class="g">내 문체</b></div>
+  </div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:20%"></th><th>준비할 때</th><th>쓸 때</th></tr>
+    <tr><td>1단계</td><td>내 스타일 &rarr; <b>중립</b></td><td>주제 &rarr; <b>중립</b> (파운데이션 모델)</td></tr>
+    <tr><td>2단계</td><td><b class="gold">뒤집어서 학습</b></td><td>중립 &rarr; <b class="g">내 스타일</b> (파인튜닝 모델)</td></tr>
+  </table>
+  <div class="hl">&#128161; 핵심은 <b>"중립"이 다리 역할</b>을 한다는 것. AI는 <b>밋밋한 글은 어떤 주제로든 잘 씁니다.</b> 그 능력을 빌려 온 다음 마지막에 <b>옷만 갈아입히는</b> 겁니다.</div>
+  <div class="warn">&#128176; 이 패턴은 <b>회사 브랜드에 맞는 콘텐츠를 내놓는 모델을 학습시키는 길</b>이기도 합니다 &mdash; 제품 설명·고객 리뷰처럼 <b>스타일이 입혀진 콘텐츠는 있는데 중립 버전이 없을 때</b>.</div>
+  <aside>방향이 두 번 바뀝니다. 준비할 때 한 번, 쓸 때 한 번. 헷갈리기 쉬운 부분이에요.</aside>
+</section>
+
+<!-- 8 PART 3 -->
+<section class="slide" data-part="2.4.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">2.4.3~4 예제</h2>
+    <div class="who">법률 문서 &middot; 개인 문체</div>
+  </div>
+  <aside>두 예제 모두 "중립화 → 뒤집기 → 파인튜닝 → 2단계 추론" 흐름이 같습니다.</aside>
+</section>
+
+<!-- 9 법률 -->
+<section class="slide" data-part="2.4.3 예제">
+  <h2>&#9878;&#65039; 예제 1 &mdash; <span class="gold">법률 문서</span></h2>
+  <p>루프트한자 수하물 분실 법적 항의문. 파운데이션 모델은 <b class="r">적절한 법률 통지문을 만들기 어려워한다</b> &mdash; 법률 기준과 관행이 <b>지역마다 다르기</b> 때문.</p>
+  <div class="plabel">중립화 프롬프트 — "대학 신입생이 이해할 언어로"</div>
+  <pre>"Neutralize the tone and style from the following legal text
+ and express it for a <b>nonlegal audience</b>:
+
+ The <b>plaintiff hereby moves for summary judgment</b> pursuant to
+ Rule 56(c), asserting that the defendant's <b>aforementioned conduct
+ constitutes a material breach</b> of the contractual obligations
+ set forth in Exhibit A, <b>thus entitling</b> the moving party to
+ compensatory damages as a matter of law."</pre>
+  <div class="plabel">중립화 결과</div>
+  <div class="box"><p style="margin:0"><i>소송을 제기한 <b class="g">사람</b>은 정식 재판 없이 법원이 사건을 판단해 달라고 요청하고 있습니다. 상대방이 Exhibit A에 명시된 <b class="g">계약을 어겼으므로</b> 그에 대한 보상을 받아야 한다고 주장합니다.</i></p></div>
+  <div class="hl">&#128161; <b>특징적 문체 요소는 중립화하면서 의미는 보존</b>합니다 &mdash; <code>plaintiff</code> &rarr; <code>person</code>, <code>material breach</code> &rarr; <code>broke the contract</code>. 그리고 이 <b class="g">중립 콘텐츠는 일반적이라 LLM이 생성할 수 있습니다.</b></div>
+  <aside>그래서 루프트한자 항의를 법적 조치로 만들려면, 이 과정의 입력과 출력을 뒤집어 학습시킨 모델을 쓰면 됩니다. 파운데이션 모델이 평이한 영어로 쓰고, 파인튜닝 모델이 법률 문체로 변환하는 거죠.</aside>
+</section>
+
+<!-- 10 개인문체 중립화 -->
+<section class="slide" data-part="2.4.4 예제">
+  <h2>&#128231; 예제 2 &mdash; <span class="gold">개인 문체</span> · 1단계 중립화</h2>
+  <div class="plabel">입력 — 개인 문체 이메일</div>
+  <div class="box"><p style="margin:0"><i>Subject: &#127881; Welcome Aboard, Emily! &#127881;<br><br>Hi Emily,<br>Welcome to the Customer Success family! &#127775; I am <b>absolutely thrilled</b> to have you join us and <b>can't wait</b> to see the amazing things you will accomplish. Your <b>passion</b> for helping others and your <b>vibrant spirit</b> are exactly what we need! &#128522;<br><b>Let's make magic happen together!</b> &#127919;<br>Warmest regards,<br>Casey Brown</i></p></div>
+  <div class="plabel" style="margin-top:12px">출력 — 중립 버전</div>
+  <div class="box"><p style="margin:0"><i>Subject: Welcome to the Team<br><br>Hi Emily,<br>고객 성공 팀의 새 구성원이 되신 것을 진심으로 환영합니다. 귀하의 기여를 기대하며, 귀하의 역량과 경험이 우리 목표에 소중한 자산이 되리라 확신합니다.<br>새 역할에 적응하시는 동안 팀의 지원이 함께한다는 점을 알아 주시기 바랍니다.<br>Best regards,<br>Casey Brown</i></p></div>
+  <div class="hl">&#128161; <b>이모지는 장식이 아니라 이 절의 핵심 증거물</b>입니다. 중립 버전에는 <b>하나도 없고</b> 개인 문체 버전에는 <b>잔뜩 있다</b>는 대비가, "스타일이란 무엇인가"를 가장 직관적으로 보여 줍니다.</div>
+  <aside>"Let's make magic happen together!" 같은 개인적 표현과 이모지가 전부 사라진 게 중립화의 결과입니다.</aside>
+</section>
+
+<!-- 11 데이터셋 -->
+<section class="slide" data-part="2.4.4 예제">
+  <h2>&#128202; 2단계 &mdash; <span class="gold">데이터셋 생성</span> (뒤집기)</h2>
+  <pre>{"messages": [
+  {"role": "<b>system</b>",
+   "content": "You are a helpful assistant converting the
+               neutralized email into personalized email."},
+
+  {"role": "<b class="gold">user</b>",              <span class="g">// ← 중립 버전이 입력으로</span>
+   "content": "Subject: Welcome to the Team\n\nHi Emily,\n\n
+               I would like to extend a warm welcome..."},
+
+  {"role": "<b class="gold">assistant</b>",         <span class="g">// ← 내 문체가 출력으로</span>
+   "content": "Subject: &#127881; Welcome Aboard, Emily! &#127881;\n\n
+               Welcome to the Customer Success family! &#127775;..."}
+]}</pre>
+  <div class="big" style="margin-top:14px">파인튜닝에는 보통 <span class="y">100~1,000개</span>의 쌍이 필요<br><small>저자들은 <b>200개</b>를 사용해 좋은 결과를 얻었다</small></div>
+  <div class="hl">&#128161; 데이터 구조는 모델 제공자마다 다르지만 개념은 같습니다 &mdash; <b>시스템 프롬프트 + 사용자 프롬프트(입력)</b>를 <b>기대하는 어시스턴트 응답(출력)</b>과 짝짓습니다.</div>
+  <aside>1단계 결과의 출력과 입력을 그대로 뒤집었을 뿐입니다. 코드는 단순한데 발상이 영리한 패턴이에요.</aside>
+</section>
+
+<!-- 12 추론 결과 -->
+<section class="slide" data-part="2.4.4 예제">
+  <h2>&#127881; 4단계 &mdash; <span class="gold">엔드투엔드 추론</span></h2>
+  <p>학습 데이터셋에 <b>없는 주제</b>로 생성한다 &mdash; <i>2026 FIFA 월드컵 마케팅 캠페인 발표 요청</i></p>
+  <div class="plabel">1차 — 파운데이션 모델의 중립 이메일 (임원 간 소통)</div>
+  <div class="box"><p style="margin:0"><i>Subject: Invitation to Present on Marketing Campaign for 2026 FIFA World Cup<br>Dear Gretl, 잘 지내시길 바랍니다. &hellip; 발표해 주실 것을 <b>공식적으로 요청</b>드립니다. 귀하의 전문성과 통찰은 저희 팀에 매우 소중할 것이며 &hellip;</i></p></div>
+  <div class="plabel" style="margin-top:12px">2차 — 파인튜닝 모델이 개인 문체로 변환</div>
+  <div class="box" style="border-color:var(--gr)"><p style="margin:0"><i>Subject: &#127881; Exciting Opportunity: Unleash Your Marketing Magic at the 2026 FIFA World Cup! &#127881;<br>Hi Gretl!<br>I hope this message finds you in <b>fantastic spirits</b>! &#127775; I am <b>absolutely thrilled</b> to invite you &hellip; Your creativity and insights are like a <b>burst of sunshine</b> &hellip; &#127752;<br>&hellip; I'm <b>beyond excited</b> to hear your thoughts and ideas!<br>Let me know your availability; I'm here to make it all happen with a big smile! &#10024;&#128522;<br><b>Enthusiastically yours,</b></i></p></div>
+  <div class="hl">&#9989; <b>파운데이션 모델은 임의의 주제로 편지를 생성</b>하고, <b>파인튜닝 모델은 그것을 원하는 개인 문체로 변환</b>했습니다.</div>
+  <aside>학습 데이터에 월드컵 얘기는 한 줄도 없었습니다. 중립 형태가 다리 역할을 해서 새 주제로도 확장된 겁니다.</aside>
+</section>
+
+<!-- 13 PART 4 -->
+<section class="slide" data-part="2.4.5 고려사항">
+  <div class="part">
+    <div class="pno">4</div>
+    <h2 style="margin:0">2.4.5 고려사항</h2>
+    <div class="who">중립 형태 · 데이터셋 · 다른 용도</div>
+  </div>
+  <aside>이 패턴은 모델이 관련 콘텐츠 전부를 "스타일만 다르고 내용은 같은" 중립 형태로 옮길 수 있다는 데 크게 의존합니다.</aside>
+</section>
+
+<!-- 14 중립 형태 -->
+<section class="slide" data-part="2.4.5 고려사항">
+  <h2>&#9888;&#65039; <span class="r">중립 형태 고르기</span>가 어렵다</h2>
+  <p><b>반복 가능한</b> 중립 형태를 고르는 것이 중요하다. 그런데 <b class="r">"임원 간 소통", "대학 신입생 읽기 수준" 같은 정의조차 다소 주관적</b>이고 LLM마다 복잡도가 다른 텍스트를 만든다.</p>
+  <div class="warn">&#128161; <b>LLM에는 편향이 있고, LLM이 생각하는 <i>중립</i>이 내 애플리케이션이 생각하는 중립과 다를 수 있습니다.</b></div>
+  <div class="box" style="margin-top:14px">
+    <h3>&#128207; 평가 방법 &mdash; 임베딩 코사인 유사도</h3>
+    <p style="margin:4px 0 0">원문과 생성된 중립 텍스트의 <b>임베딩</b>을 비교한다. 의미가 매우 유사해야 하므로 코사인 유사도도 가까워야 한다.</p>
+    <p style="margin:8px 0 0"><b class="r">&#9888;&#65039; 조심할 것</b> &mdash; <b>가장 가까운 임베딩은 텍스트를 전혀 바꾸지 않은 것</b>인데, 그런 변환은 <b>LLM이 원하는 스타일을 생성하기 어렵게</b> 만든다.</p>
+  </div>
+  <div class="warn" style="margin-top:12px">&#9986; 때로는 내용이 스타일과 깊이 얽혀 있어 <b>스타일을 중립화하면 정보까지 잃습니다.</b> 원본과 대조해 내용과 의도가 바뀌지 않았는지 확인해야 하고, <b class="r">지나치게 중립화하면 명확성을 잃는데 이를 「과잉 중립화(over-neutralization)」</b>라 합니다.</div>
+  <aside>양쪽에 함정이 있습니다. 덜 바꾸면 학습이 안 되고, 너무 바꾸면 정보가 날아가요.</aside>
+</section>
+
+<!-- 15 데이터셋 -->
+<section class="slide" data-part="2.4.5 고려사항">
+  <h2>&#128202; 데이터셋 <span class="r">분포 오류</span>는 프로젝트 전체를 망친다</h2>
+  <p>LLM으로 입력을 생성하는 건 빠르고 간단하지만 <b>입력 생성 작업의 프롬프트를 잘 짜는 것이 결정적</b>이다.</p>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t">원하는 스타일의 <b>좋은 예시</b>를 고르고, 애플리케이션이 생성해야 할 <b>콘텐츠의 전 범위를 포괄</b>하는지 확인</span></div>
+    <div class="st"><span class="n">2</span><span class="t">선택한 입력과 원시 데이터셋에 <b>토픽 모델링</b> 같은 NLP 기법을 적용해 전 범위를 담고 있는지 확인</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>생성된 중립 형태에 대해서도 같은 작업을 반복</b>해 주제 다양성이 유지되는지 확인</span></div>
+  </div>
+  <div class="big" style="margin-top:16px">데이터셋 분포 오류는<br><span class="y">프로젝트 전체의 실패</span>로 이어진다<br><small>파인튜닝이 생성된 입력에 크게 의존하기 때문</small></div>
+  <aside>중립화 단계에서 주제가 한쪽으로 쏠리면, 그 쏠림이 그대로 모델에 학습됩니다. 그래서 두 번 검사하라는 거예요.</aside>
+</section>
+
+<!-- 16 다른 용도 -->
+<section class="slide" data-part="2.4.5 고려사항">
+  <h2>&#128161; <span class="gold">중립화 자체</span>가 쓸모 있을 때</h2>
+  <p>중간 형식으로 소개했지만 <b>중립 형식 자체가 그대로 유용한</b> 상황도 있다. 그런 경우 <b class="g">파인튜닝 모델을 만들지 않고 중립화 프롬프트만</b> 쓸 수 있다.</p>
+  <div class="grid2">
+    <div class="box"><h3>&#128274; 프라이버시 강화 · 편향 감소</h3><p style="margin:0">텍스트에서 <b>문체적 특징을 제거</b>해 생성된 텍스트가 중립적이고 <b>문체 변동이 없게</b> 만든다</p></div>
+    <div class="box"><h3>&#128101; 협업 콘텐츠 표준화</h3><p style="margin:0"><b>여러 사람이 쓴 텍스트</b>를 중립화해 통일한다</p></div>
+  </div>
+  <div class="hl">&#128161; 문체는 <b>신원 정보</b>이기도 합니다. 누가 썼는지 드러나면 안 되는 상황에서 중립화는 <b>익명화 도구</b>가 됩니다.</div>
+  <aside>이 패턴의 절반만 써도 쓸모가 있다는 게 재미있는 지점입니다. 뒤집지 않고 중립화에서 멈추는 거죠.</aside>
+</section>
+
+<!-- 17 PART 5 -->
+<section class="slide" data-part="2.4.6 참고문헌">
+  <h2>&#128218; 2.4.6 <span class="gold">참고문헌</span></h2>
+  <div class="big"><span class="y">역번역</span> (back translation)<br><small>기계번역 분야에서 데이터셋 확장에 오래 쓰여 온 기법</small></div>
+  <pre style="margin-top:16px">영어 → 프랑스어 번역 모델이 있다면
+       <b>입력과 출력을 뒤집어</b>
+프랑스어 → 영어 번역 모델의 입력을 만든다</pre>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:26%">출처</th><th>기여</th></tr>
+    <tr><td><b>Edunov 외 (2018)</b></td><td>역번역에서 <b>합성 원문 문장</b>의 사용을 논의</td></tr>
+  </table>
+  <div class="hl">&#128161; 이 패턴이 <b>새로 발명된 게 아니라</b>, 기계번역에서 검증된 데이터 증강 기법을 <b>스타일 전이로 옮겨온 것</b>임을 알 수 있습니다.</div>
+  <aside>번역에서 "짝이 없으면 만들어낸다"는 발상이 이미 오래전에 자리 잡았고, 그걸 스타일 문제에 적용한 겁니다.</aside>
+</section>
+
+<!-- 18 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#8630; 화살표를 <span class="gold">뒤집어라</span></h1>
+    <div class="big" style="margin-top:24px">짝이 없으면 <span class="y">만들면 된다</span><br><br>가진 결과물을 밋밋하게 바꾼 뒤<br><span class="y">화살표를 뒤집어</span> 학습 데이터로 쓴다</div>
+    <p class="sub" style="margin-top:22px">패턴 4 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 5 콘텐츠 최적화</b> (뭐가 좋은 스타일인지도 모른다면?)</p>
+  </div>
+  <aside>패턴 3·4는 "원하는 스타일이 뭔지는 안다"는 전제였습니다. 마지막 패턴은 그것조차 모를 때 쓰는 방법이에요.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

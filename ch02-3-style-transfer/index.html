@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스타일 전이 · 패턴 3 (2장)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 2 &middot; Pattern 3</div>
+    <h1 style="margin:18px 0">스타일 <span class="gold">전이</span></h1>
+    <p class="sub">Style Transfer &mdash; <b>변환 예시</b>를 보여 줘서 참조 콘텐츠의 특성을 갖게 한다</p>
+  </div>
+  <aside>패턴 1·2가 "하지 마"라고 막는 방식이었다면, 패턴 3은 "이렇게 해"라고 보여주는 방식입니다. 강제에서 유도로 축이 바뀝니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="gold">구조</span> <small>&mdash; 책 2.3</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>2.3.1 문제</b> &mdash; 성립 조건 세 가지와 제로샷의 실패</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>2.3.2 해법</b> &mdash; 퓨샷 러닝 / 모델 파인튜닝, 그리고 이미지 스타일 전이</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>2.3.3 고려사항</b> &mdash; 준수에 영향을 주는 세 요인</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>2.3.4 참고문헌</b></span></div>
+  </div>
+  <div class="warn">&#9888;&#65039; 이 패턴은 책에서 <b>별도의 「예제」 절 없이</b> 해법 안에 예제가 녹아 있습니다. 그래서 이 덱은 <b>네 절</b> 구성입니다.</div>
+  <div class="hl">&#128161; <b>한 줄로</b> &mdash; 규칙으로 못 적는 <b>"느낌"</b>을 예시로 가르친다.</div>
+  <aside>패턴마다 절 구성이 조금씩 다릅니다. 책의 실제 구조를 따랐어요.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="2.3.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">2.3.1 문제</h2>
+    <div class="who">규칙으로 쓸 수 없는 스타일</div>
+  </div>
+  <aside>앞의 두 패턴은 동적 로직이나 구조화된 규칙으로 스타일을 제어했습니다. 많은 상황에서 뉘앙스를 규칙으로 표현하기는 어렵습니다.</aside>
+</section>
+
+<!-- 4 세 조건 -->
+<section class="slide" data-part="2.3.1 문제">
+  <h2>&#127919; 성립 조건 <span class="gold">셋</span></h2>
+  <table class="t">
+    <tr><th style="width:22%">조건</th><th>내용</th></tr>
+    <tr><td><b>가용한 콘텐츠</b><br><small>available content</small></td><td>원하는 <b>내용은 이미 있지만</b> 원하는 톤·스타일이 아니다 &mdash; 내용이 학술 논문에 있는데 <b>비기술직 임원용 마케팅 브로슈어</b>에 쓰고 싶다</td></tr>
+    <tr><td><b>미묘한 스타일</b><br><small>nuanced style</small></td><td>뉘앙스를 <b>몇 가지 규칙으로 표현하기 어렵다.</b> 사람도 말로 표현하기 힘들지만 <b class="gold">맞는 스타일을 보면 알아본다</b> &mdash; 브로슈어에 <i>파인튜닝</i>은 써도 될까? <i>강화학습</i>은?</td></tr>
+    <tr><td><b>변환 예시</b><br><small>example conversions</small></td><td>전문가가 가용한 콘텐츠를 원하는 스타일로 <b>변환해 놓은 사례가 실제로 있다</b></td></tr>
+  </table>
+  <div class="hl">&#128161; 세 번째가 이 패턴과 <b>패턴 4를 가르는 조건</b>입니다. 변환 <b>전·후 쌍</b>이 있으면 패턴 3, <b>결과물만</b> 있으면 패턴 4.</div>
+  <aside>두 번째 조건의 "보면 안다"가 핵심입니다. 규칙으로 쓸 수 있으면 패턴 1·2가 낫고, 못 쓰겠으면 여기로 옵니다.</aside>
+</section>
+
+<!-- 5 적용 상황 -->
+<section class="slide" data-part="2.3.1 문제">
+  <h2>&#128221; 어디에 쓰나 &mdash; 책의 <span class="gold">다섯 상황</span></h2>
+  <ul class="pts">
+    <li><b>학술 논문 &rarr; 흥미로운 블로그 글</b> &mdash; 복잡한 주제를 일반 용어로. 단 <b>정확성과 핵심 메시지는 보존</b></li>
+    <li><b>일반 회사 콘텐츠 &rarr; 브랜드 스타일 가이드</b> &mdash; 표준 헬프데스크 문서를 <b>따뜻하고 친근한 톤</b>으로</li>
+    <li><b>소셜 미디어 플랫폼별 변환</b> &mdash; 긴 LinkedIn 글을 X·BlueSky의 짧은 형식이나 Instagram의 <b>시각 중심</b> 스타일로. 핵심 메시지와 브랜드 보이스는 유지</li>
+    <li><b>기술 문서 &rarr; 숙련도별</b> &mdash; 초급·중급·전문가용으로 나눠 각각에 맞는 용어와 설명으로</li>
+    <li><b>메모 &rarr; 정식 이메일</b> &mdash; 임원의 짧은 메시지를 정식 메모나 이메일로</li>
+  </ul>
+  <div class="big" style="margin-top:16px">공통점 &mdash; <span class="y">내용은 그대로, 옷만 갈아입힌다</span></div>
+  <aside>다섯 번째가 뒤에 나올 실행 예제입니다. 메모를 이메일로 바꾸는 것.</aside>
+</section>
+
+<!-- 6 제로샷 실패 -->
+<section class="slide" data-part="2.3.1 문제">
+  <h2>&#10060; 제로샷은 <span class="r">두 가지로</span> 실패한다</h2>
+  <div class="plabel">입력 — 급하게 쓴 메모</div>
+  <pre>urgent: need meeting minutes by {deadline}
+for stakeholder presentation
+- This is needed for our upcoming presi to stakeholders.
+- will need ur help asap
+- send 2 me when rdy</pre>
+  <div class="plabel">GPT-3.5 결과 — 장황하고 플레이스홀더가 제멋대로</div>
+  <div class="box"><p style="margin:0"><i>Dear <b class="r">[Recipient]</b>, 잘 지내시길 바랍니다. 최근 회의의 회의록 준비에 긴급히 도움을 요청드리고자 연락드립니다 &hellip; 이 사안에 신속히 주의를 기울여 주시면 대단히 감사하겠습니다 &hellip; Best regards, <b class="r">[Your Name]</b></i></p></div>
+  <table class="t" style="margin-top:12px">
+    <tr><th style="width:22%">실패</th><th>이유</th></tr>
+    <tr><td><b class="r">스타일이 내 것이 아니다</b></td><td>길이·어휘·읽기 수준·톤. <b>당연하다</b> &mdash; OpenAI는 내가 격식 있는 은행인지 캐주얼한 테크 스타트업인지 모른다</td></tr>
+    <tr><td><b class="r">플레이스홀더가 제멋대로</b></td><td><code>[Your Name]</code>인가 <code>[Name]</code>인가? 정확한 플레이스홀더를 모르면 <b>다운스트림이 실제 값으로 치환할 수 없다</b></td></tr>
+  </table>
+  <aside>두 번째가 실무에선 더 치명적입니다. 글이 좀 길어도 사람이 읽으면 되지만, 치환 코드는 플레이스홀더가 매번 달라지면 그냥 깨집니다.</aside>
+</section>
+
+<!-- 7 PART 2 -->
+<section class="slide" data-part="2.3.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">2.3.2 해법</h2>
+    <div class="who">퓨샷 러닝 &middot; 모델 파인튜닝</div>
+  </div>
+  <aside>입력-출력 예시로 생성 콘텐츠의 스타일을 제어합니다. 이렇게 하면 더 일관된 결과를 얻어요.</aside>
+</section>
+
+<!-- 8 퓨샷 -->
+<section class="slide" data-part="2.3.2 해법">
+  <h2>&#9312; <span class="gold">퓨샷 러닝</span></h2>
+  <p>프롬프트에 입력과 기대 출력의 예시를 <b>보통 1~10개</b> 넣는다. 예시는 <b>예상 문제 영역과 관련</b>이 있어야 한다.</p>
+  <pre>in_context_examples = [{
+    "input_text": "The movie was fantastic!",
+    "output_text": """The cinematography was exceptional, with
+masterful use of light and shadow to convey emotional depth.""",
+}, ... ]
+
+prompt = "Convert the following text into the following style:\n\n"
+for ex in in_context_examples:
+    prompt += f"Input: {ex['input_text']}\nOutput: {ex['output_text']}\n"
+prompt += f"Input: {input_text}\nOutput:"</pre>
+  <div class="hl">&#127891; <b>학생-교사 관계</b>로 생각하면 됩니다. 교사(당신)가 LLM(학생)에게 예시 몇 개를 보여 주고, 학생이 <b>앞으로의 문제에서 그 예시를 모방하기를</b> 기대하는 것.</div>
+  <aside>1장의 컨텍스트 내 학습이 그대로 쓰입니다. 가중치는 전혀 안 바뀌고 그 요청 안에서만 유효해요.</aside>
+</section>
+
+<!-- 9 파인튜닝 -->
+<section class="slide" data-part="2.3.2 해법">
+  <h2>&#9313; <span class="gold">모델 파인튜닝</span></h2>
+  <p>여러 예시를 기대 출력으로 사용한다. <b>보통 100개 남짓, 수천 개일 수도.</b> 대응하는 입력과 짝지어 파인튜닝한다. (어댑터 조정, 패턴 15 참고)</p>
+  <div class="grid2">
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 더 높은 충실도</h3><p style="margin:0">예시 몇 개를 넘어 튜닝할 수 있다. <b>복잡한 작업</b>에서 특히 &mdash; 논문을 브로슈어로 바꾸려면 <b>많은 어휘 매핑</b>을 학습해야 하는데 파인튜닝이 그럴 가능성이 높다</p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9889; 더 빠르고 저렴한 추론</h3><p style="margin:0">모델이 이미 작업에 맞춰져 있어 <b>프롬프트를 최소한으로</b> 줄인다. 예시를 처리할 필요가 없으니 <b>지연이 줄고 비용도 낮아진다</b></p></div>
+  </div>
+  <div class="hl">&#128161; <b>두 장점은 서로를 강화합니다.</b> 많은 경우 <b>퓨샷으로 실패했던 복잡한 작업에 더 작은 모델을 튜닝</b>할 수 있고, 그러면 추론은 더 빠르고 호스팅 비용은 더 낮아집니다.</div>
+  <table class="t" style="margin-top:12px">
+    <tr><th style="width:24%">단점</th><th>내용</th></tr>
+    <tr><td>데이터 큐레이션·거버넌스</td><td>학습 세트를 수집·정제·유지해야 한다</td></tr>
+    <tr><td>학습 비용</td><td>스타일이 바뀌면 <b>파인튜닝을 다시</b> 해야 할 수도</td></tr>
+    <tr><td>학습 전문성</td><td>핵심 학습 파라미터가 여럿. <b class="r">파국적 망각</b> 때문에 학습률을 신중히</td></tr>
+    <tr><td>운영 전문성</td><td>호스팅·운영에 <b>LLMOps</b> 역량 &mdash; 프롬프트에 예시를 넣는 것보다 <b class="r">희소하고 비싼 기술</b></td></tr>
+  </table>
+  <aside>파국적 망각은 1장에서 본 개념입니다. 미세조정 예시를 과대평가해 기존 지식을 잃는 현상이죠.</aside>
+</section>
+
+<!-- 10 비교 -->
+<section class="slide" data-part="2.3.2 해법">
+  <h2>&#9878;&#65039; 퓨샷 vs 파인튜닝 &mdash; <span class="gold">선택 기준</span></h2>
+  <table class="t">
+    <tr><th style="width:22%"></th><th>퓨샷 러닝</th><th>파인튜닝</th></tr>
+    <tr><td>예시 개수</td><td><b>1~10개</b></td><td><b>100~수천 개</b></td></tr>
+    <tr><td>준비 시간</td><td><b class="g">즉시</b></td><td>몇 시간~며칠</td></tr>
+    <tr><td>매 요청 비용</td><td><b class="r">비쌈</b> &mdash; 예시를 매번 전송</td><td><b class="g">쌈</b> &mdash; 프롬프트가 짧다</td></tr>
+    <tr><td>속도</td><td>느림</td><td><b class="g">빠름</b></td></tr>
+    <tr><td>수정</td><td><b class="g">즉시</b></td><td>재학습</td></tr>
+    <tr><td>필요 인력</td><td>없음</td><td>AI 엔지니어 + LLMOps</td></tr>
+  </table>
+  <div class="big" style="margin-top:14px">비용이 <span class="y">역전되는 지점</span>이 핵심<br><small>퓨샷은 시작이 공짜지만 요청 1건마다 예시 토큰 값을 낸다</small></div>
+  <div class="plabel">파인튜닝 실행 — OpenAI 관리형</div>
+  <pre>training_file = client.files.create(
+    file=open("fine_tuning_dataset.jsonl", "rb"), purpose="fine-tune")
+job = client.fine_tuning.jobs.create(
+    training_file=training_file.id, model="gpt-3.5-turbo")</pre>
+  <aside>1장 토론노트 3번의 손익분기 계산이 여기 그대로 적용됩니다. 하루 10만 건이면 파인튜닝이 훨씬 싸요.</aside>
+</section>
+
+<!-- 11 결과 -->
+<section class="slide" data-part="2.3.2 해법">
+  <h2>&#9989; 파인튜닝 <span class="gold">결과</span></h2>
+  <div class="plabel">같은 메모 → 파인튜닝 모델</div>
+  <div class="box"><p style="margin:0"><i>Subject: Request for meeting minutes<br><br>Hi <b class="g">{name}</b>,<br>잘 지내고 계시길 바랍니다.<br><b class="g">{deadline}</b>까지 회의록이 필요해서 연락드립니다. 다가오는 이해관계자 발표에 필요합니다. 도와주실 수 있을까요?<br>추가 정보가 필요하시면 알려 주세요.<br>도움 주셔서 미리 감사드립니다.<br>Best,<br><b class="g">{name}</b></i></p></div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 더 요점에 충실</h3><p style="margin:0">제로샷의 장황함이 사라졌다</p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 플레이스홀더가 통일됐다</h3><p style="margin:0"><code>{name}</code>, <code>{deadline}</code> &mdash; <b>우리가 지정한 패턴</b></p></div>
+  </div>
+  <div class="hl">&#128161; <b>두 번째가 진짜 성과입니다.</b> 다운스트림 치환 코드가 이제 깨지지 않습니다.</div>
+  <aside>글이 짧아진 것보다 플레이스홀더 통일이 실무적으로 훨씬 중요합니다. 프로그램이 다룰 수 있게 됐으니까요.</aside>
+</section>
+
+<!-- 12 이미지 -->
+<section class="slide" data-part="2.3.2 해법">
+  <h2>&#127912; 확장 &mdash; <span class="gold">이미지</span> 스타일 전이</h2>
+  <p>텍스트에 국한되지 않는다. 카스파르 다비트 프리드리히의 <b>「안개 바다 위의 방랑자」</b> 스타일로 <b>스타워즈</b> 포스터를 만든다.</p>
+  <pre>pipe = StableDiffusionControlNetImg2ImgPipeline.from_pretrained(
+        "stable-diffusion-v1-5/stable-diffusion-v1-5",
+        controlnet=controlnet, torch_dtype=torch.float16)
+
+depth_estimator = pipeline("depth-estimation")
+depth_image = depth_estimator(image)["depth"]      # <b>깊이 맵</b>
+
+output = pipe("Star Wars' Darth Vader with a red light saber",
+              image=wanderer_image, <b>control_image=wanderer_depth_map</b>)</pre>
+  <div class="hl">&#128207; <b>왜 제어 이미지(control image)를 주나?</b> 전통적 신경망 스타일 전이는 <b class="r">공간 배치와 깊이 관계를 왜곡</b>합니다. <b>깊이 맵</b>이 "거리 관계는 건드리지 마"라고 못 박아 줍니다. (가까운 픽셀은 희고 먼 픽셀은 어둡다)</div>
+  <div class="warn">&#127917; <b>결과</b> &mdash; 방랑자가 다스 베이더로 바뀌었지만 <b>공간 원근·인물 자세·배경이 보존</b>됐고 지팡이는 라이트세이버가 되어 같은 위치에 있습니다. 다만 <b>창의성도 생겼습니다</b> &mdash; 먼 지평선의 우주선, 그리고 원작과 달리 <b>관람자를 향해 선 인물.</b> 원치 않으면 <b>스타일 이미지와 콘텐츠 프롬프트의 상대 가중치</b>를 조절합니다.</div>
+  <aside>실무 교훈은 이겁니다. 스타일의 어떤 측면이 중요한지 따로 지정할 수단이 있으면 결과가 훨씬 좋아집니다. "스타일"이라고 뭉뚱그리면 색감과 붓터치만 흉내 내고 구도는 날아가요.</aside>
+</section>
+
+<!-- 13 PART 3 -->
+<section class="slide" data-part="2.3.3 고려사항">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">2.3.3 고려사항</h2>
+    <div class="who">준수에 영향을 주는 세 요인</div>
+  </div>
+  <aside>구현은 패턴 1·2보다 훨씬 간단합니다. 하지만 암시된 스타일을 엄격히 강제하지는 않아요.</aside>
+</section>
+
+<!-- 14 강제 강도 -->
+<section class="slide" data-part="2.3.3 고려사항">
+  <h2>&#9878;&#65039; <span class="r">강제가 아니다</span></h2>
+  <div class="chain">
+    <div class="cell" style="border-color:var(--gr)"><small>패턴 1 · 2</small><b class="g">강제<br><small style="color:var(--soft)">100%</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>파인튜닝</small><b>"성공률"이<br>훨씬 높음</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gold)"><small>퓨샷</small><b class="gold">암묵적<br>유도</b></div>
+  </div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:34%">상황</th><th>선택</th></tr>
+    <tr><td><b>준수가 필수적</b></td><td><b class="g">로짓 마스킹 · 문법</b>이 더 나은 접근일 수 있다</td></tr>
+    <tr><td>준수가 필수는 아니다 / 스타일을 <b>쉽게 표현할 수 없다</b> / <b>구현의 단순함</b>이 매력적(프로토타입)</td><td><b class="gold">스타일 전이</b></td></tr>
+  </table>
+  <div class="warn">&#9888;&#65039; 파인튜닝도 <b>암묵적 강제</b>일 뿐이고, 작업의 복잡성이 구현 복잡도를 높입니다.</div>
+  <aside>저자가 솔직하게 짚는 부분입니다. 예시로 가르치는 건 편하지만 보장이 없어요.</aside>
+</section>
+
+<!-- 15 세 요인 -->
+<section class="slide" data-part="2.3.3 고려사항">
+  <h2>&#128207; 준수에 영향을 주는 <span class="gold">세 요인</span></h2>
+  <table class="t">
+    <tr><th style="width:22%">요인</th><th>내용</th></tr>
+    <tr><td><b>큰 모델이 더 좋다</b></td><td>오픈소스든(Llama, Qwen) 클로즈드소스든 예시를 잘 외삽하지만 <b>파라미터가 많은 모델이 일반화를 더 쉽게</b> 한다. 결과가 나쁘면 ① 예시를 검토 ② 예시를 늘림 ③ <b>더 큰 모델로</b>. 단 프로덕션에선 <b class="r">파라미터 수 &harr; 추론 비용·지연의 지속적 트레이드오프</b></td></tr>
+    <tr><td><b>컨텍스트의 한계</b></td><td>예시를 넣으면 입력 토큰이 늘어난다. 많이 넣을수록 <b>실제 프롬프트에 쓸 여유가 줄고</b>, 너무 많으면 예시의 "메시지"가 묻히거나 <b class="r">예시들끼리 서로 모순</b>돼 모델이 "혼란"에 빠진다</td></tr>
+    <tr><td><b>추론 속도</b></td><td>입력이 길면 <b>더 긴 컨텍스트에 어텐션을 적용</b>해야 하므로 지연이 커진다. 결국 인컨텍스트 러닝은 <b>같은 베이스 모델이라도 파인튜닝 모델보다 느리다</b></td></tr>
+  </table>
+  <div class="hl">&#128161; 컨텍스트 한계나 속도 저하를 겪는다면 &mdash; <b>컨텍스트 엔지니어링</b>을 고려하거나 <b>최적의 예시를 선별</b>하거나, <b class="g">어댑터 조정(5장)</b>으로 넘어가세요. 좁은 작업에서는 <b>더 작은 LLM을 파인튜닝해 큰 모델과 동등한 성능</b>을 내는 경우가 많습니다.</div>
+  <aside>마지막 문장이 중요합니다. LLM 애플리케이션이 실시간으로 사용자를 응대한다면 이 점이 결정적일 수 있어요.</aside>
+</section>
+
+<!-- 16 PART 4 -->
+<section class="slide" data-part="2.3.4 참고문헌">
+  <h2>&#128218; 2.3.4 <span class="gold">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">출처</th><th>기여</th></tr>
+    <tr><td><b>Gatys · Ecker · Bethge (2015)</b></td><td><b>합성곱 신경망으로 콘텐츠와 스타일을 분리</b>하는 아이디어를 도입 &mdash; 이미지 스타일 전이 분야의 출발점</td></tr>
+    <tr><td><b>Jing 외 (2018)</b></td><td>이미지 스타일 전이 분야의 <b>리뷰</b></td></tr>
+    <tr><td><b>Reif 외 (2021)</b></td><td><b>LLM을 이용한 텍스트 스타일 전이</b>를 도입</td></tr>
+    <tr><td><b>Addlly</b></td><td>기존 제품 설명의 스타일을 <b>신규 제품에 전이</b>해 Shopify 등재 시 <b>브랜드 보이스와 형식을 유지</b> &mdash; 실제 상용 사례</td></tr>
+  </table>
+  <div class="hl">&#128161; 이미지 쪽이 <b>6년 먼저</b>였습니다. 2015년 이미지, 2021년 텍스트 &mdash; "콘텐츠와 스타일을 분리한다"는 발상이 텍스트로 옮겨오는 데 그만큼 걸린 셈입니다.</div>
+  <aside>Addlly 사례가 이 패턴의 전형적인 실무 용례입니다. 제품이 새로 나올 때마다 브랜드 톤을 유지하는 문제죠.</aside>
+</section>
+
+<!-- 17 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#127891; 규칙 대신 <span class="gold">예시</span></h1>
+    <div class="big" style="margin-top:24px">예시 몇 개면 <span class="y">퓨샷</span><br>대량 처리하면 <span class="y">파인튜닝</span><br><br>규칙으로 못 적는 <span class="y">"느낌"</span>을 가르칠 때 쓴다</div>
+    <p class="sub" style="margin-top:22px">패턴 3 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 4 역중립화</b> (그런데 변환 쌍이 없다면?)</p>
+  </div>
+  <aside>패턴 3은 변환 전·후 쌍이 있다는 전제였습니다. 현실에선 그런 짝이 없는 경우가 훨씬 많아요. 그때 쓰는 게 패턴 4입니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

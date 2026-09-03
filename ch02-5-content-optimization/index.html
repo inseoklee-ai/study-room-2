@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>콘텐츠 최적화 · 패턴 5 (2장)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 2 &middot; Pattern 5</div>
+    <h1 style="margin:18px 0">콘텐츠 <span class="p">최적화</span></h1>
+    <p class="sub">Content Optimization &mdash; 스타일을 이루는 <b>요인이 무엇인지 몰라도</b> 가장 성과가 좋은 스타일을 고른다</p>
+  </div>
+  <aside>이 패턴은 앞의 넷과 생각하는 방식 자체가 다릅니다. 저자가 "유도(柔道)"라고 부른 이유가 있어요.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="p">구조</span> <small>&mdash; 책 2.5의 다섯 절</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>2.5.1 문제</b> &mdash; 가설이 없으면 A/B 테스트가 불가능하다</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>2.5.2 해법</b> &mdash; 문제를 재정의하는 네 단계</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>2.5.3 예제</b> &mdash; 중고 물품 광고 (Qwen2 0.5B)</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>2.5.4 고려사항</b> &mdash; 인-디스트리뷰션 요건 · 지속적 개선</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>2.5.5 참고문헌</b></span></div>
+  </div>
+  <div class="warn">&#9888;&#65039; 저자가 대놓고 쓰는 표현 &mdash; <b>"평가 방법이 훌륭하다고 여길 콘텐츠를 만들도록 모델을 <span class="r">해킹</span>한다"</b></div>
+  <div class="hl">&#128161; <b>한 줄로</b> &mdash; 뭐가 좋은 스타일인지 <b>몰라도 된다.</b> 둘 중 나은 걸 고르는 일만 <b>수백 번 반복</b>하면 모델이 알아서 배운다.</div>
+  <aside>독립적인 진리의 원천에 근접하려는 일반적 최적화와 달리, 이 패턴은 평가 방법에 맞춰 모델을 길들이는 쪽입니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="2.5.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">2.5.1 문제</h2>
+    <div class="who">가설이 없으면 시작조차 못 한다</div>
+  </div>
+  <aside>콘텐츠는 어떤 목적에 봉사하려고 만들어집니다. 교육하거나, 즐겁게 하거나, 판매를 이끌어내거나. 그러니 그 목적에 가장 잘 봉사하는 스타일로 만들고 싶죠.</aside>
+</section>
+
+<!-- 4 A/B 한계 -->
+<section class="slide" data-part="2.5.1 문제">
+  <h2>&#128202; 전통적 A/B 테스트는 <span class="r">가설을 요구한다</span></h2>
+  <pre>"문단 길이가 중요하고 <b>3~4문장이 최선</b>일 것이다"   ← <b class="gold">가설</b>
+    ↓
+스타일 A: 문단 길이 제각각   vs   스타일 B: 3~4문장
+    ↓
+청중을 나눠 보여 주고 <b>어느 쪽이 더 빨리 배우고 더 오래 기억하는지</b> 측정
+    ↓
+<b>통계적으로 유의한 차이</b>가 나오면 "승자" 선언</pre>
+  <div class="hl">&#128161; 여러 요인이 얽혀 있다면 <b>다중 슬롯머신</b>(multiarmed bandit)으로 모든 변형을 효율적으로 테스트할 수 있습니다.</div>
+  <div class="warn">&#9888;&#65039; <b>결정적 단점</b> &mdash; A와 B가 <b>어떻게 다른지 알아야</b> 승리한 스타일로 계속 콘텐츠를 만들 수 있습니다. <b class="r">테스트할 요인 집합에 대한 가설이 없다면 전통적 A/B 테스트는 불가능합니다.</b></div>
+  <aside>가설을 세울 수 있으면 이 패턴이 필요 없습니다. 그냥 A/B 테스트하면 돼요. 문제는 "뭐가 좋은 글인지 나도 모르겠는데?"인 경우입니다.</aside>
+</section>
+
+<!-- 5 세 겹 문제 -->
+<section class="slide" data-part="2.5.1 문제">
+  <h2>&#128683; 문제는 <span class="r">세 겹</span>이다</h2>
+  <table class="t">
+    <tr><th style="width:26%">문제</th><th>내용</th></tr>
+    <tr><td><b class="r">구분 불가능한 집합</b><br><small>indistinguishable sets</small></td><td>차이를 만드는 요인에 대한 가설이 없으면 <b>집합 A와 B를 구별할 근거가 없다</b></td></tr>
+    <tr><td><b class="r">판정 불가능한 테스트</b><br><small>indeterminate test</small></td><td>두 집합이 구분되지 않으면 테스트가 <b>통계적으로 유의한 차이를 내놓지 못할</b> 가능성이 크다</td></tr>
+    <tr><td><b class="r">결과를 쓸 수 없음</b><br><small>inability to use results</small></td><td>운 좋게 A가 낫다는 결론이 나와도 <b>무엇이 A와 B를 가르는지 모르는데</b> 어떻게 승리한 스타일로 콘텐츠를 안정적으로 생성하겠는가?</td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">세 번째가 <span class="y">극복 불가능해 보인다</span><br><small>집합 A에 항목이 100개면 프롬프트도 100개일 수 있다</small></div>
+  <aside>배포된 시스템의 프롬프트를 어떻게 바꾸겠느냐는 질문입니다. 다음 파트가 그 답이에요.</aside>
+</section>
+
+<!-- 6 PART 2 -->
+<section class="slide" data-part="2.5.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">2.5.2 해법</h2>
+    <div class="who">순전히 유도(柔道) &mdash; 재정의해서 사라지게 만든다</div>
+  </div>
+  <aside>세 문제를 정면으로 푸는 게 아니라 문제 정의를 바꿔서 없애버립니다.</aside>
+</section>
+
+<!-- 7 재정의 -->
+<section class="slide" data-part="2.5.2 해법">
+  <h2>&#129354; 세 문제를 <span class="p">재정의</span>한다</h2>
+  <table class="t">
+    <tr><th style="width:26%">문제</th><th>재정의</th></tr>
+    <tr><td>구분 불가능한 집합</td><td><b class="p">한 번에 딱 두 개</b>의 콘텐츠만 비교하고, 그 쌍 비교에서 <b>"이긴" 쪽을 A, 진 쪽을 B</b>로 정의한다</td></tr>
+    <tr><td>판정 불가능한 테스트</td><td>"테스트"를 <b class="p">단 한 번의 비교</b>로 정의하고, <b>통계적 유의성 요구를 버린다.</b> 단 두 콘텐츠는 비교 가능해야 하므로 <b>같은 LLM이 거의 같은 프롬프트에 응답</b>해 만들어야 한다</td></tr>
+    <tr><td>결과를 쓸 수 없음</td><td>답은 <b class="p">프롬프트를 바꾸지 않는 것.</b> 대신 <b class="p">LLM을 바꾼다!</b></td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">왜 나은지 <span class="y">신경 쓰지 않기로</span> 결정한다<br><small>대신 콘텐츠가 "이기게" 만들기 위해 필요한 일을 그냥 한다</small></div>
+  <div class="hl">&#127859; <b>요리사 비유</b> &mdash; 레시피를 분석해 "소금 3g, 5분 볶기"를 알려주려면 <b>내가 먼저 정답을 알아야</b> 합니다. 대신 요리사가 두 접시를 만들면 <b>손님이 맛있는 쪽을 고릅니다.</b> 수백 번 반복하면 아무도 "왜"를 설명 안 했는데도 <b class="p">요리사의 손맛이 바뀝니다.</b></div>
+  <aside>기존 상식과 정반대입니다. A그룹 100개 vs B그룹 100개가 아니라 딱 2개씩, 통계적 유의성 포기, 프롬프트 대신 모델을 수정.</aside>
+</section>
+
+<!-- 8 4단계 -->
+<section class="slide" data-part="2.5.2 해법">
+  <h2>&#128207; 네 <span class="p">단계</span></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t">같은 프롬프트에서 <b>콘텐츠 쌍을 생성</b>한다</span></div>
+    <div class="st"><span class="n">2</span><span class="t">두 콘텐츠를 <b>비교해 승자를 고른다</b> &mdash; <b class="r">가장 중요한 단계</b></span></div>
+    <div class="st"><span class="n">3</span><span class="t">선호 튜닝용 <b>학습 데이터셋을 만든다</b></span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>선호 튜닝을 수행</b>하고 이후로는 튜닝된 LLM을 사용한다</span></div>
+  </div>
+  <h3 style="margin-top:18px">&#9312; 쌍 생성 &mdash; 세 가지 방법</h3>
+  <table class="t">
+    <tr><th style="width:24%">방법</th><th>내용</th></tr>
+    <tr><td><b>반복 생성</b></td><td>똑같은 프롬프트로 두 번. <b>온도를 0보다 크게</b>, 캐싱을 끄고 top-K를 1보다 크게</td></tr>
+    <tr><td><b>생성 설정 변경</b></td><td><code>temperature=random.uniform(0.2, 0.9)</code> 처럼 온도·top-P를 바꾼다</td></tr>
+    <tr><td><b>프롬프트 재작성</b></td><td>LLM에게 <b>원래 프롬프트를</b> 임의로 바꿔 쓰게 한다. <b class="r">콘텐츠를 바꿔 쓰는 게 아니다!</b> 또는 <b>적절한 후속 질문을 덧붙이게</b> 한다</td></tr>
+  </table>
+  <div class="warn">&#128161; 사실 관계를 묻는 프롬프트("knee-jerk reaction의 어원은?")조차 <b>일반인 대상</b> 답변과 <b>슬개건(patellar tendon)을 아는 사람 대상</b> 답변으로 <b>스타일이 크게 갈렸습니다.</b></div>
+  <aside>반복 생성도 통하지만, 설정을 바꾸거나 프롬프트를 재작성하는 편이 대체로 더 의미 있게 다르고 스타일 공간을 더 넓게 덮습니다.</aside>
+</section>
+
+<!-- 9 평가 -->
+<section class="slide" data-part="2.5.2 해법">
+  <h2>&#9878;&#65039; &#9313; 평가 &mdash; <span class="r">이 패턴에서 단연 가장 중요한 단계</span></h2>
+  <table class="t">
+    <tr><th style="width:22%">변형</th><th>내용</th></tr>
+    <tr><td><b>사람이 라벨링</b></td><td>인간 전문가가 고른다. 의견이 갈리면 <b>패널의 다수 의견</b>을 택하거나 <b>판단이 불명확한 쌍은 버린다.</b> 두 초안을 나란히 보여 주고 <b>최종 사용자가 실제로 무엇을 고르는지</b> 볼 수도 있다</td></tr>
+    <tr><td><b>평가자 사용</b><br><small>LLM-as-judge</small></td><td>업계 지표로 <b>루브릭</b>을 만든다. SQL이라면 <b>인메모리 DB에서 실행</b>해 출력과 소요 시간을 기록하는 샌드박스 &mdash; 옳은 결과 &rarr; 더 간결한 것 &rarr; 더 빠른 것 순. 마케팅이면 <b>4P·3C 프레임워크</b></td></tr>
+    <tr><td><b>실제 성과</b></td><td><b>직접 측정</b> &mdash; 뉴스레터를 절반씩 보내 콜 투 액션 수행자 수를 잰다 / <b>프롬프트 매칭</b> &mdash; <b>의미적으로 유사한 질의들을 짝지어</b> 이슈 해결 속도를 비교</td></tr>
+  </table>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; <b>지표를 게임하지 않게 하라.</b> 최적화 대상이 <b>체류 시간</b>이면 LLM은 <b class="r">읽기 어려운 콘텐츠</b>를 만들 수 있습니다 &mdash; 읽는 데 더 오래 걸리니까!</div>
+  <div class="hl">&#128218; 마틴 진케비치 『Rules of Machine Learning』 &mdash; <b>지표(metrics)와 목표(objectives)를 구별</b>하라. 측정 불가능한 "진짜" 목표를 먼저 정하고, 그 대리 지표로 <b>단순하고 관측 가능하며 귀속 가능한</b> 것을 고르되 <b class="g">언제나 진짜 목표에 비추어 해석</b>하라.</div>
+  <aside>순환 논리가 약간 있다는 걸 저자도 인정합니다. "시험에 맞춰 가르치기"라는 말에 부정적 함의가 있죠. 받아들일 만한 결과를 얻는 유일한 길은 그 시험이 충분히 견고하고 현실을 반영하는 것입니다.</aside>
+</section>
+
+<!-- 10 3,4단계 -->
+<section class="slide" data-part="2.5.2 해법">
+  <h2>&#128202; &#9314;&#9315; 데이터셋과 <span class="p">DPO</span></h2>
+  <div class="plabel">③ 선호 튜닝 표준 형식 — 세 속성</div>
+  <pre>{
+  "<b>prompt</b>":   "Where does the term \"knee-jerk reaction\" come from?",
+  "<b class="g">chosen</b>":   "... refers to an immediate, often unreflective
+                response to a stimulus. It comes from the medical
+                procedure used to test the reflexes in the knee.",
+  "<b class="r">rejected</b>": "... comes from the medical reflex test where the
+                knee jerks up when the <b>patellar tendon</b> is tapped..."
+}</pre>
+  <div class="hl">&#128161; 프롬프트 재작성을 했다면 <b>원래 프롬프트</b>를 넣습니다. 조기 종료를 계획한다면 학습용·평가용으로 나눌 수도 있습니다.</div>
+  <div class="plabel" style="margin-top:12px">④ 선호 튜닝 — DPO를 권장</div>
+  <pre>training_args = DPOConfig(output_dir="Qwen-DPO")
+trainer = DPOTrainer(model=model, args=training_args,
+                     processing_class=tokenizer,
+                     train_dataset=train_dataset)
+trainer.train()</pre>
+  <div class="warn">&#9889; 원래 방식은 2017년 도입된 <b>강화학습</b>이었지만, 저자들은 Raifalov 외(2023)의 <b class="p">직접 선호 최적화(DPO)</b>를 권합니다 &mdash; <b>DPO가 훨씬 빠릅니다.</b></div>
+  <aside>1장에서 배운 선호 튜닝 데이터 형태 그대로입니다. "답변 2개 + 어느 쪽이 나은지". 이 패턴은 그 데이터를 스스로 만들어내는 방법이에요.</aside>
+</section>
+
+<!-- 11 PART 3 -->
+<section class="slide" data-part="2.5.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">2.5.3 예제</h2>
+    <div class="who">중고 물품 광고 &mdash; 5억 파라미터 Qwen2</div>
+  </div>
+  <aside>지연 시간 때문에 더 작은 모델을 쓰고 싶은 상황입니다. GPT-4가 수천억 파라미터인 데 비하면 장난감 수준이에요.</aside>
+</section>
+
+<!-- 12 제로샷 실패 -->
+<section class="slide" data-part="2.5.3 예제">
+  <h2>&#10060; 제로샷은 <span class="r">명백히 나쁘다</span></h2>
+  <div class="plabel">프롬프트</div>
+  <pre>You are a resident who is listing a used item for sale on a
+neighborhood online group. An ad for used items in this
+neighborhood group is <b>1–3 sentences</b>.
+Write an ad to sell a <b>3-year old Specialized bike</b> priced at <b>$300</b></pre>
+  <div class="plabel">결과</div>
+  <div class="box" style="border-color:var(--red)"><p style="margin:0"><i><b>Welcome to the Adventure with our Specialized Bike!</b><br>Specialized 자전거는 수년간 산악자전거 애호가들에게 사랑받아 왔고, 이제 <b>다시 돌아왔습니다!</b> 저희 <b class="r">최신 모델인</b> Specialized 3-Year Old는 비할 데 없는 성능과 내구성을 자랑합니다. 안전과 편안함을 염두에 두고 설계되어 초보자부터 숙련된 라이더까지 완벽합니다.</i></p></div>
+  <div class="warn">&#9888;&#65039; 이 광고는 <b class="r">제조사가 파는 신제품 광고처럼</b> 들립니다. 우리가 원한 건 3년 된 자전거를 파는 <b>개인 직거래 광고</b>인데요. 게다가 <b>1~3문장</b>이라는 지시도 안 지켰습니다.</div>
+  <aside>모델이 너무 작아 좋은 광고를 만들지 못합니다. 하지만 이 패턴으로 훈련시킬 수 있어요.</aside>
+</section>
+
+<!-- 13 심사 -->
+<section class="slide" data-part="2.5.3 예제">
+  <h2>&#9878;&#65039; LLM-as-judge &mdash; <span class="p">평가 기준</span></h2>
+  <div class="plabel">평가 프롬프트 — "광고학 교수"</div>
+  <ul class="pts">
+    <li>무엇을 파는지 <b>명확한가?</b> 연식·브랜드·가격·상태가 중요하다</li>
+    <li>가장 적합한 <b>대상을 겨냥</b>하는가? 그 대상에게 설득력이 있는가?</li>
+    <li><b>간결하고 읽기 쉬운가?</b> 이상적인 광고는 최대 3문장</li>
+    <li><b>연락처</b>를 포함하는가? 선호하는 연락 수단을 명시하면 이상적</li>
+    <li>광고가 <b>진실한가?</b> 물건은 중고이며 제조사가 파는 것이 아니다</li>
+  </ul>
+  <pre style="margin-top:10px">@dataclass
+class AdsComparison:
+    ad_a_is_better_than_ad_b: bool
+    <b>reasoning: str</b>          <span class="g">// 이유를 함께 요구 → 숙고하며 비교</span></pre>
+  <div class="plabel">Gemini 2.0 Flash의 판정</div>
+  <div class="box"><p style="margin:0"><i>ad_a_is_better_than_ad_b = <b class="r">False</b><br>"둘 다 문제가 있지만 ad_b가 <b>가격을 포함</b>하고 있어 약간 낫습니다. <b>어느 쪽도 연락처가 없습니다.</b> 두 광고 모두 중고 자전거에 있을 법하지 않은 <b class="r">평생 보증을 주장하는 실수</b>를 범합니다. ad_a는 아이들을 겨냥하지만 ad_b는 성인을 겨냥합니다 &mdash; 중고 자전거이므로 성인이 구매할 가능성이 더 높습니다."</i></p></div>
+  <div class="hl">&#128161; 이 평가에 최적화한다는 건 <b>명확하고, 대상에 맞고, 짧고, 행동 가능하고, 진실하기만 하면 어떤 스타일이든 상관없다</b>고 말하는 것과 같습니다. <b>운문으로 쓰는 게 자전거를 팔리게 한다면 운문이어도 전혀 문제없습니다.</b></div>
+  <aside>좋은 평가자의 조건이 여기 보입니다. 둘 다 나쁠 때도 이유를 짚어줘요. 이유를 함께 요구하면 LLM이 숙고하며 비교합니다 — 사고 연쇄(패턴 13)와 이어지는 대목입니다.</aside>
+</section>
+
+<!-- 14 결과 -->
+<section class="slide" data-part="2.5.3 예제">
+  <h2>&#127881; 결과 &mdash; <span class="p">같은 모델, 같은 프롬프트</span></h2>
+  <div class="plabel">튜닝된 모델 — "book Pachinko by Min Jin Lee", $5</div>
+  <div class="box" style="border-color:var(--gr)"><p style="margin:0"><i>Pachinko, 한 남자의 도박에 대한 집착과 파친코 게임을 하다 만난 여인에 대한 사랑을 그린 고전. <b class="g">희귀본을 $5에</b> 드립니다. 더 알아보시거나 수령을 조율하시려면 <b class="g">[Your Name] [Your Phone Number]</b>로 연락 주세요. 감사합니다!</i></p></div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:20%"></th><th>튜닝 전</th><th>튜닝 후</th></tr>
+    <tr><td>말투</td><td><b class="r">제조사 신제품 광고</b></td><td><b class="g">동네 직거래 글</b></td></tr>
+    <tr><td>길이</td><td>장황함</td><td><b class="g">간결함</b></td></tr>
+    <tr><td>가격</td><td>빠짐</td><td><b class="g">있음</b></td></tr>
+    <tr><td>연락처</td><td>없음</td><td><b class="g">있음</b></td></tr>
+    <tr><td>거짓말</td><td><b class="r">"평생 보증"</b></td><td><b class="g">없음</b></td></tr>
+  </table>
+  <div class="big" style="margin-top:14px">예시 <span class="y">100개</span> · 학습 <span class="y">약 3분</span><br><small>vCPU 8개 + L4 GPU 한 장</small></div>
+  <div class="hl">&#128161; <b>가장 놀라운 지점</b> &mdash; "연락처를 넣어라"는 <b>프롬프트에 쓴 적이 없습니다.</b> 그건 <b class="p">평가 기준에만</b> 있었어요. 그런데 튜닝된 모델은 알아서 넣습니다.</div>
+  <aside>선배가 매번 두 초안 중 하나를 골라 주기만 했는데, 100번쯤 반복하니 신입이 선배 취향을 말로 설명은 못 해도 몸으로 아는 것과 같습니다.</aside>
+</section>
+
+<!-- 15 PART 4 -->
+<section class="slide" data-part="2.5.4 고려사항">
+  <div class="part">
+    <div class="pno">4</div>
+    <h2 style="margin:0">2.5.4 고려사항</h2>
+    <div class="who">인-디스트리뷰션 요건 &middot; 지속적 개선</div>
+  </div>
+  <aside>변형 사이의 선택은 주로 선호 튜닝 데이터셋을 만드는 방식에서 갈립니다.</aside>
+</section>
+
+<!-- 16 인디스트리뷰션 -->
+<section class="slide" data-part="2.5.4 고려사항">
+  <h2>&#128274; <span class="r">인-디스트리뷰션 요건</span></h2>
+  <p>이 패턴에서 LLM은 <b>네 군데</b>에 쓰인다 &mdash; ① 프롬프트를 바꿔 쓰는 데 ② 프롬프트로 콘텐츠를 만드는 데 ③ 평가하는 데 ④ 선호 튜닝의 입력으로.</p>
+  <div class="big">②가 만든 콘텐츠는<br>④가 <span class="y">실제로 만들어 낼 수 있는 텍스트</span>여야 한다</div>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; 아무리 선호 튜닝을 해도 LLM에게 <b class="r">새로운 사실이나 새로운 토큰을 가르칠 수는 없습니다.</b></div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:22%">길</th><th>방법</th></tr>
+    <tr><td><b class="g">쉬운 길</b></td><td>두 단계에서 <b>같은 LLM을 쓴다.</b> 저자들은 예시 생성과 선호 학습 모두에 <b>Qwen2 0.5B</b>를 사용했다</td></tr>
+    <tr><td><b class="r">어려운 길</b></td><td>더 큰 LLM으로 콘텐츠를 생성한 뒤, 작은 모델이 그런 콘텐츠를 만들 수 있도록 <b>먼저 인스트럭션 튜닝</b>한다 &mdash; 즉 <b>DPO 전에 지도 학습</b></td></tr>
+  </table>
+  <div class="hl">&#128161; <b>콘텐츠가 좋을 필요는 없습니다.</b> 튜닝 전 Qwen2가 만든 광고들은 <i>좋지</i> 않았지만 <b>어쨌든 광고였고 평가자로 평가할 수 있었습니다.</b> 그것으로 충분했어요.</div>
+  <aside>큰 모델은 심사에만 쓰고 학습은 작은 모델에 하는 구조입니다. 비싼 모델을 매 요청마다 쓰는 대신 학습할 때만 쓰는 거죠.</aside>
+</section>
+
+<!-- 17 지속 개선 -->
+<section class="slide" data-part="2.5.4 고려사항">
+  <h2>&#128260; 지속적 개선 &mdash; <span class="p">메타 학습</span></h2>
+  <p>DPO는 <b>고품질 예시 몇 개만 있으면</b> 된다. 선호 튜닝에서는 (딥러닝과 달리) <b class="p">데이터의 질이 양을 압도한다.</b></p>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>더 나은 평가자</b> &mdash; 쌍의 <b>미묘한 차이를 관찰할 수 있는</b> 고품질 평가자를 써야 한다</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>다양한 프롬프트</b> &mdash; 배포된 LLM이 감당할 <b>입력 공간 전체를 덮을 만큼</b>. <b class="g">솔루션을 일찍 배포해 피드백을 모으고</b>, 기대 이하 응답을 유발한 프롬프트와 <b>토픽 모델링으로 찾은 이상치 프롬프트</b>를 추가</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>반복 학습</b> &mdash; 학습이 <b>일회성일 이유가 없다.</b> 새로 학습된 LLM으로 네 단계를 반복해 <b>모든 예시가 개선된</b> 선호 데이터셋을 만들고 다시 DPO</span></div>
+  </div>
+  <div class="hl">&#128161; 예시 100개 DPO 학습은 <b>몇 초면 끝나고</b>, 평가가 자동화돼 있다면 네 단계 전체를 빠르게 돌 수 있습니다. 어느 시점엔 포화되지만, 이런 <b class="p">메타 학습</b>은 그 크기의 LLM이 달성할 수 있는 품질을 <b>합리적 비용으로 최대치까지</b> 끌어올립니다.</div>
+  <div class="warn">&#128293; <b>DeepSeek-R1</b>이 2025년 초 등장했을 때, 사용자들은 <b>검증하기 쉬운 문제들에 대응하는 합성 데이터로 반복 DPO</b>를 하면 상당한 개선이 가능하다는 걸 깨달았습니다.</div>
+  <div class="big" style="margin-top:12px">필요한 재료 셋 &mdash; <span class="y">빠르고 품질 좋은 평가자</span>,<br><span class="y">프롬프트 수집·관리 체계</span>, <span class="y">포화까지의 반복</span></div>
+  <aside>이미지에도 선호 튜닝을 할 수 있습니다. DiffusionDPO로 디퓨전 모델을 튜닝하는데, 여기서도 핵심 단계는 평가예요. 뉴스레터용이라면 기사 클릭을 더 많이 유도한 이미지를 고르는 식입니다.</aside>
+</section>
+
+<!-- 18 PART 5 -->
+<section class="slide" data-part="2.5.5 참고문헌">
+  <h2>&#128218; 2.5.5 <span class="p">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">출처</th><th>기여</th></tr>
+    <tr><td><b>Christiano 외 (2017)</b></td><td><b>인간 피드백 기반 강화학습</b>(RLHF)을 도입</td></tr>
+    <tr><td><b>Ouyang 외 (2022)</b></td><td>RLHF를 <b>LLM에 적용</b></td></tr>
+    <tr><td><b>Raifalov 외 (2023)</b></td><td><b>DPO</b>(직접 선호 최적화)를 이용한 선호 튜닝을 도입</td></tr>
+  </table>
+  <div class="hl">&#128161; 이 패턴은 선호 튜닝에 의존하지만, 그 기법을 <b class="p">파운데이션 모델 학습 밖에서</b>, 그리고 <b class="p">반드시 인간 피드백이 아닌 형태로</b> 적용합니다.</div>
+  <div class="big" style="margin-top:16px">모델 제작사의 도구를<br><span class="y">애플리케이션 개발자가 가져다 쓰는</span> 것</div>
+  <aside>원래는 모델을 만드는 쪽에서 쓰던 기법인데, 이 패턴은 그걸 애플리케이션 레벨로 끌어내렸습니다. 그게 이 패턴의 진짜 기여예요.</aside>
+</section>
+
+<!-- 19 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#127919; 왜 좋은지 <span class="p">몰라도 된다</span></h1>
+    <div class="big" style="margin-top:24px">둘 중 나은 걸 고르는 일만<br><span class="y">수백 번 반복</span>하면<br>모델이 알아서 배운다<br><br><small>단 &mdash; <span class="y">평가자 품질이 결과의 상한이다</span></small></div>
+    <p class="sub" style="margin-top:22px">패턴 5 &mdash; 2장 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>3·4장 외부 지식 활용</b></p>
+  </div>
+  <aside>2장이 끝났습니다. 규칙으로 막고(1·2), 예시로 가르치고(3·4), 성과로 학습시킨다(5). 다음은 지식 컷오프와 환각을 다루는 RAG 쪽입니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>로짓 마스킹 · 패턴 1 (2장)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 2 &middot; Pattern 1</div>
+    <h1 style="margin:18px 0">로짓 <span class="g">마스킹</span></h1>
+    <p class="sub">Logits Masking &mdash; 생성된 텍스트가 <b>규칙 집합</b>을 따르도록 보장한다</p>
+  </div>
+  <aside>2장 다섯 패턴 중 첫 번째입니다. 표현력이 가장 크지만 쓸 수 있는 모델이 가장 적은 패턴이에요.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 2.1의 다섯 절</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>2.1.1 문제</b> &mdash; 브랜딩·정확성·컴플라이언스·스타일북, 그리고 안티패턴</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>2.1.2 해법</b> &mdash; 샘플링 가로채기 5단계</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>2.1.3 예제</b> &mdash; A 시퀀스 선택 / B 시퀀스 재생성</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>2.1.4 고려사항과 대안</b> &mdash; 자동완성 확장 · 주의점</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>2.1.5 참고문헌</b></span></div>
+  </div>
+  <div class="hl">&#128161; <b>한 줄로</b> &mdash; 프롬프트가 "부탁"이라면, 로짓 마스킹은 <b>"물리적 차단"</b>입니다.</div>
+  <aside>모든 패턴 덱이 이 다섯 절 구조를 따릅니다. 책의 각 패턴 절이 문제 → 해법 → 예시 → 대안·고려사항 순으로 고정돼 있기 때문입니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="2.1.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">2.1.1 문제</h2>
+    <div class="who">규칙은 있는데 강제할 수단이 없다</div>
+  </div>
+  <aside>LLM으로 텍스트를 생성할 때 그 텍스트가 특정 스타일 규칙을 따르길 원하는 경우가 있습니다. 브랜딩·정확성·컴플라이언스 등의 이유로요.</aside>
+</section>
+
+<!-- 4 규칙 네 종류 -->
+<section class="slide" data-part="2.1.1 문제">
+  <h2>&#128221; 어떤 <span class="g">규칙</span>들인가 &mdash; 책의 네 예시</h2>
+  <table class="t">
+    <tr><th style="width:18%">종류</th><th>내용</th></tr>
+    <tr><td><b>브랜딩</b><br><small>Branding</small></td><td>제품 A를 이야기하면 그 브랜드 단어(<i>스포티한</i>, <i>고성능의</i>)를 쓰고 제품 B의 단어(<i>널찍한</i>, <i>고급스러운</i>)는 쓰지 않는다</td></tr>
+    <tr><td><b>정확성</b><br><small>Accuracy</small></td><td>청구서에서 <b>인보이스 ID와 금액이 본문에서 반복되지 않게</b> 한다. 검증은 정해진 위치의 값에 대해서만 이뤄지므로 <b class="r">반복은 오류 가능성을 높인다</b></td></tr>
+    <tr><td><b>컴플라이언스</b><br><small>Compliance</small></td><td>고객사 A의 사례 연구를 언급할 때 <b>경쟁사 B·C·D 언급이 들어가지 않게</b> 한다 &mdash; 인용 허락이 "직접 경쟁사가 없는 콘텐츠"에 한정됐을 수 있다</td></tr>
+    <tr><td><b>스타일북</b><br><small>Stylebook</small></td><td>시카고 매뉴얼 오브 스타일, APA 인용 방식 등</td></tr>
+  </table>
+  <div class="hl">&#128161; 공통점 &mdash; 전부 <b>프로그램으로 판정 가능한 규칙</b>입니다. 그래서 강제할 수 있습니다.</div>
+  <aside>정확성 예시가 특히 흥미롭습니다. "같은 정보를 두 번 말하지 마라"는 규칙은 스키마로 표현할 수 없어요. 이미 생성된 내용에 따라 달라지는 동적 규칙이라 패턴 2가 아니라 패턴 1의 영역입니다.</aside>
+</section>
+
+<!-- 5 안티패턴 -->
+<section class="slide" data-part="2.1.1 문제">
+  <h2>&#128683; 안티패턴 &mdash; <span class="r">될 때까지 다시 해 보기</span></h2>
+  <div class="chain">
+    <div class="cell"><small>1</small><b>생성</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>2</small><b>규칙에<br>비춰 평가</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--red)"><small>3</small><b class="r">안 맞으면<br>다시 생성</b></div>
+    <span class="ar">&#8630;</span>
+  </div>
+  <p style="margin-top:14px">이 방식은 재생성이 필요한 응답이 <b>아주 적을 때(10% 남짓)만</b> 통한다. 그렇지 않으면 재시도가 지연을 극적으로 늘리고, 때로는 <b class="r">수용 가능한 답으로 수렴조차 하지 않는다.</b></p>
+  <div class="hl">&#128200; 시도 횟수는 <b>기하분포</b>를 따르므로 평균과 테일 레이턴시를 계산할 수 있습니다. 성공률이 <i>p</i>%라면 <b>평균 생성 횟수 = 100/<i>p</i></b>.</div>
+  <aside>비유하자면 작문 시험에서 금지어가 있을 때, 학생이 글을 다 쓴 다음 검사해서 금지어가 있으면 처음부터 다시 쓰게 하는 겁니다.</aside>
+</section>
+
+<!-- 6 숫자 -->
+<section class="slide" data-part="2.1.1 문제">
+  <h2>&#128202; 숫자로 보면 <span class="r">무섭다</span></h2>
+  <table class="t">
+    <tr><th style="width:20%">성공률</th><th>평균 시도</th><th>평균 지연</th><th>최악 (99분위)</th></tr>
+    <tr><td><b>90%</b></td><td>100/90 &asymp; <b>1.1회</b></td><td><b class="g">+10%</b></td><td><b class="g">2회</b></td></tr>
+    <tr><td><b>30%</b></td><td>100/30 &asymp; <b>3.3회</b></td><td><b class="r">+230%</b></td><td><b class="r">13회</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; 성공률 30%면 <b>운 나쁜 사용자는 13번을 기다립니다.</b> 한 번에 2초라면 26초. 게다가 <b class="r">영원히 성공 못 할 수도</b> 있습니다.</div>
+  <ul class="pts" style="margin-top:12px">
+    <li>99분위수에는 <b>닫힌 공식이 없다</b> &mdash; 기하분포에서 수치적으로 추정해야 한다</li>
+    <li><b>지수 백오프</b>를 쓰면 지연 증가는 더 커진다</li>
+    <li>허용 시도 횟수를 줄이면 애플리케이션의 <b class="r">거부율</b>이 올라간다</li>
+  </ul>
+  <div class="big" style="margin-top:12px">"될 때까지"는 <span class="y">성공률이 아주 높을 때만</span> 받아들일 만하다</div>
+  <aside>이 표가 패턴 1이 왜 필요한지를 가장 설득력 있게 보여줍니다. 성공률이 조금만 떨어져도 재앙이 돼요.</aside>
+</section>
+
+<!-- 7 PART 2 -->
+<section class="slide" data-part="2.1.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">2.1.2 해법</h2>
+    <div class="who">샘플링 단계에서 가로챈다</div>
+  </div>
+  <aside>1장의 빔 서치에서 봤듯 파운데이션 모델은 가능한 연속의 시퀀스에서 표집합니다. 아이디어는 바로 그 표집 단계에서 생성을 가로채는 것입니다.</aside>
+</section>
+
+<!-- 8 원리 -->
+<section class="slide" data-part="2.1.2 해법">
+  <h2>&#128295; 어디서 <span class="g">개입</span>하는가</h2>
+  <pre>마지막 층 → <b>로짓</b>(원시 점수) → <b class="g">[여기]</b> → 소프트맥스 → 확률 → 표집</pre>
+  <pre style="margin-top:10px">P(token_i) = exp(logit_i) / Σ_j exp(logit_j)
+
+exp(-∞) = 0   →   금지 토큰의 로짓을 <b>-inf</b>로 만들면
+                  확률이 <b class="g">정확히 0</b>. 0.001%가 아니라 진짜 0.</pre>
+  <div class="hl">&#128161; 1장에서 <i>"언어 모델은 어떤 후속 단어라도 확률이 0이 되지 않는 표집 전략을 쓴다"</i>고 했는데, 로짓 마스킹은 <b>그 원칙을 의도적으로 깨는 것</b>입니다.</div>
+  <div class="warn">&#128295; 구현 팁 &mdash; torch는 <code>-np.inf</code>를 싫어하므로 실무에선 <code>-10000</code>을 씁니다.</div>
+  <aside>학생이 단어 하나 쓸 때마다 옆에서 보고 있다가 금지어를 쓰려 하면 펜을 막아 다른 단어를 쓰게 하는 겁니다. 다 쓰고 검사하는 것보다 훨씬 효율적이죠.</aside>
+</section>
+
+<!-- 9 5단계 -->
+<section class="slide" data-part="2.1.2 해법">
+  <h2>&#128207; 다섯 <span class="g">단계</span></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>샘플링 가로채기</b> &mdash; 전부 생성될 때까지 기다리지 않고 <b>각 중간 지점에서</b> 가능한 연속 집합을 얻는다</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>유효하지 않은 시퀀스를 0으로</b> &mdash; 규칙에 안 맞는 연속의 확률을 0으로 만든다</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>표집</b> &mdash; 규칙에 맞는 연속이 <b>하나라도 있으면</b> 생성을 계속한다</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>최대 시도 초과 판단</b> &mdash; 넘기면 <b class="r">거부 응답</b>을 사용자에게 보낸다</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>백트래킹과 재생성</b> &mdash; 맞는 연속이 하나도 없거나 막다른 길이면 <b>한 단계 되돌아가</b> 다시 생성한다</span></div>
+  </div>
+  <div class="hl">&#127919; 효과는 <b>빔 서치에서 규칙에 안 맞는 빔을 쳐내는 것</b>입니다.</div>
+  <div class="grid2" style="margin-top:12px">
+    <div class="box"><h3 class="g">&#9312;&#9313;&#9314; 시퀀스 선택</h3><p style="margin:0">걸러내도 <b>쓸 만한 게 남는</b> 경우. 남은 것 중 고르면 끝. <b>단순한 유스케이스에 충분.</b></p></div>
+    <div class="box" style="border-color:var(--red)"><h3 class="r">&#9315;&#9316; 시퀀스 재생성</h3><p style="margin:0">걸러내면 <b>후보가 하나도 안 남는</b> 경우. 뒤로 되돌아가야 한다.</p></div>
+  </div>
+  <aside>그림 2-2의 회색 실선 상자가 시퀀스 선택, 빗금 상자가 시퀀스 재생성입니다. 뒤의 두 예제가 정확히 이 둘이에요.</aside>
+</section>
+
+<!-- 10 코드 -->
+<section class="slide" data-part="2.1.2 해법">
+  <h2>&#128187; 구현 &mdash; <span class="g">Transformers</span></h2>
+  <div class="plabel">1단계 · 2단계 — LogitsProcessor 서브클래스</div>
+  <pre>class MyRulesLogitsProcessor(LogitsProcessor):
+    def __init__(self, tokenizer, rules):
+        self.tokenizer = tokenizer; self.rules = rules
+
+    def __call__(self, input_ids, input_logits):
+        output_logits = input_logits.clone()
+        for idx, input_id in enumerate(input_ids):
+            seq = self.tokenizer.<b>decode</b>(input_id)   # 토큰 ID → 문자
+            if not self.apply_rules(seq, self.rules):
+                output_logits[idx] = <b>-np.inf</b>        # 확률을 0으로
+        return output_logits</pre>
+  <div class="plabel">3단계 — 파이프라인에 넘긴다</div>
+  <pre>results = pipe(input_message, max_new_tokens=256, do_sample=True,
+               temperature=0.8, <b>num_beams=10</b>,
+               <b>logits_processor=[rules_processor]</b>)</pre>
+  <div class="warn">&#9888;&#65039; 두 가지 주의 &mdash; ① 입력은 자연어가 아니라 <b>토큰 ID</b>라 <b>디코딩</b>이 필요하다 ② 로짓은 <b>확률의 로그</b>이므로 0으로 만들려면 <b>음의 무한대</b>로 둔다</div>
+  <aside>num_beams가 중요합니다. 후보가 하나면 걸러낼 때 고를 게 없어요. 빔이 여러 개여야 마스킹이 의미가 있습니다.</aside>
+</section>
+
+<!-- 11 5단계 백트래킹 -->
+<section class="slide" data-part="2.1.2 해법">
+  <h2>&#8630; 5단계 &mdash; <span class="r">백트래킹</span>은 직접 짜야 한다</h2>
+  <p>Transformers의 <b>파이프라인 호출은 백트래킹과 재생성을 허용하지 않는다.</b> 그러려면 <b>생성 루프 전체를 직접 통제</b>해야 한다.</p>
+  <pre>results = pipe.model.<b>generate</b>(
+            **input_ids,
+            <b>max_new_tokens=16</b>,      # 정해진 토큰 수씩 끊어서
+            num_beams=10, output_scores=True)</pre>
+  <pre style="margin-top:8px">input_ids = pipe.tokenizer(
+    input_prompt + '\n'.join(<b>text_so_far</b>),   # 이전 생성분을 이어 붙인다
+    return_tensors="pt").to("cuda")</pre>
+  <ul class="pts" style="margin-top:10px">
+    <li>루프에는 <b>(재)초기화 · 규칙 적용 · 백트래킹 · 중지</b> 로직이 들어간다</li>
+    <li><b>상태 변수</b>를 유지해야 한다</li>
+    <li>중지는 흔히 <b>중지 문자열</b>(stop string)로 &mdash; 프롬프트 지시나 예시에 포함시킨다</li>
+  </ul>
+  <aside>generate를 16토큰씩 끊어 부르면서 매번 규칙을 검사하고, 막히면 앞으로 되돌아가는 구조입니다. 파이프라인 한 방으로는 안 돼요.</aside>
+</section>
+
+<!-- 12 PART 3 -->
+<section class="slide" data-part="2.1.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">2.1.3 예제</h2>
+    <div class="who">A 시퀀스 선택 &middot; B 시퀀스 재생성</div>
+  </div>
+  <aside>예제 A는 1~3단계만으로 되는 단순한 문제, B는 1~5단계가 모두 필요한 복잡한 문제입니다.</aside>
+</section>
+
+<!-- 13 예제A 문제 -->
+<section class="slide" data-part="2.1.3 예제">
+  <h2>&#128230; 예제 A &mdash; <span class="g">시퀀스 선택</span> (단백질 음료)</h2>
+  <p>영양 보조제 마케터. 이커머스 상품 페이지는 <i>수상 경력(award winning)</i> 같은 표현을 <b class="r">거부하는 경향</b>이 있고, SEO 분석으로 <b>넣으면 좋은 표현</b>은 알고 있다.</p>
+  <div class="plabel">제로샷 결과 — 규칙 위반</div>
+  <div class="box"><p style="margin:0"><i>PowerBoost를 소개합니다 &hellip; 가장 힘든 운동 후의 근육 성장(<b class="r">growth</b>)과 회복을 돕습니다. 고품질(<b class="r">quality</b>) 유청 단백질과 필수 비타민으로 만든 PowerBoost는 &hellip; 재충전하는 완벽한(<b class="r">perfect</b>) 방법입니다.</i></p></div>
+  <div class="warn">좋은 SEO 용어 두 개(<b class="g">whey</b>, <b class="g">whey protein</b>)는 들어갔지만 <b class="r">차단 확률을 높이는 단어 세 개</b>도 함께 들어갔습니다. <i>high-quality</i>와 <i>muscle growth</i>는 무해해 보이지만 &mdash; <b>왜 위험을 감수하겠는가?</b></div>
+  <aside>SEO 키워드는 MarketKeep이 Google Ads 키워드 플래너로 만든 영양 관련 상위 키워드 집합을 썼습니다.</aside>
+</section>
+
+<!-- 14 예제A 해법 -->
+<section class="slide" data-part="2.1.3 예제">
+  <h2>&#9989; 예제 A &mdash; 마스킹 <span class="g">적용</span></h2>
+  <pre>def evaluate(descr, positives, negatives) -> int:
+    descr = descr.lower()
+    num_positive = np.sum([1 for p in positives if p in descr])
+    num_negative = np.sum([1 for n in negatives if n in descr])
+    return int(num_positive - num_negative)   # <b>점수 = 희망어 − 금지어</b></pre>
+  <pre style="margin-top:8px"># 최댓값이 아닌 시퀀스를 마스킹한다
+for idx in range(len(input_ids)):
+    if num_matches[idx] != <b>max_matches</b>:
+        output_logits[idx] = <b>-10000</b></pre>
+  <div class="plabel">결과 — 규칙 준수</div>
+  <div class="box"><p style="margin:0"><i>&hellip; 유청 단백질(<b class="g">whey protein</b>) 20g, BCAA 10g &hellip; <b class="gold">프리미엄(premium)</b> 단백질 음료 &hellip; 영양소(<b class="g">nutrients</b>)를 지속적으로 방출해 &hellip;</i></p></div>
+  <div class="hl">&#128161; <b>가장 영리한 지점</b> &mdash; <code>quality</code>를 막았더니 AI가 <b>스스로 <code>premium</code>을 찾아냈습니다.</b> 단순 치환 필터였다면 문장이 어색해졌을 겁니다.</div>
+  <div class="warn">&#9989; 이 방식은 <b>언제나 제품 설명을 만들어 냅니다.</b> 희망어가 하나도 없어도 어떤 시퀀스든 항상 남으므로 <b>3단계가 자동으로 유효</b>합니다.</div>
+  <aside>"이 단어 쓰지 마"라고만 했는데 대체 표현은 모델이 알아서 만들어 냅니다. 이게 마스킹이 필터보다 나은 이유예요.</aside>
+</section>
+
+<!-- 15 예제B 실패 -->
+<section class="slide" data-part="2.1.3 예제">
+  <h2>&#128683; 예제 B &mdash; <span class="r">원샷도 통하지 않는다</span> (아크로스틱)</h2>
+  <p>어린이 책에 실을 <b>아크로스틱</b>(acrostic) 시. 각 행의 <b>첫 글자를 모으면 그 동물에 어울리는 형용사</b>가 되어야 한다.</p>
+  <div class="grid2">
+    <div class="box"><h3 class="g">&#9989; 원샷 예시 &mdash; 토끼 QUICK</h3><pre style="margin:6px 0 0"><b>Q</b>uietly, the rabbit bides its time
+<b>U</b>nder the garden deck
+<b>I</b>n wait for
+<b>C</b>arrot greens,
+<b>K</b>ale, and parsley.</pre></div>
+    <div class="box" style="border-color:var(--red)"><h3 class="r">&#10060; Llama 3.2의 호랑이 시도</h3><pre style="margin:6px 0 0"><b>P</b>owerful eyes gleam in the night
+<b>O</b>ccupying shadows, a fierce sight
+<b>R</b>uling the forest with gentle might
+<b>E</b>legant, a creature of beauty bright</pre><p style="margin:8px 0 0"><b class="r">PORE</b> &mdash; 의도한 <b>POWER</b>가 아니다</p></div>
+  </div>
+  <div class="hl">&#128161; 왜 이런 일이? 끝말잇기를 하면서 <b>동시에</b> 각 단어 첫 글자로 문장을 만드는 것과 같습니다. 모델은 <b>앞만 보고 한 단어씩</b> 나아가고, 4행에서 막혀도 <b class="r">이미 쓴 걸 지울 수가 없습니다.</b></div>
+  <aside>고칠 방법은 여럿입니다. 성찰(패턴 18)이나 더 강력한 추론 모델에 생각 토큰을 주는 것도 방법이에요. 하지만 여기서는 작은 모델로 로짓 마스킹을 써서 해결합니다.</aside>
+</section>
+
+<!-- 16 예제B 해법 -->
+<section class="slide" data-part="2.1.3 예제">
+  <h2>&#8630; 예제 B &mdash; <span class="g">백트래킹</span>으로 해결</h2>
+  <div class="plabel">유지 vs 제거 — 아크로스틱이 BOLD일 때</div>
+  <div class="grid2">
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 유지 (B, O, L…)</h3><pre style="margin:6px 0 0"><b>B</b>rightening up the forest floor
+<b>O</b>ften, the tiger stalks its prey
+<b>L</b>ur…</pre></div>
+    <div class="box" style="border-color:var(--red)"><h3 class="r">&#10060; 제거 (B, L, O…)</h3><pre style="margin:6px 0 0"><b>B</b>rightening up the forest floor
+<b>L</b>ively eyes watch all around
+<b>O</b>wning the night</pre></div>
+  </div>
+  <pre style="margin-top:12px"># 모든 연속이 0이 됐다면 — 행을 뒤에서부터 하나씩 제거
+while True:
+    best_bad_poem_in_iter = best_bad_poem_in_iter<b>[:-1]</b>
+    if len(best_bad_poem_in_iter) == 0:
+        start_word, poem_so_far = <b>initialize_poem</b>(...)  # 다른 단어로 재시작
+        break</pre>
+  <div class="hl">&#128161; 완성된 <b>행의 개수 = 아크로스틱 단어의 길이</b>이면 시가 완성된 것 &mdash; <b>명시적 중지 문자열이 필요 없습니다.</b> 선택은 확률이 가장 높은 것을 고르는 <b>그리디 디코딩</b>.</div>
+  <aside>막히면 3행을 지우고, 그래도 막히면 2행을 지우고, 완전히 막히면 아예 다른 단어로 새로 시작합니다. BOLD 대신 SWIFT처럼요.</aside>
+</section>
+
+<!-- 17 예제B 결과 -->
+<section class="slide" data-part="2.1.3 예제">
+  <h2>&#127881; 예제 B &mdash; <span class="g">결과</span>와 정직한 한계</h2>
+  <div class="grid2">
+    <div class="box"><h3>&#128005; 호랑이 &mdash; <b class="g">BOLD</b></h3><pre style="margin:6px 0 0"><b>B</b>oldly, the brave tiger stalks its prey
+<b>O</b>wning the forest with its might,
+<b>L</b>urking in the shadows, waiting to pounce,
+<b>D</b>aring to be the king of the night</pre></div>
+    <div class="box" style="border-color:var(--red)"><h3>&#128005; 호랑이 &mdash; <b class="gold">SWIFT</b></h3><pre style="margin:6px 0 0"><b>S</b>miling softly, the
+<b>W</b>ild eyes gleam
+<b>I</b>n the
+<b>F</b>orest depths,
+<b>T</b>igers stalk</pre></div>
+  </div>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; SWIFT 시는 <b>행이 어색하게 끊깁니다.</b> <b class="r">규칙은 지켰지만 시로서는 어색해요.</b> 이게 로짓 마스킹의 솔직한 한계입니다 &mdash; <b>규칙 준수를 보장하는 대신 자연스러움을 일부 포기</b>합니다.</div>
+  <div class="hl">&#128161; 시가 지엽적으로 보이지만, 실무로 옮기면 같은 구조입니다 &mdash; 글자 수를 <b>정확히</b> 맞춰야 하는 UI 문구, 이미 쓴 문장에 따라 <b>다음에 쓸 수 있는 말이 달라지는</b> 법률·의료 문서, 같은 정보를 <b>두 번 말하면 안 되는</b> 청구서.</div>
+  <aside>올빼미로도 SHARP 아크로스틱이 나왔습니다. 백트래킹이 필요한 상황에서도 엄격한 스타일 기준을 충족하는 시를 만들 만큼의 통제력을 준다는 게 저자의 결론입니다.</aside>
+</section>
+
+<!-- 18 PART 4 -->
+<section class="slide" data-part="2.1.4 고려사항">
+  <div class="part">
+    <div class="pno">4</div>
+    <h2 style="margin:0">2.1.4 고려사항과 대안</h2>
+    <div class="who">대안 · 확장 · 주의점</div>
+  </div>
+  <aside>LLM의 기계 장치 대부분을 그대로 쓰면서 표집에만 내 선호를 강제하는 방법입니다. 허용되지 않는 선택지를 쉽게 걸러낼 수 있을 때 유용해요.</aside>
+</section>
+
+<!-- 19 대안 -->
+<section class="slide" data-part="2.1.4 고려사항">
+  <h2>&#128257; 다섯 가지 <span class="g">대안</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">대안</th><th>언제 · 한계</th></tr>
+    <tr><td><b>퓨샷 예시</b> (패턴 3)<br>프롬프트 엔지니어링</td><td>더 간단하다. 다만 <b class="r">엄격한 강제 수단이 아니다</b> &mdash; 규칙을 따를 거라 확신할 수 없다</td></tr>
+    <tr><td><b>더 강력한 모델</b></td><td>지시를 더 잘 따른다. 추론 모델은 스스로 철회·재생성한다. 다만 <b class="r">더 비싸고 느리다</b></td></tr>
+    <tr><td><b>될 때까지 다시 해 보기</b></td><td>규칙 준수 확률이 충분히 높으면 합리적. <b>p = 0.9면 99분위수가 겨우 2회</b></td></tr>
+    <tr><td><b>성찰</b> (패턴 18)</td><td>로짓 마스킹은 재생성 때 <b class="r">아무 힌트도 주지 않는다.</b> 규칙 엔진이 <b>유용한 오류 메시지</b>를 준다면 프롬프트를 그것으로 갱신 &rarr; 시도 횟수를 줄인다</td></tr>
+    <tr><td><b>문법</b> (패턴 2)</td><td>규칙을 <b>표준 형식으로 표현할 수 있다면</b> 마스킹을 <b class="g">모델 제공자에게 떠넘길 수 있다</b></td></tr>
+  </table>
+  <aside>마지막 줄이 패턴 2로 넘어가는 다리입니다. 형식으로 표현 가능하면 굳이 직접 할 이유가 없어요.</aside>
+</section>
+
+<!-- 20 자동완성 -->
+<section class="slide" data-part="2.1.4 고려사항">
+  <h2>&#128269; 확장 &mdash; <span class="g">자동완성</span></h2>
+  <p>구글은 검색어 입력 중 완성을 제안한다. 그 제안은 <i>"실제 검색과 웹 전반에서 발견된 단어 패턴"</i>에 기반한다.</p>
+  <div class="warn">&#128274; 실제 검색 기록에 기반하려면 사용자 검색어를 로깅해야 하는데, 이는 <b class="r">다른 사용자가 무엇을 검색하는지 흘립니다.</b> 배포 환경이나 개인 검색어로 한정하면 <b>콜드 스타트</b>가 대량 발생합니다.</div>
+  <p style="margin-top:12px">그래서 <b>단어 패턴만으로</b> 구현하고 싶어진다. 색인을 만들 수도 있지만, 더 간단한 방법은 <b class="g">문서를 컨텍스트에 담아 둔 채 로짓 마스킹을 쓰는 것</b>.</p>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t">입력 중인 질의를 <b>한 구절이나 문장을 덧붙여 완성</b>하도록 LLM에게 요청</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><code>LogitsProcessor</code>에서 <b>상위 완성 후보 목록</b>을 얻어 사용자에게 보여 준다</span></div>
+    <div class="st"><span class="n">3</span><span class="t">후보를 고르면 <b>시퀀스 선택</b>으로 나머지를 0으로 / 다른 구절을 입력하면 그것을 출발점으로 <b>시퀀스 재생성</b></span></div>
+  </div>
+  <div class="hl">&#128161; 실제 구현에서는 <b>문서 전체를 컨텍스트에 캐싱</b>해, 질의마다 입력 토큰 비용을 내지 않고 전체 지식 베이스에 접근하게 합니다.</div>
+  <aside>이건 규칙이 사용자 입력에 의존하는 경우라 패턴 2로는 못 합니다. 동적이니까요.</aside>
+</section>
+
+<!-- 21 주의점 -->
+<section class="slide" data-part="2.1.4 고려사항">
+  <h2>&#9888;&#65039; 주의점 &mdash; <span class="r">모델 선택이 제한된다</span></h2>
+  <table class="t">
+    <tr><th style="width:20%">제공자</th><th>로짓 접근 (2025년 6월 기준)</th></tr>
+    <tr><td><b class="r">Anthropic</b></td><td><b class="r">제공하지 않는다</b> &mdash; Claude 계열 전체</td></tr>
+    <tr><td>OpenAI</td><td>거의 모든 모델에서 <code>logprobs</code> <b>읽기</b> 접근</td></tr>
+    <tr><td>Google</td><td>Gemini <b>Flash</b>는 <code>responseLogprobs</code> 허용, <b class="r">Pro는 안 됨</b></td></tr>
+    <tr><td>Meta</td><td>가장 관대하지만 <b>모델을 직접 호스팅</b>해야 한다</td></tr>
+  </table>
+  <div class="hl">&#128161; <b>왜 안 주나?</b> 로짓을 제공하면 다른 이들이 <b>자사 모델의 출력으로 더 작은 모델을 학습</b>시키기 쉬워질까 봐 우려합니다.</div>
+  <ul class="pts" style="margin-top:12px">
+    <li><b>통신 비용</b> &mdash; 시퀀스마다 모델·클라이언트 통신이 필요하다. 로컬 호스팅이 아니면 <b class="r">받아들이기 어려운 지연</b>이 붙는다 &rarr; <b>로컬 모델에만 적용 가능한 경우가 많다</b></li>
+    <li><b>검열 방식이라는 성질</b> &mdash; 규칙을 만족하는 후보가 없으면 <b>유효한 콘텐츠를 못 만든다.</b> 그래서 <b class="g">프롬프트에 충분한 정보를 담는 것</b>이 중요하다</li>
+  </ul>
+  <div class="big" style="margin-top:12px">역설 &mdash; 이 패턴은 <span class="y">작은 모델이 크고 비싼 모델의<br>성능에 필적하게</span> 해 주는 길이기도 하다</div>
+  <aside>자체점검(패턴 31, 9장)도 로짓을 활용하는 또 다른 사례입니다.</aside>
+</section>
+
+<!-- 22 PART 5 -->
+<section class="slide" data-part="2.1.5 참고문헌">
+  <h2>&#128218; 2.1.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:22%">출처</th><th>기여</th></tr>
+    <tr><td><b>Vinyals 외 (2019)</b></td><td>강화학습에서 로짓을 0으로 만드는 아이디어 &mdash; <b>유효하지 않은 행동 마스킹</b>(invalid action masking). <b>최초 기록된 사용은 『스타크래프트 II』 연구</b></td></tr>
+    <tr><td><b>Huang · Ontañón (2020)</b></td><td>그 <b>이론적 정당화</b>를 제공</td></tr>
+    <tr><td><b>Romain Florenz (2025)</b></td><td><b>유한 상태 기계</b>를 마스킹 메커니즘으로 삼아 토큰 생성을 반복 유도하며 <b>LLM으로 소셜 그래프를 생성</b></td></tr>
+  </table>
+  <div class="hl">&#128161; 뿌리가 <b>게임 AI의 강화학습</b>이라는 게 흥미롭습니다. "할 수 없는 수는 애초에 못 두게 한다"는 발상이 그대로 텍스트 생성으로 옮겨온 것입니다.</div>
+  <aside>스타크래프트 II에서 유닛이 할 수 없는 행동을 마스킹한 것과, LLM이 쓸 수 없는 토큰을 마스킹하는 것이 정확히 같은 기법입니다.</aside>
+</section>
+
+<!-- 23 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#128274; 부탁이 아니라 <span class="g">차단</span></h1>
+    <div class="big" style="margin-top:24px">다 쓰고 검사하지 말고<br><span class="y">쓰는 순간순간 나쁜 선택지를 지워라</span><br><br>단 &mdash; <span class="y">로짓을 주는 모델에서만</span></div>
+    <p class="sub" style="margin-top:22px">패턴 1 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 2 문법</b> (같은 일을 서버가 대신)</p>
+  </div>
+  <aside>다음 패턴은 하는 일이 똑같습니다. 다만 모델 제공자가 대신 해주기 때문에 쓸 수 있는 모델이 훨씬 많아요.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>
