@@ -60,7 +60,8 @@
 
 ### 🔨 2장 · 스타일과 형식 제어 — 진행 중
 
-- ✅ **패턴 1 로짓 마스킹** — 📑 [개념 · 코드 해설 · CPU 실습 기록](notes/ch02-pattern01-logit-masking.md)
+- 🔨 **패턴 1 로짓 마스킹** — 📑 [개념 · 코드 해설 · CPU 실습 기록](notes/ch02-pattern01-logit-masking.md)
+  예제 노트북 4개 중 **1개 완료** (`0_logits_masking` ✅ / `1_sequence_selection` · `2_sequence_regeneration` · `3_autocomplete` ⏳)
 
 <details>
 <summary><b>실습 결과 펼치기</b></summary>

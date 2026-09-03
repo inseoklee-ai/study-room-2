@@ -1,8 +1,18 @@
 # 패턴 1 · 로짓 마스킹 — 개념과 실습 기록
 
 > 『에이전트 시대의 AI 시스템 설계』 2장 패턴 1
-> 예제: [`examples/01_logits_masking/0_logits_masking.ipynb`](https://github.com/lakshmanok/generative-ai-design-patterns)
 > 실습 환경: Windows 11 · CPU 전용(GPU 없음) · Python 3.12 · transformers 5.16.1
+
+## ⚠️ 진행 상태 — 4개 중 1개 완료
+
+`examples/01_logits_masking/` 에는 노트북이 **4개** 있고, 이 문서는 그중 **첫 번째만** 다룬다.
+
+| 노트북 | 주제 | 상태 |
+|---|---|---|
+| `0_logits_masking.ipynb` | 생성 목표에 안 맞는 후속을 마스킹 (브랜드 금칙어) | ✅ **완료 — 이 문서** |
+| `1_sequence_selection.ipynb` | 원하는 두운(alliteration)에 맞춰 로짓 변경 | ⏳ 예정 |
+| `2_sequence_regeneration.ipynb` | logprobs로 삼행시(acrostic) 보장 | ⏳ 예정 |
+| `3_autocomplete.ipynb` | 로짓 기반 문구 자동완성 | ⏳ 예정 |
 
 ---
 
