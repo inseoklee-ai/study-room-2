@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>패턴 31 자가 점검 — Self-Check</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 9 &middot; Pattern 31</div>
+    <h1 style="margin:18px 0">자가 <span class="g">점검</span></h1>
+    <p class="sub">Self-Check &mdash; <b>토큰 확률(logprobs)</b>로 환각을 탐지한다</p>
+  </div>
+  <aside>모델에게 다시 묻지 않고, 이미 나온 숫자를 읽는 패턴입니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 9.3</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>9.3.1 문제</b> &mdash; 환각률은 떨어졌지만 여전히</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>9.3.2 해법</b> &mdash; logprobs 읽기, 거짓 양성 줄이기</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>9.3.3 예제</b> &mdash; 영수증 숫자 보정</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>9.3.4 고려사항</b> &mdash; 더 간단한 방법과 RAG 충돌</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>9.3.5 참고문헌</b></span></div>
+  </div>
+  <div class="big" style="margin-top:16px">모델에게 <span class="y">"확실해?"라고 다시 묻는 대신</span><br>답을 만들 때 <span class="y">이미 나온 확신도 숫자</span>를 읽는다</div>
+  <div class="hl">&#128161; <b>그래서 비용이 0에 가깝습니다</b> &mdash; 추가 LLM 호출이 없습니다. 이것이 <b class="g">"비용 효율적"</b>이라는 말의 뜻입니다.</div>
+  <aside>패턴 17 심판자 LLM과 대비되는 점입니다 — 그건 호출을 하나 더 씁니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="9.3.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">9.3.1 문제</h2>
+    <div class="who">환각을 어떻게 알아채나</div>
+  </div>
+  <aside>환각이 생기는 이유부터 짚습니다.</aside>
+</section>
+
+<!-- 4 환각률 -->
+<section class="slide" data-part="9.3.1 문제">
+  <h2>&#128201; 환각률은 <span class="g">떨어지고 있다</span></h2>
+  <div class="hl">&#10067; <b>환각이란</b> &mdash; LLM이 <b class="r">실제 세계나 입력 컨텍스트와 맞지 않는 부정확하거나 말이 안 되거나 날조된 내용</b>을 생성하는 것.<br><br>
+    <b>왜 생기나</b> &mdash; LLM은 본질적으로 <b class="r">통계적 토큰 생성기</b>다. <b class="r">자기가 생성하는 것의 의미를 모르며</b>, 실제 지식이 없는 상태에서 만들어 낸 응답은 사실과 맞지 않을 수 있다.</div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:34%">Vectara 측정 <small>(상위 25개 LLM &middot; 텍스트 요약)</small></th><th>가장 좋은 LLM</th><th>25번째</th></tr>
+    <tr><td><b>2024년 12월</b></td><td><b class="gold">1.3%</b></td><td><b class="gold">4.1%</b></td></tr>
+    <tr><td><b>2025년 4월</b></td><td><b class="g">0.7%</b></td><td><b class="g">2.4%</b></td></tr>
+    <tr><td colspan="3" style="text-align:center">넉 달 만에 전반적으로 <b class="g">40~50% 하락</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:16px">&#9888;&#65039; <b>그러나 더 제약적이거나 복잡한 상황에서는 여전히 문제다.</b><br><br>예를 들어 LLM으로 이미지에서 숫자를 뽑는데 <b class="r">이미지 하나가 뭉개져 있다면?</b> 응답을 숫자로 <b class="g">제약한다면</b>(패턴 2 Grammar) <b class="r">환각된 숫자</b>가 돌아온다.</div>
+  <div class="hl">&#128209; <b>패턴 2의 그림자</b> &mdash; 2장에서 <b class="g">"문법이 정답을 막을 수 있다"</b>고 경고했던 문제가 여기서 다시 나옵니다. <b class="r">숫자만 허용하면 모델은 "모르겠다"고 말할 자리가 없어 반드시 숫자를 지어냅니다.</b></div>
+  <aside>제약이 안전장치이면서 동시에 위험 요인이 되는 지점입니다.</aside>
+</section>
+
+<!-- 5 깨끗한 입력에서도 -->
+<section class="slide" data-part="9.3.1 문제">
+  <h2>&#128290; <span class="r">깨끗한 입력</span>에서도 문제는 남는다</h2>
+  <div class="big">이미지에서 추출한 필드의 정확도는<br><span class="r">90~97% 수준</span></div>
+  <div class="warn" style="margin-top:18px">&#128179; 즉 청구서나 영수증에서 뽑아낸 숫자의 <b class="r">3~10%가 환각</b>이라는 뜻이다!</div>
+  <div class="hl" style="margin-top:16px">&#128200; <b>그리고 복리로 불어난다</b> &mdash; 데이터 추출 결과를 <b class="g">다른 LLM 호출의 입력 컨텍스트로 넘기면</b> <b class="r">오류 발생 확률이 복리로 불어난다</b> &mdash; 오류 탐지 &middot; 정정을 갖춰 두었더라도. <b class="r">LLM 호출 체인이 복잡할수록 응답이 환각일 가능성은 커진다.</b></div>
+  <div class="warn" style="margin-top:14px">&#128209; <b>7장의 계산이 여기서도</b> &mdash; 패턴 23에서 본 <b class="g">0.95<sup>8</sup> &asymp; 66%</b>와 같은 구조입니다. <b class="g">각 단계가 아무리 좋아도 곱하면 무너집니다.</b></div>
+  <div class="steps" style="margin-top:16px">
+    <div class="st"><span class="n">1</span><span class="t"><b>발상</b> &mdash; 서로 아주 다른 방식으로, <b class="g">겹치지 않는 데이터셋</b>에서 학습된 LLM 셋으로 응답을 생성해 <b class="g">서로 비교</b>한다면? 응답이 서로 다르면 <b class="g">환각일 가능성이 높다</b></span></div>
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">2</span><span class="t"><b class="r">그런데 프런티어 모델들의 학습 데이터셋은 상당히 많이 겹친다</b> &mdash; 그런 LLM 셋을 구하기 어렵다</span></div>
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">3</span><span class="t"><b class="r">게다가 여러 LLM으로 추론하면 비용도 곱절이 된다</b></span></div>
+  </div>
+  <div class="big" style="margin-top:16px"><span class="y">LLM 응답 하나만 보고</span><br>환각 위험 지점을 짚어 낼 방법은 없을까?</div>
+  <aside>직관은 "응답의 변동성을 쓴다"인데, 그 변동성을 한 응답 안에서 찾아야 합니다.</aside>
+</section>
+
+<!-- 6 PART 2 logprobs -->
+<section class="slide" data-part="9.3.2 해법">
+  <h2>&#128207; 9.3.2 해법 &mdash; <span class="g">logprobs 읽기</span></h2>
+  <p>많은 LLM은 생성한 토큰과 함께 그 토큰의 <b class="g">logprobs(로그 확률, logits라고도 한다)</b>를 제공한다. logprobs로부터 <b class="g">특정 토큰이 정답 토큰일 확률</b>을 계산할 수 있다.</p>
+  <div class="big" style="margin-top:14px">확률 = <span class="y">e<sup>logit</sup></span></div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:44%">상황</th><th>확률</th></tr>
+    <tr><td>생성된 토큰이 <b class="g">압도적인 1순위</b></td><td><b class="g">100%에 가깝다</b></td></tr>
+    <tr><td><b class="gold">가능성이 여럿인 상황</b></td><td>"이긴" 토큰이 정답일 확률이 <b class="gold">더 낮게</b> 나온다</td></tr>
+  </table>
+  <div class="plabel" style="margin-top:16px">OpenAI — logprobs와 상위 후보 5개를 함께 요청</div>
+  <pre>message = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[ ... ],
+        <b class="g">logprobs=True</b>,
+        <b class="g">top_logprobs=5</b>
+    )</pre>
+  <pre style="margin-top:10px">response_text = message.choices[0].message.content
+logprobs = message.choices[0].logprobs
+for token_info in logprobs.content:
+   token = token_info.token
+   logprob = token_info.logprob
+   <b class="g">probability = math.e ** logprob</b>
+   if token_info.top_logprobs:
+      for alt_token in token_info.top_logprobs:
+          if alt_token.token != token:
+             alt_probability = math.e ** alt_token.logprob</pre>
+  <aside>1장과 2장에서 다룬 개념이 여기서 실제로 쓰입니다.</aside>
+</section>
+
+<!-- 7 아타튀르크 -->
+<section class="slide" data-part="9.3.2 해법">
+  <h2>&#127481;&#127479; logprobs가 <span class="g">어떻게 움직이나</span></h2>
+  <div class="plabel">프롬프트</div>
+  <pre>What year was Ataturk born? Answer in one sentence.</pre>
+  <div class="plabel" style="margin-top:10px">응답</div>
+  <pre>Ataturk was born in <b class="g">1881</b>.</pre>
+  <div class="hl" style="margin-top:14px">&#128290; <b>1881은 두 개의 토큰</b> &mdash; <b class="g">188</b>과 <b class="g">1</b>. 모델은 이 답에 <b class="g">상당히 확신</b>하고 있다. 1980년대나 1830년대, 1930년대에 태어났다는 <b class="g">다른 후보들의 확률은 전부 0에 가깝다.</b></div>
+  <div class="warn" style="margin-top:16px">&#9888;&#65039; <b>그렇다고 낮은 확률이 전부 의심스럽다는 뜻은 아니다</b></div>
+  <table class="t" style="margin-top:12px">
+    <tr><th style="width:34%">문장 시작 토큰</th><th>확률</th></tr>
+    <tr><td><b class="gold">At</b>&hellip; ("Ataturk was born&hellip;")</td><td><b class="gold">58%</b></td></tr>
+    <tr><td><b>Must</b>&hellip; ("Mustafa Kemal Atatürk was born&hellip;")</td><td>다음 후보</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; <b><i>At</i> 토큰의 확률이 왜 58%밖에 안 될까?</b> 다음 후보가 <b class="g"><i>Must</i></b>라는 점이 단서를 줍니다 &mdash; <b class="g">"Mustafa Kemal Atatürk was born in 1881."도 이 질문에 대한 정답</b>이기 때문입니다. <b class="g">정답이 여러 갈래였을 뿐, 틀린 게 아닙니다.</b></div>
+  <div class="warn" style="margin-top:12px">&#128269; <b>움라우트의 흔적</b> &mdash; 성(姓)의 <b class="g">ü</b> 위에 붙는 움라우트가, 두 번째 자리의 두 번째 후보 토큰이 <b class="g"><i>at</i></b>인 이유를 설명해 줍니다 &mdash; 이름의 <b class="g">세 번째 토큰 자리에 움라우트가 올 수 있도록 자리를 비워 두는</b> 것이죠.</div>
+  <aside>그림 9-4의 (a)와 (b)가 이 두 경우를 보여 줍니다.</aside>
+</section>
+
+<!-- 8 움라우트 각주 -->
+<section class="slide" data-part="9.3.2 해법">
+  <h2>&#128274; 움라우트가 드러낸 <span class="r">학습 데이터</span></h2>
+  <div class="warn">&#128204; <b>각주 2 &mdash; 저자의 추론</b><br><br>토큰 확률로부터 합리적으로 추론하자면, OpenAI가 모델을 학습시킨 이 터키 정치가 관련 문서의 <b class="r">98.4%가 이름에서 움라우트를 빠뜨렸다</b>는 뜻이다.</div>
+  <div class="big" style="margin-top:18px">이런 종류의 <span class="r">학습 데이터 유출</span>이야말로<br>일부 독점 모델이<br><span class="r">logprobs 제공을 거부하는 이유</span>일지도 모른다</div>
+  <div class="hl" style="margin-top:18px">&#128300; <b>왜 그런가</b> &mdash; 이름을 움라우트로 표기한 문서가 <b class="g">단 하나뿐이었다면</b>, 생성된 응답에 <b class="g">움라우트가 한 번도 나오지 않더라도</b> &mdash; <b class="r">그 문서가 모델 학습에 쓰였다는 증거</b>가 되기 때문입니다.</div>
+  <div class="warn" style="margin-top:16px">&#128209; <b>이 패턴의 근본적 제약</b> &mdash; 9.3.4에서 저자가 다시 짚습니다. <b class="r">모든 모델이 logprobs에 접근을 허용하지는 않습니다.</b> 그 이유가 <b class="g">기술적 한계가 아니라 영업 비밀 보호</b>라는 것이 이 각주의 통찰입니다.</div>
+  <div class="hl">&#128161; 2장 패턴 1(로짓 마스킹)의 「주의사항」에서도 같은 제약을 언급했습니다 &mdash; <b class="g">logprobs에 의존하는 모든 기법이 공유하는 한계</b>입니다.</div>
+  <aside>확률 숫자 하나에서 학습 데이터 구성을 역추론한다는 발상이 흥미롭습니다.</aside>
+</section>
+
+<!-- 9 환각 사례 -->
+<section class="slide" data-part="9.3.2 해법">
+  <h2>&#10060; 모델이 <span class="r">찍고 있을 때</span></h2>
+  <p>이번에는 모델이 <b class="r">환각하는</b> 상황을 보자. 이 오류가 고쳐지지 않았기를 기대하며 일부러 <b>오래된 모델</b>(GPT-3.5-turbo)을 쓴다.</p>
+  <div class="plabel" style="margin-top:12px">프롬프트</div>
+  <pre>Who is John Cole Howard? Answer in one sentence.</pre>
+  <div class="plabel" style="margin-top:10px">응답 — 환각</div>
+  <pre>John Cole Howard is a fictional character from <b class="r">The</b> Office,
+portrayed by actor <b class="r">Ed</b> Helms.</pre>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; 확률이 <b class="r">50%에 미치지 못했는데도 선택된</b> 토큰은 <b class="r">The</b>와 <b class="r">Ed</b>다.</div>
+  <div class="hl" style="margin-top:16px">&#128269; <b>이유는 짐작할 만하다</b><br><br>
+    &bull; <i>The Office</i>에서 <b>에드 헬름스가 맡은 인물은 앤디 버나드</b>이고<br>
+    &bull; <b class="r">존 콜 하워드라는 유명인은 존재하지 않는다</b><br><br>
+    그래서 <b class="g">프로그램 이름과 배우 이름의 확률이 낮게</b> 나온 것이다 &mdash; <b class="r">이 지점에서 모델은 사실상 찍고 있다.</b></div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:50%">상황</th><th>1등 확률</th><th>뜻</th></tr>
+    <tr><td>"아타튀르크는 <b>1881</b>년생"</td><td><b class="g">100%</b></td><td>모델이 <b class="g">안다</b></td></tr>
+    <tr><td>"존 콜 하워드는 <b>The</b> Office…"</td><td><b class="r">36.8%</b></td><td>모델이 <b class="r">찍는다</b></td></tr>
+  </table>
+  <aside>그림 9-5가 이 낮은 신뢰도 토큰들을 보여 줍니다.</aside>
+</section>
+
+<!-- 10 거짓 양성 줄이기 -->
+<section class="slide" data-part="9.3.2 해법">
+  <h2>&#128300; 환각을 식별하기 &mdash; <span class="r">거짓 양성</span>을 조심하라</h2>
+  <div class="hl">&#9989; <b>기본 발상</b> &mdash; 모델이 <b>비슷하게 그럴듯한 선택지 여럿</b> 중에서 골라야 할 때 <b class="g">logprobs가 낮은 토큰을 내놓는다.</b> 그러니 logprobs에 <b class="g">임계값</b>을 걸고 낮은 확률을 환각 가능성의 지표로 삼을 수 있다.</div>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; <b>다만 거짓 양성을 조심하라</b> &mdash; <b class="g">아타튀르크 예</b>가 보여 주듯, <b class="r">정답인데도 확률이 낮은 토큰이 섞이는 정당한 이유</b>가 있다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:26%">접근</th><th>내용</th></tr>
+    <tr><td><b class="g">관심 토큰을<br>특정하기</b></td><td><b class="g">특정 토큰의 logprobs만</b> 검사한다. <b class="g">구조화된 출력</b>을 생성할 때는 검증해야 할 핵심 값의 위치를 알아낼 수 있으므로 <b class="g">그 토큰들만 검사</b>하는 것이 가능한 경우가 많다</td></tr>
+    <tr><td><b class="g">생성 시퀀스를<br>표본으로 뽑기</b></td><td>확률이 낮은 토큰을 만날 때마다 <b class="g">시퀀스 생성</b>(2장 패턴 1)을 쓴다. <b class="g">여러 시퀀스를 생성해 답이 모두 일치하는지 검증</b>한다.<br>&rarr; 아타튀르크 예라면 <b class="g">문장 시작은 서로 달라도 두 생성 모두 출생 연도가 1881이라는 데는 합의</b>했을 것. 두 생성의 <b class="g">임베딩</b>을 비교하면 답이 실질적으로 같은지 견줄 수 있다</td></tr>
+    <tr><td><b class="g">모든 토큰에 걸쳐<br>통계를 정규화</b></td><td>긴 답에 집계 통계를 쓰면 환각 가능성을 <b class="r">과소평가</b>(평균)하거나 <b class="r">과대평가</b>(최솟값)할 수 있다.<br>&rarr; 길이가 다른 시퀀스에 대해 정규화해 주는 것이 <b class="g">퍼플렉서티(혼란도)</b></td></tr>
+    <tr><td><b class="g">ML 모델을<br>만들기</b></td><td>특정 토큰들의 확률, 생성 시퀀스 임베딩 사이의 거리, 집계 &middot; 정규화 통계, 문맥적 특징 등을 <b class="g">ML 모델의 입력 피처</b>로 삼는다</td></tr>
+  </table>
+  <div class="big" style="margin-top:14px">퍼플렉서티 = <span class="y">e<sup>−(1/N) Σ logit<sub>i</sub></sup></span><br><small>모델이 <b>얼마나 많은 선택지를 두고 고민하는지</b><br><b class="g">낮을수록 더 확신</b>을 가지고 생성한 것</small></div>
+  <div class="hl" style="margin-top:14px">&#11088; <b class="g">맞춤형 ML 모델을 쓰는 것이 가장 견고한 접근</b>입니다 &mdash; <b class="g">위의 모든 방법 위에 쌓아 올리는 방식</b>이기 때문입니다.</div>
+  <aside>그림 9-6이 이 네 가지 접근을 정리한 것입니다.</aside>
+</section>
+
+<!-- 11 PART 3 영수증 -->
+<section class="slide" data-part="9.3.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">9.3.3 예제</h2>
+    <div class="who">영수증 숫자 보정</div>
+  </div>
+  <aside>식당에서 서명된 영수증을 처리하는 소프트웨어입니다.</aside>
+</section>
+
+<!-- 12 문제 설정 -->
+<section class="slide" data-part="9.3.3 예제">
+  <h2>&#129534; 네 숫자와 <span class="g">체크섬</span></h2>
+  <p>팁이 일반적이고 식사에 세금이 붙는 나라의 식당. 영수증마다 <b class="g">청구액 &middot; 세금 &middot; 팁 &middot; 총액</b> 네 개의 숫자를 뽑아야 한다.</p>
+  <div class="grid2" style="margin-top:14px">
+    <div class="box"><b class="g">&#9989; 네 값 모두 추출</b><br><br><pre style="margin:8px 0">312.32, 28.76, 60, 401.08</pre><b class="g">총액이 체크섬 역할</b>을 한다 &mdash; 나머지 세 숫자로 총액을 계산해 <b class="g">추출된 값이 맞는지 확인</b>할 수 있다</div>
+    <div class="box" style="border-color:var(--gold)"><b class="gold">&#9888;&#65039; 하나 누락</b><br><br><pre style="margin:8px 0">312.32, 28.76, <b class="r">,</b> 400</pre>(네 번째 이미지가 뭉개져서) <b class="gold">셋만 뽑을 수 있었다면</b> &mdash; 누락된 숫자를 <b class="gold">LLM에게 추정해 채우게</b> 하고 싶다</div>
+  </div>
+  <div class="plabel" style="margin-top:14px">프롬프트</div>
+  <pre>You are a helpful AI assistant that helps parse restaurant receipts.
+I will give you a set of parsed values containing the following on
+each line:
+billed_amount, tax, tip, paid_amount
+
+If tax is missing, calculate it as <b class="g">9.21% of the billed_amount</b>.
+If the tip is missing, calculate it as
+   <b class="g">(paid_amount - billed_amount - tax)</b>.
+If the paid_amount is missing, calculate it as
+   <b class="g">(billed_amount + tax + tip)</b>.
+Do not add any headers or explanations.</pre>
+  <div class="warn" style="margin-top:12px">&#128204; <b>각주 3 &mdash; 저자가 인정하는 한계</b> &mdash; <b class="r">이건 다소 억지스러운 예다.</b> 실제로는 <b class="r">수학 계산에 LLM을 쓰지 않는다</b> &mdash; <b class="g">계산기 도구를 붙여 준다</b>(7장 패턴 21). 다만 <b class="g">LLM 결과의 정확성을 자동으로 평가할 수 있다는 장점</b> 때문에 이 예를 골랐다.</div>
+  <aside>다른 유형의 생성에서도 같은 효과가 나타나지만 책에서 보여 주기가 훨씬 어렵다고 합니다.</aside>
+</section>
+
+<!-- 13 신뢰도 계산 -->
+<section class="slide" data-part="9.3.3 예제">
+  <h2>&#128290; 줄마다 <span class="g">가장 낮은 신뢰도</span>를 붙인다</h2>
+  <pre>parse_result(response_text=message.choices[0].message.content,
+             logprobs=message.choices[0].logprobs)</pre>
+  <pre style="margin-top:10px">def parse_result(response_text, logprobs) -&gt; pd.DataFrame:
+   csv_file = StringIO(response_text)
+   result_df = pd.read_csv(csv_file, header=None,
+                  names=['billed_amount','tax','tip','paid_amount'])</pre>
+  <div class="hl" style="margin-top:12px">&#128161; 모델은 내용과 함께 <b class="g">logprobs도 돌려준다.</b> 반환된 각 토큰을 <b class="g">그것이 등장한 줄과 연결</b>해, 그 줄에서 <b class="g">가장 신뢰도가 낮은 토큰</b>을 계산할 수 있다.</div>
+  <pre style="margin-top:12px">line_no = 0
+<b class="g">confidence_of_line = 1.0</b>
+last_col_no = len(result_df.iloc[0]) - 1
+for token_info in logprobs.content:
+    token = token_info.token
+    logprob = token_info.logprob
+    probability = (2.718281828459045 ** logprob)
+    <b class="g">confidence_of_line = min(confidence_of_line, probability)</b>
+    result_df.iloc[line_no, last_col_no] = confidence_of_line
+    if '\n' in token:   # 다음 줄
+       line_no = line_no + 1
+       <b class="g">confidence_of_line = 1.0</b></pre>
+  <div class="warn" style="margin-top:12px">&#128209; <code>min()</code>을 쓰는 점을 보세요 &mdash; <b class="g">한 줄에서 가장 자신 없었던 토큰</b>이 그 줄의 점수가 됩니다. 9.3.2에서 <b class="gold">"최솟값은 과대평가할 수 있다"</b>고 했지만, <b class="g">줄 단위로 짧게 끊었으므로</b> 여기서는 적절합니다.</div>
+  <aside>정규화가 필요한 것은 긴 시퀀스일 때입니다.</aside>
+</section>
+
+<!-- 14 표 9-1 -->
+<section class="slide" data-part="9.3.3 예제">
+  <h2>&#128202; 표 9-1 &mdash; <span class="g">신뢰도가 그대로 드러난다</span></h2>
+  <div class="plabel">입력 — 여섯 줄</div>
+  <pre>312.32,28.76,60,401.08
+312.32,28.76,,400
+312.32,28.76,60,
+312.21,,50,
+312.43,,,400
+300,27.63,60,387.63</pre>
+  <table class="t" style="margin-top:14px">
+    <tr><th>billed_amount</th><th>tax</th><th>tip</th><th>paid_amount</th><th>Confidence</th><th>채운 값</th></tr>
+    <tr><td>312.32</td><td>28.76</td><td>60.0</td><td>401.08</td><td><b class="g">0.962668</b></td><td><b class="g">0개</b></td></tr>
+    <tr><td>312.32</td><td>28.76</td><td>60.0</td><td>400.00</td><td><b class="gold">0.551552</b></td><td><b class="gold">1개</b></td></tr>
+    <tr><td>312.32</td><td>28.76</td><td>60.0</td><td>400.08</td><td><b class="gold">0.562172</b></td><td><b class="gold">1개</b></td></tr>
+    <tr><td>312.21</td><td>28.84</td><td>50.0</td><td>391.05</td><td><b class="r">0.172516</b></td><td><b class="r">2개</b></td></tr>
+    <tr><td>312.43</td><td>28.80</td><td>60.0</td><td>401.23</td><td><b class="r">0.170295</b></td><td><b class="r">2개</b></td></tr>
+    <tr><td>300.00</td><td>27.63</td><td>60.0</td><td>387.63</td><td><b class="g">0.999290</b></td><td><b class="g">0개</b></td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">신뢰도가 높은 것은<br><span class="y">아무것도 추정해 채우지 않은 두 행뿐</span></div>
+  <div class="hl" style="margin-top:14px">&#127919; <b>채운 값의 개수와 신뢰도가 정확히 대응합니다</b> &mdash; 0개면 <b class="g">0.96~0.99</b>, 1개면 <b class="gold">0.55 근처</b>, 2개면 <b class="r">0.17</b>. 그리고 <b class="g">실제로 <code>paid_amount</code>의 체크섬 오차를 계산해 보면, 오차가 없는 행들의 신뢰도는 0.9를 넘습니다.</b></div>
+  <div class="warn">&#128161; 수천 개의 토큰이 제약된 방식으로 생성되는 복잡한 체인에서, <b class="g">생성한 LLM 자신의 신뢰도 점수</b>를 이용해 <b class="g">문제가 될 수 있는 출력을 골라낼 수</b> 있습니다.</div>
+  <aside>신뢰도 값만 보고도 어느 행이 문제인지 짚어 낼 수 있습니다.</aside>
+</section>
+
+<!-- 15 고려사항 -->
+<section class="slide" data-part="9.3.4 고려사항">
+  <h2>&#128161; 9.3.4 &mdash; 더 <span class="g">간단한 방법</span>부터</h2>
+  <div class="hl">&#9989; Self-Check보다 간단하면서도 많은 상황에서 꽤 효과적인 방법은, 모델에게 <b class="g">빠져나갈 구멍을 명시적으로 주는</b> 것입니다.</div>
+  <div class="steps" style="margin-top:14px">
+    <div class="st"><span class="n">1</span><span class="t">학습 데이터 밖의 질문을 받으면 <b class="g">"모르겠습니다"라고 답하라</b>고 시킨다</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b class="g">구조화된 출력</b>(패턴 2 Grammar)을 생성할 때는 필드를 <b class="g">유니온</b>으로 모델링해 <b class="g">그중 한 갈래를 "모른다"로</b> 둔다</span></div>
+  </div>
+  <pre style="margin-top:12px">currency_rate: <b class="g">float | Literal["Unknown"]</b></pre>
+  <div class="warn" style="margin-top:14px">&#128209; <b>9.3.1의 문제를 정면으로 푸는 코드</b>입니다 &mdash; "응답을 숫자로 제약하면 환각된 숫자가 돌아온다"고 했죠. <b class="g">"모른다"를 허용된 값에 넣으면 모델은 더 이상 지어낼 필요가 없습니다.</b></div>
+  <div class="hl" style="margin-top:16px">&#128218; <b>RAG에서 특히 유용하다</b> &mdash; Self-Check는 <b class="g">RAG에서 데이터가 서로 모순될 때</b>를 짚어 내는 데 아주 유용합니다.<br><br>
+    검색된 <b class="g">두 청크가 서로 상충하면</b>, 생성된 응답의 logprobs는 <b class="g">생성 경로가 둘이었음</b>을 드러냅니다. 어느 쪽이 선택됐든, logprobs를 보고 <b class="g">문제 소지가 있는 답</b>을 골라낼 수 있습니다.</div>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; <b>물론 경로가 둘이라고 해서 반드시 충돌은 아닙니다</b> &mdash; <b class="g">두 경로가 같은 답으로 이어졌을 수도</b> 있습니다(아타튀르크 예처럼). 거짓 양성을 줄이려면 9.3.2의 더 견고한 접근들을 쓰면 됩니다.</div>
+  <div class="warn" style="margin-top:14px">&#128274; <b>근본적 제약</b> &mdash; 2장 패턴 1의 「주의사항」에서 논한 대로, <b class="r">모든 모델이 logprobs에 접근을 허용하지는 않습니다.</b></div>
+  <aside>가장 간단한 해법을 먼저 제시하는 것이 이 절의 미덕입니다.</aside>
+</section>
+
+<!-- 16 참고문헌 -->
+<section class="slide" data-part="9.3.5 참고문헌">
+  <h2>&#128218; 9.3.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:30%">출처</th><th>기여</th></tr>
+    <tr><td><b class="g">Manakul &middot; Liusie &middot;<br>Gales (2023)</b></td><td>환각 탐지에 <b class="g">logprobs를 쓰는 아이디어</b>를 제시. <b class="g">시퀀스 생성</b>을 사용했고 자신들의 탐지기를 <b class="g">SelfCheckGPT</b>라 불렀다.<br>&rarr; 독점 LLM이 logprobs를 직접 제공하지 않을 때 <b class="g">logprobs 생성 전용의 별도 LLM</b>을 쓰자고 제안</td></tr>
+    <tr><td><b>Quevedo 외 (2024)</b></td><td>LLM이 출력한 <b class="g">토큰 확률로 ML 분류기를 학습</b>시켜 환각을 탐지</td></tr>
+    <tr><td><b>Valentin 외 (2024)</b></td><td>logprobs로 환각을 탐지하는 <b class="g">여러 방식을 비교</b></td></tr>
+  </table>
+  <div class="hl" style="margin-top:16px">&#128161; <b>첫 항목의 제안이 실용적입니다</b> &mdash; logprobs를 안 주는 모델을 써야 한다면, <b class="g">작은 모델을 하나 더 두고 그 모델의 logprobs를 대신 본다</b>는 발상입니다. <b class="g">패턴 24(SLM)</b>과 자연스럽게 붙습니다.</div>
+  <div class="warn" style="margin-top:14px">&#128209; <b>세 논문의 순서가 곧 9.3.2의 순서</b>입니다 &mdash; <b class="g">시퀀스 생성</b>(Manakul) &rarr; <b class="g">ML 분류기</b>(Quevedo) &rarr; <b class="g">방법 비교</b>(Valentin). 저자가 「해법」 절에서 <b class="g">"ML 모델이 가장 견고하다"</b>고 한 근거가 이 계보입니다.</div>
+  <aside>2023~2024년에 집중된 최신 연구 영역입니다.</aside>
+</section>
+
+<!-- 17 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#128207; 이미 나온 <span class="g">숫자를 읽어라</span></h1>
+    <div class="big" style="margin-top:24px">모델에게 <span class="y">"확실해?"라고 다시 묻는 대신</span><br>답을 만들 때 이미 나온<br><span class="y">확신도 숫자</span>를 그냥 읽는다<br><br><small>다만 <b class="r">낮다고 다 환각은 아니다</b><br><b class="g">확인할 자리를 미리 정해 두라</b></small></div>
+    <p class="sub" style="margin-top:22px">패턴 31 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 32 가드레일</b></p>
+  </div>
+  <aside>여기까지가 틀린 자리를 찾는 이야기. 마지막은 못 나가게 막는 이야기입니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

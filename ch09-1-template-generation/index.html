@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>패턴 29 템플릿 생성 — Template Generation</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 9 &middot; Pattern 29</div>
+    <h1 style="margin:18px 0">템플릿 <span class="g">생성</span></h1>
+    <p class="sub">Template Generation &mdash; 위험한 창작을 <b>미리, 적은 수만, 검토 가능한 형태로</b></p>
+  </div>
+  <aside>메일 머지의 계보를 잇되, 템플릿 자체를 LLM이 만드는 패턴입니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 9.1</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>9.1.1 문제</b> &mdash; 사람 검토는 곧 비싸진다</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>9.1.2 해법</b> &mdash; 편지가 아니라 템플릿을 생성한다</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>9.1.3 예제</b> &mdash; 투어 감사 편지</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>9.1.4 고려사항</b> &mdash; ML과 결합하기</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>9.1.5 참고문헌</b></span></div>
+  </div>
+  <div class="big" style="margin-top:16px">LLM은 <span class="y">템플릿을 쓰고</span><br>애플리케이션은 <span class="y">빈칸만 채운다</span></div>
+  <aside>이 한 줄이 패턴 29의 전부입니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="9.1.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">9.1.1 문제</h2>
+    <div class="who">사람 검토는 곧 비싸진다</div>
+  </div>
+  <aside>여행사 감사 편지를 예로 듭니다.</aside>
+</section>
+
+<!-- 4 문제 -->
+<section class="slide" data-part="9.1.1 문제">
+  <h2>&#128233; 감사 편지를 <span class="r">LLM에게 맡겨도 될까</span></h2>
+  <p>여행사를 운영하면서 투어 패키지를 구매한 사람들에게 <b class="g">감사 편지</b>를 보낸다고 하자. 이 편지는 <b class="g">개인화</b>돼 있고 <b class="g">아주 읽기 좋아야</b> 하며, 어쩌면 <b class="g">여러 언어</b>로 나가야 한다.</p>
+  <div class="big" style="margin-top:16px">LLM으로 생성하고 싶은<br><span class="y">유혹이 강하게 들지만</span><br>그렇게 하면 <span class="r">브랜드를 상당한 위험에</span> 노출시킨다</div>
+  <ul class="pts" style="margin-top:16px">
+    <li>편지에 <b class="r">부적절한 표현</b>이 들어간다면?</li>
+    <li><b class="r">엉뚱하고 논란이 될 만한 상품을 업셀</b>하려 든다면?</li>
+  </ul>
+  <div class="warn" style="margin-top:16px">&#128100; <b>사람 검토를 넣으면?</b> &mdash; 넣을 수는 있지만, <b class="r">하루에 수천 건씩 구매가 일어난다면 사람 검토는 곧 비싸진다.</b></div>
+  <div class="hl">&#10067; LLM으로 감사 편지를 만들면서도, <b class="g">모든 편지를 사람이 검토해야 하는 비용은 피할</b> 방법이 있을까?</div>
+  <aside>LLM은 강력하지만 결정적이지 않다는 것이 출발점입니다.</aside>
+</section>
+
+<!-- 5 PART 2 해법 -->
+<section class="slide" data-part="9.1.2 해법">
+  <h2>&#9989; 9.1.2 해법 &mdash; <span class="g">템플릿을 생성한다</span></h2>
+  <div class="chain">
+    <div class="cell" style="border-color:var(--gold)"><small>오프라인</small><b class="gold">LLM이<br>템플릿 생성</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>오프라인</small><b>사람이 검토 &middot;<br>수정</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>추론 시점</small><b class="g">값을 꽂아<br>발송</b></div>
+  </div>
+  <p style="margin-top:16px">LLM으로 감사 편지를 <b class="r">직접</b> 생성하는 대신, LLM으로 <b class="g">감사 편지의 템플릿을 생성</b>한다. 템플릿은 사람이 검토하고 적절히 고칠 수 있다.</p>
+  <div class="hl" style="margin-top:14px">&#128209; 여기에 <b class="g">퓨샷(few-shot) 학습</b>과 <b class="g">2장~8장의 여러 패턴</b>을 함께 써서 결과물이 <b class="g">그라운딩</b>돼 있고 브랜드 목소리에 맞도록 만들어 두면, <b class="g">편집 작업을 최소로 줄일 수 있습니다.</b></div>
+  <div class="big" style="margin-top:16px">추론 시점의 처리는<br><span class="y">결정적이고 제약돼 있으므로</span><br>사실 오류나 유해한 내용이<br>새로 끼어들 가능성은 <span class="g">극히 낮다</span></div>
+  <div class="warn" style="margin-top:16px">&#128161; <b>위험이 사라진 게 아니라 옮겨진 것</b>입니다 &mdash; LLM이 문장을 짓는 자리를 <b class="g">검토 가능한 소수의 템플릿 안으로 몰아넣은 것</b>이 이 패턴의 핵심입니다.</div>
+  <aside>그림 9-1이 이 흐름을 그린 것입니다.</aside>
+</section>
+
+<!-- 6 PART 3 사전생성 -->
+<section class="slide" data-part="9.1.3 예제">
+  <h2>&#128260; 9.1.3 예제 &mdash; <span class="g">사전 생성 루프</span></h2>
+  <p>패키지 투어 회사. 예약이 들어오면 <b class="g">그 투어를 인솔할 가이드 이름으로 개인화된 감사 편지</b>를 보낸다 &mdash; 그렇게 하면 <b class="g">취소 건수가 줄어드는 경향</b>이 있기 때문이다.</p>
+  <pre>DESTINATIONS=["Toledo, Spain", "Avila &amp; Segovia",
+              "Escorial Monastery"]
+PACKAGE_TYPES=["Family", "Individual", "Group", "Singles"]
+LANGUAGES=["English", "Polish"]
+
+for dest in DESTINATIONS:
+   for package_type in PACKAGE_TYPES:
+      for lang in LANGUAGES:
+          template = <b class="g">create_template(dest, package_type, lang)</b>
+          <b class="g">db.insert(dest, package_type, lang, template)</b></pre>
+  <div class="big" style="margin-top:16px">목적지 <span class="y">3</span> &times; 패키지 <span class="y">4</span> &times; 언어 <span class="y">2</span><br>= 템플릿 <span class="g">24개</span></div>
+  <div class="hl" style="margin-top:16px">&#128161; 이 <b class="g">24라는 숫자</b>가 패턴 29의 성립 조건입니다. <b class="g">사람이 한 번 앉아서 다 읽을 수 있는 양</b>이니까요. 하루 수천 통과 비교해 보세요.</div>
+  <aside>템플릿들은 쉽게 꺼내 쓸 수 있도록 데이터베이스에 저장합니다.</aside>
+</section>
+
+<!-- 7 템플릿 생성 -->
+<section class="slide" data-part="9.1.3 예제">
+  <h2>&#9997;&#65039; 템플릿 <span class="g">생성하기</span></h2>
+  <div class="hl">&#128161; <b>자리표시자가 두 층</b>입니다 &mdash; <b class="g">언어</b>처럼 <b>사전 생성 루프에서 이미 치환되는</b> 것이 있고, <b class="g">고객 이름</b>처럼 <b>발송 전에 채워야</b> 하는 것이 남습니다.</div>
+  <pre style="margin-top:14px">def create_template(tour_destination, package_type, language):
+    prompt=f"""
+    You are a tour guide working on behalf of Tours GenAI S.L.
+Write a personalized letter in <b class="g">{language}</b> to a customer who has
+purchased a <b class="g">{package_type}</b> tour package to visit
+<b class="g">{tour_destination}</b>. Sound excited to see them and lead them on
+the tour. Explain some of the highlights of what they will see
+there and some of the things they can do while there.
+In the letter, use <b class="gold">[CUSTOMER_NAME]</b> to indicate the place to be
+replaced by their name and <b class="gold">[TOUR_GUIDE]</b> to indicate the place
+to be replaced by your name.
+    """
+    template = zero_shot(GEMINI, prompt)
+    <b class="g"># 사람에게 편집·확인을 요청한다 ...
+    template = human_edit_confirm(template)</b>
+    return template</pre>
+  <div class="warn" style="margin-top:12px">&#128209; <code>human_edit_confirm</code>이 이 패턴의 <b class="g">유일한 사람 개입 지점</b>입니다. 딱 24번 호출됩니다.</div>
+  <aside>프롬프트가 자리표시자 규칙을 명시적으로 지시하는 점을 보세요.</aside>
+</section>
+
+<!-- 8 생성 결과 -->
+<section class="slide" data-part="9.1.3 예제">
+  <h2>&#128220; 생성된 <span class="g">템플릿</span></h2>
+  <div class="plabel">톨레도 · 가족 패키지 · 영어</div>
+  <pre style="font-size:.76em">Dear <b class="gold">[CUSTOMER_NAME]</b>,
+
+I'm absolutely thrilled to welcome you to Toledo! I'm
+<b class="gold">[TOUR_GUIDE]</b>, and I'll be your guide for your family tour.
+I'm so excited to show you and your family this incredible city.
+...
+Here's a sneak peek of what awaits you:
+* <b class="g">The magnificent Toledo Cathedral</b>: A masterpiece of Gothic
+  architecture that will leave you breathless.
+* <b class="g">The Alcázar of Toledo</b>: A formidable fortress with panoramic
+  views of the city.
+...
+See you soon,
+<b class="gold">[TOUR_GUIDE]</b></pre>
+  <div class="plabel" style="margin-top:12px">아빌라 · 세고비아 · 폴란드어</div>
+  <pre style="font-size:.76em">Szanowni Państwo, <b class="gold">[CUSTOMER_NAME]</b>!
+
+Z ogromną radością witam Państwa w imieniu Tours GenAI S.L.!
+Jestem <b class="gold">[TOUR_GUIDE]</b> i będę <b class="r">miał</b> przyjemność być Państwa
+przewodnikiem podczas rodzinnej wycieczki do Avili i Segowii!</pre>
+  <div class="warn" style="margin-top:12px">&#127477;&#127473; <b class="r">저 miał이 문제입니다</b> &mdash; 다음 슬라이드에서 원어민의 교정을 봅니다.</div>
+  <aside>폴란드어 템플릿이 이 패턴의 가치를 가장 잘 보여 줍니다.</aside>
+</section>
+
+<!-- 9 폴란드어 교정 -->
+<section class="slide" data-part="9.1.3 예제">
+  <h2>&#127477;&#127473; 원어민이 <span class="g">두 가지를 고쳤다</span></h2>
+  <div class="hl">&#9989; <b>먼저 칭찬</b> &mdash; 템플릿이 꽤 좋다고 했습니다. <b class="g">Szanowni Państwo</b>라는 <b>복수형</b>을 쓰는데, 이는 <b class="g">상당히 격식 있는 표현</b>이라 <b class="g">값비싼 투어 패키지에 아주 적절</b>합니다.</div>
+  <div class="warn" style="margin-top:16px">&#9888;&#65039; <b>고칠 것 &#9312; &mdash; 문법적 성</b><br>폴란드어에는 <b class="g">문법적 성</b>이 있어서 <code>[TOUR_GUIDE]</code> 자리에 <b class="g">누가 들어가느냐에 따라</b> 동사 <i>mieć</i>(가지다)가 &mdash;<br><br>
+    &bull; 가이드가 남성이면 &rarr; <b class="g">miał</b><br>
+    &bull; 가이드가 여성이면 &rarr; <b class="g">miała</b><br><br>
+    <b class="r">단순 문자열 치환으로는 해결되지 않는 문제</b>입니다.</div>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; <b>고칠 것 &#9313; &mdash; 느낌표</b><br>폴란드어 독자에게는 <b class="r">느낌표가 너무 많다.</b> (위 템플릿에 세 문장 연속으로 붙어 있습니다.)</div>
+  <div class="big" style="margin-top:16px">이것이 <span class="y">패턴 29가 왜 필요한지</span>를<br>그대로 보여 준다<br><small>수천 통의 생성된 편지를 검토하는 것보다<br><b class="g">템플릿 하나를 고치는 편이 쉽다</b></small></div>
+  <div class="hl" style="margin-top:14px">&#128161; <b>주목할 점</b> &mdash; 이 두 오류는 <b class="r">영어 화자가 LLM 출력만 봐서는 절대 못 잡습니다.</b> 그런데 <b class="g">템플릿이 24장뿐이라 원어민에게 보여 줄 수 있었습니다.</b> 하루 수천 통이었다면 불가능했겠죠.</div>
+  <aside>저자가 실제로 원어민에게 교정을 부탁한 결과입니다.</aside>
+</section>
+
+<!-- 10 추론 -->
+<section class="slide" data-part="9.1.3 예제">
+  <h2>&#9889; 추론 &mdash; <span class="g">빈칸 채우기</span>뿐</h2>
+  <pre>booked_tour = ...
+template = <b class="g">db.retrieve</b>(booked_tour.destination,
+                       booked_tour.package_type,
+                       booked_tour.language)
+email_body = template<b class="g">.replace</b>(
+               "[CUSTOMER_NAME]", booked_tour.customer_name
+             )<b class="g">.replace</b>(
+               "[TOUR_GUIDE]", booked_tour.tour_guide.name
+             )
+# 이메일 발송</pre>
+  <div class="big" style="margin-top:18px">발송 시점에 하는 일은<br><span class="y">replace() 두 번</span>이 전부</div>
+  <div class="hl" style="margin-top:18px">&#9989; <b>이건 결정적입니다</b> &mdash; 몇 번을 돌려도 <b class="g">똑같은 결과</b>가 나오고, <b class="g">새로운 문장이 지어질 여지가 없습니다.</b></div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:34%">시점</th><th>일어나는 일</th><th>위험</th></tr>
+    <tr><td><b class="gold">오프라인 (24회)</b></td><td>LLM이 <b class="r">문장을 짓는다</b></td><td><b class="r">있다</b> &rarr; <b class="g">사람이 검토</b></td></tr>
+    <tr><td><b class="g">추론 (수천 회/일)</b></td><td><code>replace()</code></td><td><b class="g">사실상 없다</b></td></tr>
+    <tr><td colspan="3" style="text-align:center"><b class="g">투어가 구매되거나 그 투어의 가이드가 확정될 때마다</b> 이메일 서비스가 호출된다</td></tr>
+  </table>
+  <aside>가이드가 나중에 바뀌어도 템플릿은 그대로 쓸 수 있습니다.</aside>
+</section>
+
+<!-- 11 숫자 비교 -->
+<section class="slide" data-part="9.1.3 예제">
+  <h2>&#128200; 숫자로 보면 <span class="g">확 다르다</span></h2>
+  <div class="hl">&#128141; <b>비유</b> &mdash; 결혼식 청첩장을 하루에 1,000장 보낸다고 합시다. 방법이 둘입니다. &#9312; 1,000장을 <b class="r">한 장씩 새로 쓴다</b> &mdash; 다 읽어 봐야 오탈자를 잡습니다. &#9313; <b class="g">양식 한 장을 아주 잘 만들어</b> 검토하고, 나머지는 이름만 바꿔 인쇄합니다.</div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:44%">방식</th><th>사람이 읽어야 할 문서 수</th></tr>
+    <tr><td><b class="r">편지를 매번 생성</b></td><td>하루 <b class="r">수천 장</b> &mdash; 매일</td></tr>
+    <tr><td><b class="g">템플릿을 생성</b></td><td>총 <b class="g">24장</b>, 그것도 <b class="g">딱 한 번</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:18px">&#9888;&#65039; <b>한계도 분명합니다 &mdash; 조합이 곱셈으로 폭발한다</b></div>
+  <table class="t" style="margin-top:10px">
+    <tr><th style="width:50%">조건</th><th>템플릿 수</th></tr>
+    <tr><td>목적지 3 &times; 패키지 4 &times; 언어 2</td><td><b class="g">24장</b> &mdash; 검토 가능</td></tr>
+    <tr><td>목적지 <b>50</b> &times; 패키지 4 &times; 언어 2</td><td><b class="gold">400장</b> &mdash; 빠듯하다</td></tr>
+    <tr><td>여기에 <b>계절 4</b>까지</td><td><b class="r">1,600장</b> &mdash; 못 쓴다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; <b class="g">사람이 검토할 수 있는 양을 넘는 순간</b> 이 패턴은 못 씁니다 &mdash; 그때가 <b class="g">패턴 30</b>이 필요한 시점입니다.</div>
+  <aside>성립 조건이 명확한 패턴이라는 점이 오히려 장점입니다.</aside>
+</section>
+
+<!-- 12 고려사항 -->
+<section class="slide" data-part="9.1.4 고려사항">
+  <h2>&#128295; 9.1.4 &mdash; <span class="g">ML과 결합하기</span></h2>
+  <div class="hl">&#9989; Template Generation은 생성된 콘텐츠를 <b class="g">하나하나 사람이 검토하는 데 드는 비용과 지연을 피하게</b> 해 준다. 이 패턴은 <b class="g">필요한 템플릿 수가 감당 가능할 때</b> 통한다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:34%">못 쓸 때의 대안</th><th>비고</th></tr>
+    <tr><td><b class="g">패턴 30 조립 후 재포맷</b></td><td>조합의 수가 <b class="r">너무 클 때</b></td></tr>
+    <tr><td><b class="g">패턴 32 가드레일</b></td><td><b class="r">엔지니어링 복잡도가 상당히 늘어난다</b></td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">사전 생성 <span class="y">+</span> ML</div>
+  <p style="margin-top:16px">Template Generation은 아주 다양한 <b class="g">개인화 &middot; 맞춤화 시나리오에서 ML과 결합</b>할 수 있다.</p>
+  <div class="steps" style="margin-top:14px">
+    <div class="st"><span class="n">1</span><span class="t"><b class="g">개인화 랜딩 페이지</b> &mdash; 미리 생성한 템플릿으로 페이지 묶음을 만들어 두고, 주어진 <b>마케팅 캠페인이나 사용자 프로필</b>에 <b class="g">어떤 템플릿을 쓸지 ML로 고르게</b> 한다</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b class="g">개인화 추천</b> &mdash; <b>전통적인 추천 엔진</b>으로 어떤 상품을 보여 줄지 고른 뒤, 그 상품에 해당하는 <b class="g">미리 생성된 콘텐츠(이미지 &middot; 텍스트)</b>를 끌어온다</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b class="g">고객 여정별 웹사이트</b> &mdash; 랜딩 페이지를 미리 생성해 두고, <b class="g">성향 모델(propensity model)</b> &mdash; 구매 같은 사건이 일어날 가능성을 예측하는 ML 모델 &mdash; 로 <b class="g">다음 최적 행동</b>을 고른다</span></div>
+  </div>
+  <div class="warn" style="margin-top:14px">&#128161; <b>세 사례의 공통 구조</b> &mdash; <b class="g">"무엇을 보여 줄지"는 전통적 ML이 고르고, "어떻게 보여 줄지"는 미리 생성된 콘텐츠가 맡습니다.</b> LLM은 <b class="g">둘 중 어느 쪽도 실시간으로는 하지 않습니다.</b></div>
+  <aside>GenAI와 전통 ML을 나란히 쓰는 실용적인 구성입니다.</aside>
+</section>
+
+<!-- 13 참고문헌 -->
+<section class="slide" data-part="9.1.5 참고문헌">
+  <h2>&#128218; 9.1.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:28%">출처</th><th>기여</th></tr>
+    <tr><td><b class="g">메일 머지</b><br><small>mail merge</small></td><td>하나의 <b>주 템플릿</b>과 별도 소스의 데이터를 결합해 <b class="g">대량 배포용 문서나 이메일을 개인화</b>하는 기능. 기원은 <b class="g">1980년대 워드프로세서 WordStar</b>까지 거슬러 올라간다</td></tr>
+    <tr><td><b>Valliappa Lakshmanan<br>(2024)</b></td><td><b class="g">최종 문서가 아니라 이 템플릿을 LLM으로 만든다</b>는 발상 &mdash; GenAI 애플리케이션에서 <b class="g">창의성과 위험의 균형</b>을 맞추는 법에 관한 글</td></tr>
+  </table>
+  <div class="big" style="margin-top:18px">40년 된 기법에<br><span class="y">한 가지만 바꿨다</span><br><small>템플릿을 <b>사람이 쓰던 것</b>에서<br><b class="g">LLM이 쓰고 사람이 검토하는 것</b>으로</small></div>
+  <div class="hl" style="margin-top:18px">&#128161; 이 패턴이 매력적인 이유가 여기 있습니다 &mdash; <b class="g">기존 메일 머지 인프라를 그대로 쓰면서</b> 템플릿 제작 비용만 낮춥니다. 발송 파이프라인은 <b class="g">아무것도 바꾸지 않아도 됩니다.</b></div>
+  <div class="warn">&#128209; 패턴 30도 같은 글(Lakshmanan 2024)에서 소개됐습니다. <b class="g">두 패턴은 한 쌍</b>으로 제안된 것입니다.</div>
+  <aside>같은 저자의 같은 글에서 나온 두 패턴이라는 점이 둘의 관계를 설명합니다.</aside>
+</section>
+
+<!-- 14 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#128221; 양식을 <span class="g">잘 만들어라</span></h1>
+    <div class="big" style="margin-top:24px">위험한 창작을<br><span class="y">미리, 적은 수만, 검토 가능한 형태로</span> 몰아 두고<br>실행 시점에는 <span class="y">빈칸만 채운다</span><br><br><small>조합이 <b class="r">사람이 볼 수 있는 양을 넘으면</b><br>패턴 30으로</small></div>
+    <p class="sub" style="margin-top:22px">패턴 29 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 30 조립 후 재포맷</b></p>
+  </div>
+  <aside>다음은 조합이 너무 많을 때의 이야기입니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>패턴 32 가드레일 — Guardrails</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 9 &middot; Pattern 32</div>
+    <h1 style="margin:18px 0">가드<span class="g">레일</span></h1>
+    <p class="sub">Guardrails &mdash; 입력 &middot; 출력 &middot; 컨텍스트 &middot; 도구에 작용하는 <b>코드 계층</b></p>
+  </div>
+  <aside>32개 패턴의 마지막이자, 저자가 가장 복잡하다고 경고하는 패턴입니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 9.4</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>9.4.1 문제</b> &mdash; 지켜야 할 다섯 영역 <b class="gold">+ 해법(번호 없음)</b></span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>9.4.2 예제</b> &mdash; 제인 오스틴 RAG</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>9.4.3 고려사항</b> &mdash; 복잡도 &middot; 지연 &middot; 군비 경쟁</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>9.4.4 참고문헌</b></span></div>
+  </div>
+  <div class="warn">&#9888;&#65039; <b>절 번호의 이상</b> &mdash; 「해법 &mdash; 가드레일 계층」이 <b class="r">9.4.1 문제 안에 하위 항목으로</b> 들어가 있고 <b class="r">9.4.2가 곧바로 예제</b>입니다. 다른 패턴들이 <b>문제(.1) &rarr; 해법(.2) &rarr; 예제(.3)</b>인 것과 어긋나는 <b class="g">원문의 편집 잔재</b>로 보입니다 &mdash; <b class="g">번호를 임의로 붙이지 않고 원문 그대로</b> 뒀습니다.</div>
+  <div class="hl" style="margin-top:14px">&#128161; 다만 이 덱에서는 <b class="g">읽기 편하도록 해법을 별도 구간으로</b> 배치했습니다. <code>data-part</code>는 <b class="g">「9.4.1 해법(번호 없음)」</b>으로 표시해 원문 구조를 알 수 있게 했습니다.</div>
+  <aside>구조를 바꾸지 않되 읽기 쉽게만 나눴습니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="9.4.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">9.4.1 문제</h2>
+    <div class="who">지켜야 할 다섯 영역</div>
+  </div>
+  <aside>구체적인 윤리적·법적·기능적 범위 안에서 동작하도록 보장해야 하는 일이 잦습니다.</aside>
+</section>
+
+<!-- 4 다섯 영역 -->
+<section class="slide" data-part="9.4.1 문제">
+  <h2>&#128737;&#65039; 무엇으로부터 <span class="r">지켜야 하나</span></h2>
+  <table class="t">
+    <tr><th style="width:20%">영역</th><th>내용</th></tr>
+    <tr><td><b class="r">보안</b><br><small>security</small></td><td><b class="r">프롬프트 인젝션</b>과 <b class="r">탈옥</b>을 막아야 한다. 인젝션은 LLM이 <b class="g">시스템 프롬프트와 사용자 입력을 모두 텍스트로 처리</b>한다는 점을 파고든다 &mdash; 그 때문에 모델이 <b class="r">정당한 지시와 악의적 명령을 구분하기 어렵다.</b><br>&rarr; 공격자가 악성 프롬프트를 <b>직접</b> 먹이거나, LLM이 소비하는 데이터 안에 페이로드를 숨기는 <b>간접</b> 방식<br>&rarr; <b class="g">카네기 멜런 연구진(2023)</b>: 겉보기에는 <b class="r">무작위 문자로 보이는 접미사</b>가 LLM을 예기치 못한 방식으로 동작하게 만들 수 있다</td></tr>
+    <tr><td><b class="r">데이터<br>프라이버시</b></td><td><b class="r">PII &middot; 영업 비밀 &middot; 기밀 콘텐츠</b>의 부주의한 노출. 민감 정보가 <b class="r">학습 데이터</b>에 있었거나 <b class="r">사용자 입력의 캐시본</b>에 남아 있었다면 생길 수 있다</td></tr>
+    <tr><td><b class="r">콘텐츠 조정</b><br><small>moderation</small></td><td>입력과 출력 <b class="g">양쪽</b>에서 해롭거나 부적절한 콘텐츠를 걸러 낸다. <b class="gold">대외 서비스보다 사내용 애플리케이션에서 덜 필요할 수</b> 있다</td></tr>
+    <tr><td><b class="r">환각</b></td><td>출력이 <b class="g">정확하고 진실하며 신뢰할 수 있는 정보에 그라운딩</b>돼 있도록. <b class="g">과학 &middot; 저널리즘 &middot; 의료 &middot; 법률 &middot; 금융</b>처럼 정확성이 결정적인 곳에서 특히</td></tr>
+    <tr><td><b class="r">얼라인먼트</b><br><small>alignment</small></td><td><b class="g">구체적 가이드라인 &middot; 회사 정책 &middot; 윤리 원칙</b>을 지키도록. 브랜드 목소리, <b class="g">경쟁사 언급이나 정치 &middot; 종교 회피</b>. 또 <b class="g">편향과 차별을 막고 인구 집단 간 공정성을 보장</b>하도록 윤리적 경계를 부과하는 관할권 &middot; 산업일 수도</td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#10067; <b>그런데 이걸 어떻게 조직하나</b> &mdash; <b class="r">애플리케이션 코드 여기저기에 보안 &middot; 프라이버시 &middot; 콘텐츠 검사를 흩뿌리고 싶지는 않을 것이다.</b> 오류 처리의 <b class="r">표면적이 넓으면 유지 &middot; 강제하기 어렵다.</b></div>
+  <aside>다섯 영역 자체보다 "어떻게 한 곳에 모으나"가 이 패턴의 질문입니다.</aside>
+</section>
+
+<!-- 5 해법 계층 -->
+<section class="slide" data-part="9.4.1 해법(번호 없음)">
+  <h2>&#9989; 해법 &mdash; <span class="g">가드레일 계층</span></h2>
+  <div class="hl">파운데이션 모델과 <b class="g">입력 &middot; 출력 &middot; 지식 베이스 &middot; 도구</b> 사이의 대화 흐름에서 <b class="g">여러 지점에 걸친 포괄적 보호</b>를 제공하는 계층을 구현한다.</div>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell"><small>입력</small><b class="g">전처리</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gold)"><small>LLM</small><b class="gold">생성</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>출력</small><b class="g">후처리</b></div>
+  </div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:26%">가드레일이 하는 일</th><th>두 가지 처리</th></tr>
+    <tr><td><b class="g">전처리</b></td><td>모델로 들어가는 정보를</td></tr>
+    <tr><td><b class="g">후처리</b></td><td>모델의 출력을</td></tr>
+    <tr><td colspan="2"><b class="g">수정</b>(오류를 바로잡기 위해 입력이나 출력을 고침) 또는 <b class="r">거부</b></td></tr>
+  </table>
+  <div class="hl" style="margin-top:16px">&#9992;&#65039; <b>비유</b> &mdash; 공항 보안 검색대. <b class="g">탑승 전(입력)</b>에 짐을 검사하고, 필요하면 <b class="g">물건을 압수</b>하거나(수정) <b class="r">탑승을 막습니다</b>(거부). 다만 검색대가 <b class="g">네 군데</b> 있습니다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:24%">검색대 위치</th><th>막는 것</th></tr>
+    <tr><td><b class="g">입력</b> input</td><td>프롬프트 인젝션, 욕설, 사용자가 흘린 개인정보</td></tr>
+    <tr><td><b class="g">출력</b> output</td><td>모델이 뱉은 유해 표현, 경쟁사 언급, 유출된 기밀</td></tr>
+    <tr><td><b class="g">검색</b> retrieval</td><td>지식 베이스에서 <b class="g">꺼내 오면 안 되는 문서</b></td></tr>
+    <tr><td><b class="g">실행</b> execution</td><td>도구 호출의 인자 &mdash; <b class="r">"이 계정 삭제해"</b> 같은 위험한 파라미터</td></tr>
+  </table>
+  <aside>그림 9-7이 이 네 지점을 그린 것입니다.</aside>
+</section>
+
+<!-- 6 기성 가드레일 -->
+<section class="slide" data-part="9.4.1 해법(번호 없음)">
+  <h2>&#128230; <span class="g">기성</span> 가드레일</h2>
+  <p>일부 LLM은 API 호출 시 켤 수 있는 <b class="g">내장 안전 기능</b>을 제공한다.</p>
+  <div class="plabel">Gemini — 혐오 발언 생성 차단</div>
+  <pre>response = client.models.generate_content(
+    model="gemini-2.0-flash",
+    contents=[prompt, media, ...],
+    config=types.GenerateContentConfig(
+      <b class="g">safety_settings=[
+        types.SafetySetting(
+            category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            threshold=types.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+        ),
+      ]</b>
+    )
+)</pre>
+  <div class="hl" style="margin-top:14px">&#128295; <b>프레임워크</b> &mdash; <b class="g">NVIDIA NeMo &middot; Guardrails AI &middot; LLM Guard</b>가 <b>탈옥 검사 &middot; 입력의 민감 데이터 마스킹 &middot; 환각 검사</b> 같은 흔한 기능에 대해 기성 가드레일을 제공한다.</div>
+  <div class="plabel" style="margin-top:12px">LLM Guard — 유해 표현 스캔</div>
+  <pre>from llm_guard.input_scanners import Toxicity
+
+scanner = Toxicity(threshold=0.5, match_type=MatchType.SENTENCE)
+<b class="g">sanitized_prompt, is_valid, _ = scanner.scan(prompt)</b></pre>
+  <div class="plabel" style="margin-top:10px">프롬프트 인젝션 — 형태가 거의 같다</div>
+  <pre>scanner = PromptInjection(threshold=0.5, match_type=MatchType.FULL)
+sanitized_prompt, is_valid, _ = scanner.scan(prompt)</pre>
+  <div class="warn" style="margin-top:12px">&#128209; <b>스캐너의 계약</b> &mdash; 문자열 입력을 받아 <b class="g">정화된 버전</b>(PII를 가리는 가드레일에 유용)을 돌려주고, <b class="g">그 입력을 허용할지 여부</b>를 결정합니다.</div>
+  <aside>모든 스캐너가 같은 시그니처를 갖는 것이 이 설계의 핵심입니다.</aside>
+</section>
+
+<!-- 7 SLM과 정규식 -->
+<section class="slide" data-part="9.4.1 해법(번호 없음)">
+  <h2>&#129504; 무엇이 <span class="g">뒤에서 돌고 있나</span></h2>
+  <div class="hl">&#128161; 두 경우 모두 프레임워크는 <b class="g">사후 학습된 소형 언어 모델(SLM)</b>로 작업을 수행합니다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:30%">검사</th><th>쓰는 모델</th></tr>
+    <tr><td><b class="g">유해성</b></td><td><code>unitary/unbiased-toxic-roberta</code></td></tr>
+    <tr><td><b class="g">프롬프트 인젝션</b></td><td><code>ProtectAI/deberta-v3-base-prompt-injection-v2</code></td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#128209; <b class="g">패턴 24(SLM)</b>가 여기서 실전에 쓰입니다 &mdash; 가드레일 판정은 <b class="g">단순한 이진 분류</b>라 프런티어 모델이 필요 없습니다. 9.4.3에서 저자가 <b class="g">"SLM을 써서 지연을 관리 가능한 범위로 유지하라"</b>고 권하는 근거이기도 합니다.</div>
+  <div class="hl" style="margin-top:16px">&#128269; <b>모델만 쓰는 것은 아니다</b> &mdash; LLM Guard는 <b class="g">정규표현식에 걸리는 문자열을 거부</b>하는 기능도 지원합니다.</div>
+  <pre style="margin-top:12px">scanner = Regex(
+    <b class="g">patterns=[r"Bearer [A-Za-z0-9-._~+/]+"]</b>,  # 정규식 패턴 목록
+    <b class="g">is_blocked=True</b>,   # True 이면 패턴을 '나쁜 것'으로 취급
+    match_type=MatchType.SEARCH,   # SEARCH 또는 FULL_MATCH
+    <b class="g">redact=True</b>,       # 마스킹 활성화 여부
+)
+sanitized_prompt, is_valid, risk_score = scanner.scan(prompt)</pre>
+  <div class="warn" style="margin-top:12px">&#128273; 저 정규식이 잡는 것은 <b class="r">Bearer 토큰</b>입니다 &mdash; 사용자가 실수로 <b class="r">API 키를 프롬프트에 붙여 넣는</b> 사고를 막습니다. <b class="g">가장 값싸고 확실한 가드레일은 여전히 정규식</b>입니다.</div>
+  <aside>모든 검사에 모델이 필요한 것은 아니라는 점이 실무적입니다.</aside>
+</section>
+
+<!-- 8 커스텀 + 적용 -->
+<section class="slide" data-part="9.4.1 해법(번호 없음)">
+  <h2>&#128736;&#65039; <span class="g">커스텀</span> 가드레일과 묶음 적용</h2>
+  <p>직접 <b class="g">코드로 로직을 구현</b>하거나, <b class="g">파운데이션 모델에 프롬프트를 넣거나</b>, <b class="g">SLM을 사후 학습</b>시켜 만들 수 있다. 다음은 <b class="g">패턴 17 LLM-as-Judge</b>로 특정 주제의 프롬프트를 거부하는 예다.</p>
+  <pre>banned_topics = ["religion", "politics", "sexual innuendo"]
+system_prompt=f"""
+I will give you a piece of text. Check whether the text touches
+on any of these topics.
+
+        {banned_topics}
+
+<b class="g">Return True or False, with no preamble or special markers.</b>
+Text:
+"""
+llm = ...
+response = llm.complete(prompt).text.strip()
+<b class="g">is_valid = (response == "False")</b></pre>
+  <div class="warn" style="margin-top:12px">&#128209; <b class="g">패턴 17이 재활용됩니다</b> &mdash; 6장에서 <b>품질 평가</b> 도구로 소개된 것이 여기서는 <b class="g">안전 검사 도구</b>가 됩니다. 채점표를 든 심사위원은 <b class="g">"잘 썼는가"뿐 아니라 "써도 되는가"도 판정할 수 있습니다.</b></div>
+  <div class="plabel" style="margin-top:14px">묶음이 준비되면 하나씩 차례로 적용</div>
+  <pre>def apply_guardrails(guardrails, prompt):
+    sanitized_prompt = prompt   # 초기값
+    for scanner in guardrails:
+       sanitized_prompt, is_valid, _ = scanner(sanitized_prompt)
+       if not is_valid:
+          <b class="r">raise Exception("...")</b>
+    return sanitized_prompt</pre>
+  <div class="hl" style="margin-top:12px">&#9989; <b>출력이나 검색 결과, 도구 파라미터에 적용하는 것도 비슷하게 동작합니다.</b> 시그니처를 통일해 뒀기에 <b class="g">for 루프 하나로</b> 끝납니다.</div>
+  <aside>검사 코드를 흩뿌리지 않고 한 겹으로 모으는 것이 이 패턴의 실체입니다.</aside>
+</section>
+
+<!-- 9 PART 예제 -->
+<section class="slide" data-part="9.4.2 예제">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">9.4.2 예제</h2>
+    <div class="who">제인 오스틴 RAG</div>
+  </div>
+  <aside>제인 오스틴의 글을 근거로 질문에 답하도록 설계된 RAG 시스템입니다.</aside>
+</section>
+
+<!-- 10 기본 동작 -->
+<section class="slide" data-part="9.4.2 예제">
+  <h2>&#128218; 가드레일 <span class="g">없이</span>는 이렇게 동작한다</h2>
+  <div class="plabel">질의</div>
+  <pre>Can you give advice without being resented for it?</pre>
+  <p style="margin-top:8px"><small>(원망을 사지 않으면서 충고할 수 있을까?)</small></p>
+  <div class="plabel" style="margin-top:12px">응답</div>
+  <pre style="font-size:.78em">Yes, it is possible to give advice without being resented for it.
+The text shows an example ... that is described as
+<b class="g">"a wonderful instance of advice being given on such a point,
+without being resented."</b>
+
+However, the manner in which advice is offered seems important.
+In another example, ...</pre>
+  <div class="hl" style="margin-top:14px">&#128161; <b>정상 동작</b> &mdash; 원문에서 근거를 인용하고 있습니다(<b class="g">패턴 6 기본 RAG</b>). 이제 여기에 <b class="g">두 개의 가드레일</b>을 씌워 봅니다.</div>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell"><small>가드레일 1</small><b class="g">PII 제거</b><small>고유명사 &rarr;<br>일반 식별자</small></div>
+    <div class="cell"><small>가드레일 2</small><b class="g">금지 주제</b><small>종교 &middot; 정치 &middot;<br>성적 암시</small></div>
+  </div>
+  <aside>전체 코드는 GitHub에 있습니다.</aside>
+</section>
+
+<!-- 11 두 가드레일 -->
+<section class="slide" data-part="9.4.2 예제">
+  <h2>&#128295; 두 가드레일 <span class="g">구현</span></h2>
+  <div class="plabel">가드레일 1 — 고유명사를 일반 식별자로</div>
+  <pre style="font-size:.76em">def guardrail_replace_names(to_scan: str):
+    system_prompt="""
+I will give you a piece of text. In that piece of text, replace
+any personal names with a generic identifier.
+
+<b class="g">Example:
+  Input:  I met Sally in the store.
+  Output: I met a woman in the store.</b>
+
+Return only the modified text, with no preamble or special markers.
+    """
+    sanitized_output = llm.complete(system_prompt+"\n"+to_scan).text.strip()
+    no_change = (sanitized_output == to_scan)
+
+    return {
+        "guardrail_type": "PII Removal",
+        <b class="g">"activated": not no_change</b>,
+        <b class="g">"should_stop": False</b>,          # 수정만, 차단 안 함
+        <b class="g">"sanitized_output": sanitized_output</b>,
+    }</pre>
+  <div class="plabel" style="margin-top:12px">가드레일 2 — 금지 주제 거부</div>
+  <pre style="font-size:.76em">def guardrail_banned_topics(to_scan: str):
+    banned_topics = ["religion", "politics", "sexual innuendo"]
+    ...
+    response = llm.complete(system_prompt+"\n"+to_scan).text.strip()
+    is_banned = (response == "True")
+
+    return {
+        "guardrail_type": "Banned Topic",
+        "activated": is_banned,
+        <b class="r">"should_stop": is_banned</b>,       # 차단
+        "sanitized_output": to_scan,
+    }</pre>
+  <div class="warn" style="margin-top:12px">&#128209; <b class="g">가드레일을 여러 개 적용하기 쉽도록, 모든 가드레일 함수의 시그니처를 똑같이 맞춰야 합니다.</b> <code>should_stop</code>의 차이가 <b class="g">"수정"과 "거부"</b>를 가릅니다 &mdash; PII는 <b class="g">고쳐서 통과</b>, 금지 주제는 <b class="r">멈춤</b>.</div>
+  <aside>같은 반환 구조를 강제하는 것이 이 계층의 설계 원칙입니다.</aside>
+</section>
+
+<!-- 12 감싸기 -->
+<section class="slide" data-part="9.4.2 예제">
+  <h2>&#127890; 질의 엔진 <span class="g">감싸기</span></h2>
+  <pre>class GuardedQueryEngine(RetrieverQueryEngine):
+    def __init__(self, query_engine: RetrieverQueryEngine):
+        self._query_engine = query_engine
+
+    def query(self, query):
+        <b class="g"># 입력에 가드레일 적용</b>
+        gd = apply_guardrails(query,
+                 [guardrail_replace_names, guardrail_banned_topics])
+        if not gd["should_stop"]:
+            print(f"Modified Query: {gd['sanitized']}")
+            query_response = self._query_engine.query(gd["sanitized"])
+            <b class="g"># 출력에는 다른 묶음을 적용</b>
+            gd = apply_guardrails(str(query_response),
+                                  <b class="g">[guardrail_banned_topics]</b>)
+            if not gd["should_stop"]:
+                return Response(gd["sanitized"],
+                               source_nodes=query_response.source_nodes)
+        return Response(str(gd))</pre>
+  <div class="hl" style="margin-top:14px">&#128161; <b>입력과 출력의 묶음이 다릅니다</b> &mdash; 입력에는 <b class="g">PII 제거 + 금지 주제</b> 둘 다, 출력에는 <b class="g">금지 주제만</b>. 출력에 PII 제거를 안 거는 이유는 <b class="g">이미 입력에서 가려졌기</b> 때문입니다.</div>
+  <div class="big" style="margin-top:14px">입력과 출력<br><span class="y">어느 쪽도 차단되지 않은 경우에만</span><br>응답을 돌려준다</div>
+  <aside>LlamaIndex의 질의 엔진을 그대로 감싸는 방식입니다.</aside>
+</section>
+
+<!-- 13 결과 -->
+<section class="slide" data-part="9.4.2 예제">
+  <h2>&#127919; 실제 <span class="g">동작</span></h2>
+  <div class="warn">&#128683; <b>차단된 질의</b> &mdash; 종교가 금지 주제 중 하나이므로 RAG 시스템은 답하기를 <b class="r">거부</b>합니다.</div>
+  <pre style="margin-top:10px">Are parish priests expected to be role models?</pre>
+  <p style="margin-top:6px"><small>(교구 신부는 롤 모델이어야 하는가?)</small></p>
+  <div class="hl" style="margin-top:16px">&#9997;&#65039; <b>수정된 질의</b> &mdash; 고유명사는 가려야 하므로, 다음 질의는 <b class="g">LLM에 보내지기 전에 수정</b>됩니다.</div>
+  <table class="t" style="margin-top:12px">
+    <tr><th style="width:22%">단계</th><th>질의</th></tr>
+    <tr><td><b class="gold">원래 질의</b></td><td>Would <b class="r">Mr. Darcy</b> be an appealing match if he were not wealthy?</td></tr>
+    <tr><td><b class="g">수정된 질의</b></td><td>Would <b class="g">a man</b> be an appealing match if he were not wealthy?</td></tr>
+  </table>
+  <div class="warn" style="margin-top:16px">&#129300; <b>여기서 트레이드오프가 보입니다</b> &mdash; 이 RAG는 <b class="g">제인 오스틴 전용</b>인데 <b class="r">Mr. Darcy를 지워 버렸습니다.</b> 검색 품질이 <b class="r">떨어질 수밖에</b> 없죠. 9.4.3에서 저자가 말하는 <b class="g">"보안 &middot; 사용성 &middot; 성능 사이의 본질적 트레이드오프"</b>가 바로 이것입니다.</div>
+  <div class="hl">&#128161; 실무라면 <b class="g">"실존 인물의 이름만 가리고 소설 등장인물은 통과"</b>시키는 식으로 다듬어야 합니다 &mdash; 그리고 그 다듬는 일이 <b class="r">복잡도</b>입니다.</div>
+  <aside>예제가 우연히 이 패턴의 부작용까지 보여 줍니다.</aside>
+</section>
+
+<!-- 14 고려사항 복잡도 -->
+<section class="slide" data-part="9.4.3 고려사항">
+  <h2>&#9888;&#65039; 9.4.3 &mdash; <span class="r">가장 복잡한 방식</span></h2>
+  <div class="warn">&#128680; 가드레일은 애플리케이션 아키텍처에 <b class="r">상당한 엔지니어링 복잡도와 지연</b>을 끌어들인다.<br><br>
+    <b class="r">GenAI 애플리케이션을 구현하는 가장 복잡한 방식이 바로 맞춤 사후 학습된 가드레일과 함께 배포하는 것</b>이므로, <b class="g">이 복잡도가 정당한지 반드시 확인하라.</b><br><br>
+    <b class="g">우려하는 핵심 위험을 더 저렴하게 막을 방법이 있을지도 모른다.</b></div>
+  <div class="hl" style="margin-top:16px">&#128176; <b>지연을 줄이는 두 가지</b><br><br>
+    &#9312; 예제의 가드레일은 <b>프런티어 모델 API</b>를 호출해 구현했지만 <b class="g">꼭 그럴 필요는 없다</b> &mdash; <b class="g">SLM(패턴 24)</b>을 써서 지연을 관리 가능한 범위로 유지할 수 있다<br><br>
+    &#9313; 가드레일과 LLM 코드를 <b class="g">순차로 돌릴 필요도 없다</b></div>
+  <pre style="margin-top:12px">try:
+  input_guardrail_results, turn_result = <b class="g">await asyncio.gather(</b>
+      apply_guardrails( ... ),
+      llm.complete( ... ),
+  )
+except InputGuardrailTriggered:
+  ...</pre>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; <b>병렬화의 한계를 저자가 솔직히 밝힙니다</b> &mdash; 입력 가드레일이 허용되지 않는 사용을 탐지하면 <b class="g">예외를 던져야</b> 하고, 그러면 두 번째 호출의 실행이 멈춥니다. 다만 이렇게 하면 <b class="r">LLM이 그 호출을 실행하는 것 자체는 막지 못합니다</b> &mdash; 대신 <b class="g">악의적 입력의 결과를 애플리케이션이 사용하지 못하게</b> 하는 데 초점을 맞추게 됩니다.</div>
+  <div class="hl">&#128161; <b>비용은 이미 나갔고 유출만 막는 셈</b>입니다. <b class="g">지연이 중요하면 병렬로, 비용이 중요하면 순차로.</b></div>
+  <aside>가드레일 다섯 개를 순차로 돌리면 응답이 다섯 배 느려질 수 있습니다.</aside>
+</section>
+
+<!-- 15 군비 경쟁 -->
+<section class="slide" data-part="9.4.3 고려사항">
+  <h2>&#128260; 끝없는 <span class="r">군비 경쟁</span></h2>
+  <div class="big"><span class="y">보안 &middot; 사용성 &middot; 성능</span> 사이에는<br>본질적인 트레이드오프가 있다</div>
+  <ul class="pts" style="margin-top:16px">
+    <li>가드레일이 <b class="r">엄격할수록 모델 능력이 줄거나 지연이 늘</b> 수 있다</li>
+    <li><b class="r">공격자는 충분히 공을 들이면 아무리 정교한 가드레일도 우회</b>할 수 있다</li>
+    <li><b class="r">공격 기법도 진화</b>한다</li>
+  </ul>
+  <div class="hl" style="margin-top:16px">&#128209; 그러므로 가드레일은 <b class="g">보안 조치와 우회 방법 사이의 끝없는 군비 경쟁</b>으로 봐야 한다. 그렇다면 가드레일을 <b class="g">몇 달마다 갈아 끼우는 래퍼</b>로 생각하는 편이 낫다.</div>
+  <div class="big" style="margin-top:16px">고도로 커스터마이즈된 가드레일을<br>만드는 데 힘을 쏟는 대신<br><span class="y">새 프레임워크로 쉽게 옮길 수 있거나</span><br><span class="y">모델에 구애받지 않는</span> 가드레일을 만들어라</div>
+  <div class="warn" style="margin-top:16px">&#127919; <b>저자가 제시하는 전략</b><br><br>
+    &#9312; <b class="g">막고 싶은 상황들</b>과 <b class="g">견딜 수 있는 최대 지연</b>으로 이루어진 <b class="g">평가 데이터셋을 계속 갱신</b>한다<br><br>
+    &#9313; 상용 가드레일 시스템들을 <b class="g">주기적으로 테스트</b>해, 필요에 따라 <b class="g">기반 프레임워크와 모델을 바꾼다</b></div>
+  <div class="hl">&#128161; <b>자산이 바뀝니다</b> &mdash; 공들여 만든 <b class="r">가드레일 코드가 아니라</b>, <b class="g">"무엇을 막아야 하는지 아는 평가 데이터셋"</b>이 오래 남는 자산이 됩니다.</div>
+  <aside>소모품으로 보라는 조언이 이 절에서 가장 실용적입니다.</aside>
+</section>
+
+<!-- 16 참고문헌 -->
+<section class="slide" data-part="9.4.4 참고문헌">
+  <h2>&#128218; 9.4.4 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:28%">출처</th><th>기여</th></tr>
+    <tr><td><b class="g">Dong 외 (2024)</b></td><td><b class="g">가드레일의 부분적 해법이 왜 통하지 않으며 포괄적 접근이 왜 필요한지</b> 설명</td></tr>
+    <tr><td><b class="g">OWASP 보안<br>프로젝트</b></td><td><b class="g">프롬프트 인젝션 시나리오를 분류</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:16px">&#127970; <b>실무 사례</b><br><br>
+    &bull; <b class="g">QED42</b> &mdash; 어느 <b>법률 기관</b>의 LLM 기반 검색 애플리케이션 둘레에 <b class="g">정책 &middot; 예외 &middot; 퓨샷 예시를 갖춘 프롬프트 기반 가드레일</b>을 만들었다. <b class="g">도메인 밖(비법률) 질의 입력을 걸러 내고 출력이 관련성을 유지</b>하도록 보장했다<br><br>
+    &bull; <b class="g">Acrolinx</b> &mdash; <b class="g">LLM-as-Judge(패턴 17)로 구현한 AI 가드레일</b>로 <b class="g">콘텐츠 전반의 브랜드 목소리 일관성</b>을 유지한다</div>
+  <div class="hl" style="margin-top:16px">&#128161; <b>두 사례 모두 "보안"이 아니라 "얼라인먼트"</b>입니다 &mdash; 도메인 밖 질의 차단, 브랜드 목소리 유지. <b class="g">실무에서 가드레일이 가장 많이 쓰이는 자리는 해킹 방어가 아니라 "우리 서비스답게 유지하기"</b>라는 점을 보여 줍니다.</div>
+  <div class="warn">&#128209; <b>Dong 외의 논지</b>가 이 패턴의 존재 이유입니다 &mdash; 검사를 코드 여기저기에 흩뿌리는 <b class="r">"부분적 해법"</b>으로는 안 되고, <b class="g">한 겹의 계층</b>이 필요하다는 것.</div>
+  <aside>OWASP 분류는 인젝션 방어를 설계할 때 출발점으로 쓸 만합니다.</aside>
+</section>
+
+<!-- 17 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#128737;&#65039; 한 겹으로 모으고 <span class="g">자주 갈아 끼워라</span></h1>
+    <div class="big" style="margin-top:24px">검사 로직을<br><span class="y">애플리케이션 곳곳이 아니라 한 겹의 계층</span>으로 모아<br>들고 나는 모든 것을 거른다<br><br><small>그리고 <b class="g">공들여 만들지 말고<br>갈아 끼우기 쉽게</b> 만들라</small></div>
+    <p class="sub" style="margin-top:22px">패턴 32 &mdash; 여기까지 &nbsp;&middot;&nbsp; <b>9장 완료 &middot; 32개 패턴 전부</b></p>
+  </div>
+  <aside>32개 패턴이 여기서 끝납니다. 10장은 이들을 조합하는 장입니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

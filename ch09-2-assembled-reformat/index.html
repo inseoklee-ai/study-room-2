@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>패턴 30 조립 후 재포맷 — Assembled Reformat</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 9 &middot; Pattern 30</div>
+    <h1 style="margin:18px 0">조립 후 <span class="g">재포맷</span></h1>
+    <p class="sub">Assembled Reformat &mdash; <b>사실은 기계가 모으고, 문장만 LLM이 다듬는다</b></p>
+  </div>
+  <aside>패턴 29를 쓸 수 없을 만큼 조합이 많을 때의 선택지입니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 9.2</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>9.2.1 문제</b> &mdash; 리튬 배터리를 알칼라인이라 적으면</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>9.2.2 해법</b> &mdash; 조립과 재포맷</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>9.2.3 예제</b> &mdash; 제품 카탈로그</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>9.2.4 고려사항</b> &mdash; 그래도 검증하라</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>9.2.5 참고문헌</b></span></div>
+  </div>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell"><small>&#9312; 조립</small><b class="g">Assemble</b><small>OCR &middot; RAG &middot;<br>Tool Calling &middot; 패턴 29</small></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>&#9313; 재포맷</small><b class="g">Reformat</b><small>LLM이 표현 변경 &middot;<br>요약</small></div>
+  </div>
+  <div class="hl">&#128161; <b>왜 두 단계 모두 저위험인가</b> &mdash; 조립은 <b class="g">지어낼 여지가 없고</b>, 재포맷은 <b class="g">새 사실을 만드는 게 아니라 고쳐 쓰기</b>이기 때문입니다.</div>
+  <aside>위험을 없애는 게 아니라 위험한 단계를 아예 만들지 않는 구조입니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="9.2.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">9.2.1 문제</h2>
+    <div class="who">제품 카탈로그 수십만 페이지</div>
+  </div>
+  <aside>이커머스 사이트의 제품 카탈로그를 예로 듭니다.</aside>
+</section>
+
+<!-- 4 리튬 배터리 -->
+<section class="slide" data-part="9.2.1 문제">
+  <h2>&#128267; 사소해 보이는 오류 <span class="r">하나에 걸린 위험</span></h2>
+  <p>제품 카탈로그는 <b class="g">잠재 구매자에게도 검색 엔진에도 매력적</b>이어야 한다. 사이트에는 제품 페이지가 <b class="r">수십만 개</b>다 &mdash; <b class="g">패턴 29로 감당할 수 있는 양이 아니다.</b></p>
+  <div class="big" style="margin-top:16px">LLM이 리튬 배터리 카메라를<br><span class="r">"알칼라인"이라고 적었다면?</span></div>
+  <div class="steps" style="margin-top:18px">
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">1</span><span class="t">리튬 배터리는 밀폐 공간에서 <b class="r">통제 불가능한 화재</b>를 일으킬 수 있어 <b class="r">비행기 위탁 수하물에 넣을 수 없다</b></span></div>
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">2</span><span class="t">당신 사이트에서 산 카메라가 <b class="r">비행기 화물칸에서 불이 붙거나 불길을 키운다면?</b></span></div>
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">3</span><span class="t">항공사가 인화성 물품이 수하물에 있다는 이유로 <b class="r">고객의 탑승을 막는다면?</b></span></div>
+  </div>
+  <div class="warn" style="margin-top:16px">&#9888;&#65039; <b class="r">배터리 종류라는 사소해 보이는 오류 하나에 걸린 위험이 꽤 크다</b>는 데 동의하리라 믿는다. 이런 유스케이스에서는 <b class="r">동적 생성이 너무 위험하다.</b></div>
+  <div class="hl">&#10067; LLM이 부정확하거나 환각된 정보를 끌어들일 위험은 지지 않으면서 <b class="g">LLM 생성의 이점만 얻을</b> 방법이 있을까?</div>
+  <aside>위험이 큰 이유를 저자가 세 단계로 풀어 보여 주는 대목입니다.</aside>
+</section>
+
+<!-- 5 PART 2 해법 -->
+<section class="slide" data-part="9.2.2 해법">
+  <h2>&#9989; 9.2.2 해법 &mdash; <span class="g">두 단계로 나눈다</span></h2>
+  <div class="hl">&#127919; <b>이 패턴이 통하는 두 조건</b><br><br>
+    &#9312; <b class="g">환각되면 감당 못 할 위험을 낳는 제품 특성을 식별</b>할 수 있고<br>
+    &#9313; 그 특성들을 <b class="g">데이터베이스에서 읽거나 문서 데이터 추출 시스템을 쓰는 등 위험이 낮은 방법으로 조립</b>할 수 있을 때</div>
+  <div class="steps" style="margin-top:16px">
+    <div class="st"><span class="n">1</span><span class="t">제품 속성 텍스트를 <b>전부 이어 붙이거나 미리 정의된 구조에 넣어</b> 최종 결과를 만든다 &rarr; <b class="gold">정확하기는 하지만 읽기에 그다지 즐겁지 않은 텍스트</b></span></div>
+    <div class="st"><span class="n">2</span><span class="t">이 정확한 텍스트를 <b class="g">프롬프트의 컨텍스트에 넣고</b> LLM에게 <b class="g">표현을 바꾸거나 다시 쓰거나 재포맷하라</b>고 요청한다</span></div>
+  </div>
+  <div class="big" style="margin-top:16px">이런 LLM 작업으로 생성된 텍스트는<br><span class="y">맨바닥에서 생성한 텍스트보다</span><br><span class="g">훨씬 위험이 낮다</span></div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:20%">단계</th><th style="width:26%">하는 일</th><th style="width:18%">누가</th><th>위험</th></tr>
+    <tr><td><b class="g">&#9312; 조립</b></td><td>사실을 <b>있는 그대로</b> 모은다</td><td>DB &middot; RAG &middot; OCR</td><td><b class="g">낮음</b> &mdash; 지어낼 여지가 없음</td></tr>
+    <tr><td><b class="g">&#9313; 재포맷</b></td><td>모아 둔 사실을 <b>읽기 좋게 다시 쓴다</b></td><td>LLM</td><td><b class="g">낮음</b> &mdash; 창작이 아니라 <b>고쳐 쓰기</b></td></tr>
+  </table>
+  <aside>그림 9-2가 이 두 단계를 그린 것입니다.</aside>
+</section>
+
+<!-- 6 왜 고쳐쓰기가 안전한가 -->
+<section class="slide" data-part="9.2.2 해법">
+  <h2>&#129504; 왜 <span class="g">"고쳐 쓰기"</span>는 덜 위험한가</h2>
+  <div class="grid2">
+    <div class="box" style="border-color:var(--red)"><b class="r">&#10060; "카메라 설명 써 줘"</b><br><br>
+      LLM이 배터리 종류를 <b class="r">기억에서 끄집어냅니다.</b><br><br>
+      &rarr; 여기서 <b class="r">알칼라인 / 리튬이 뒤바뀝니다.</b></div>
+    <div class="box"><b class="g">&#9989; "다음 사실을 예쁘게 다듬어라:<br>리튬 배터리, 3년 보증"</b><br><br>
+      모델이 할 일은 <b class="g">주어진 문장을 다시 배열하는 것</b>입니다.<br><br>
+      &rarr; <b class="g">지어낼 이유가 없습니다.</b></div>
+  </div>
+  <div class="hl" style="margin-top:18px">&#127968; <b>비유</b> &mdash; 부동산 매물 광고를 쓴다고 합시다. <b class="r">"전용 84&#13217;, 15층, 2012년 준공, 3억 8천만 원"</b>은 <b class="r">틀리면 큰일 나는 사실</b>이고, <b class="g">"채광이 훌륭한 남향 아파트로, 출퇴근이 편안합니다"</b>는 <b class="g">틀려도 크게 문제 없는 수식</b>입니다.</div>
+  <div class="big" style="margin-top:18px">사실은 <span class="y">기계가 모으고</span><br>문장만 <span class="y">LLM이 다듬는다</span></div>
+  <ul class="pts" style="margin-top:16px">
+    <li><b class="g">조립</b>(assemble) &mdash; 사실을 저위험 수단(DB &middot; OCR &middot; RAG)으로 그러모으는 단계</li>
+    <li><b class="g">재포맷</b>(reformat) &mdash; 그 사실을 LLM으로 다듬는 단계. <b>요약 &middot; 재표현은 창작보다 안전</b></li>
+  </ul>
+  <aside>같은 모델인데 하는 일이 달라서 위험이 달라진다는 점이 요점입니다.</aside>
+</section>
+
+<!-- 7 PART 3 데이터 클래스 -->
+<section class="slide" data-part="9.2.3 예제">
+  <h2>&#128230; 9.2.3 예제 &mdash; <span class="g">원시 데이터 정의</span></h2>
+  <pre>@dataclass
+class CatalogContent:
+    part_name: str = Field("Common name of part")
+    part_id: str = Field("unique part id in catalog")
+    part_description: str = Field("""One paragraph description of
+part, which is one of the parts of a paper machine, explaining
+its purpose.""")
+    failure_modes: list[str] = Field("""list of common reasons why
+customer might need to replace this part.""")
+    warranty_period: int = Field("""number of years that the part
+is under warranty""")
+    price: str = Field("price of part")</pre>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:36%">필드</th><th>어디서 가져오나</th></tr>
+    <tr><td><code>part_name</code> &middot; <code>part_id</code><br><code>warranty_period</code> &middot; <code>price</code></td><td><b class="g">데이터베이스</b></td></tr>
+    <tr><td><code>part_description</code><br><code>failure_modes</code></td><td><b class="g">장비 매뉴얼에서 추출</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#127777;&#65039; <b>추출에 LLM을 쓴다면</b> &mdash; <b class="g">낮은 temperature(0.1이나 0)</b>를 써서 부정확함의 위험을 낮춰라.</div>
+  <div class="hl">&#128209; <b>2장 패턴 2 Grammar</b>가 여기 깔려 있습니다 &mdash; <code>@dataclass</code>와 <code>Field</code> 설명이 곧 <b class="g">구조화 출력 스키마</b>입니다. 자유 텍스트가 아니라 <b class="g">정해진 칸에만</b> 값이 들어옵니다.</div>
+  <aside>전체 코드는 GitHub에 있습니다.</aside>
+</section>
+
+<!-- 8 조립 결과 -->
+<section class="slide" data-part="9.2.3 예제">
+  <h2>&#128295; 조립된 <span class="g">원시 데이터</span></h2>
+  <p>제지 기계에 쓰이는 <b class="g"><i>wet end</i></b>라는 부품이라면, 카탈로그 콘텐츠는 다음과 비슷하다.</p>
+  <pre>CatalogContent
+part_name=<b class="g">'wet_end'</b>
+part_id=<b class="g">'X34521PL'</b>
+part_description='The wet end of a paper machine is the section
+where the paper web is formed. It is arguably the most important
+section of the machine.'
+failure_modes=[<b class="gold">'Web breaks'</b>, <b class="gold">'Uneven sheet formation'</b>,
+               <b class="gold">'Poor drainage'</b>],
+warranty_period=<b class="g">3</b>
+price=<b class="g">'$23295'</b></pre>
+  <div class="hl" style="margin-top:16px">&#128161; <b><code>failure_modes</code>는 신뢰할 수 있는 출처에서 추출한 항목</b>입니다. 이후 생성을 이 <b class="g">세 가지 고장 유형에 그라운딩</b>시키면 &mdash;</div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="box"><b class="g">&#9989; 언제나 하는 것</b><br><br>LLM은 <b class="g">이 세 가지 이슈에 대한 단서 조항만</b> 넣게 된다</div>
+    <div class="box" style="border-color:var(--gold)"><b class="gold">&#128274; 절대 하지 않는 것</b><br><br>제지 기계 제조사가 <b class="gold">공개하고 싶지 않을 다른 고장 유형</b>은 넣지 않게 된다</div>
+  </div>
+  <div class="big" style="margin-top:18px">말하지 않을 것까지<br><span class="y">통제된다</span></div>
+  <div class="warn" style="margin-top:14px">&#128161; 이것이 이 패턴의 <b class="g">숨은 이득</b>입니다. 맨바닥 생성이었다면 LLM이 <b class="r">"베어링 마모"나 "부식"</b> 같은 그럴듯한 고장 유형을 <b class="r">자기 지식에서 끌어와 덧붙였을</b> 겁니다 &mdash; 사실일지라도 <b class="r">제조사가 카탈로그에 적고 싶지 않은 내용</b>일 수 있죠.</div>
+  <aside>정확성만이 아니라 통제 가능성이 이 패턴의 가치입니다.</aside>
+</section>
+
+<!-- 9 재포맷 -->
+<section class="slide" data-part="9.2.3 예제">
+  <h2>&#10024; 재포맷 &mdash; <span class="g">창의적인 글쓰기 엔진에게</span></h2>
+  <div class="plabel">재포맷 프롬프트</div>
+  <pre>Write content in <b class="g">Markdown</b> that will go in the Replacement Parts
+part of the manufacturer's website.
+Include a placeholder for an image and include a description of
+the image.
+<b class="g">Optimize the content for SEO.</b>
+<b class="g">Also make it appealing to potential buyers.</b>
+
+Part Information:
+<b class="gold">{item}</b></pre>
+  <div class="plabel" style="margin-top:14px">결과 — 재포맷된 카탈로그 콘텐츠</div>
+  <pre style="font-size:.76em">The wet end is where the magic happens—the initial formation of
+the paper web. A poorly functioning wet end can lead to a cascade
+of problems, including:
+
+* <b class="gold">Web Breaks</b>: Frequent web breaks are a major source of
+  downtime and waste of materials.
+* <b class="gold">Uneven Sheet Formation</b>: Inconsistent sheet formation results
+  in lower-quality paper and potential customer complaints.
+* <b class="gold">Poor Drainage</b>: Inefficient drainage reduces machine speed
+  and increases energy consumption.
+
+Investing in genuine replacement parts for your wet end is an
+investment in the overall efficiency and quality of your paper
+production.</pre>
+  <div class="hl" style="margin-top:12px">&#128161; <b>세 가지 "허용된" 고장 유형이 그대로 살아 있고</b>, LLM이 한 일은 각각에 <b class="g">"왜 이 부품을 사야 하는지 정당화하는 설명"</b>을 붙인 것입니다. <b class="g">사실은 하나도 새로 생기지 않았습니다.</b></div>
+  <aside>SEO 최적화와 구매 설득이라는 목적은 LLM이 잘하는 일입니다.</aside>
+</section>
+
+<!-- 10 고려사항 -->
+<section class="slide" data-part="9.2.4 고려사항">
+  <h2>&#9888;&#65039; 9.2.4 &mdash; <span class="r">그래도 검증하라</span></h2>
+  <div class="warn">&#9888;&#65039; <b>두 단계가 모두 위험이 낮다고는 해도, 결과는 검증해야 한다.</b></div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:24%">검증할 것</th><th>방법</th></tr>
+    <tr><td><b class="g">조립이 맞았나</b></td><td>가능하다면 데이터를 <b class="g">두 가지 방식으로 추출해</b> 같은 결과가 나오는지 보라.<br>&rarr; <b class="g">패턴 31 Self-Check</b>를 쓸 수도 있다</td></tr>
+    <tr><td><b class="g">재포맷이 사실을<br>지켰나</b></td><td>생성된 콘텐츠가 <b class="g">환각되면 안 되는 원시 데이터를 그대로 유지하고 있는지</b> 검증하라.<br>&rarr; <b class="g">패턴 17 LLM-as-Judge</b>(6장)를 쓸 수 있다</td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">먼저 <span class="y">패턴 29</span>가<br>요구를 충족하는지부터 보라</div>
+  <div class="hl" style="margin-top:16px">&#128161; <b>왜 29가 먼저인가</b> &mdash; <b class="g">모든 템플릿을 검토할 수 있다는 점이 안전장치를 하나 더 얹어 주기</b> 때문입니다. Template Generation을 <b class="g">쓸 수 없는 상황</b>, 예컨대 <b class="r">사람이 검토하기에는 항목이 너무 많은</b> 경우에만 Assembled Reformat을 고르십시오.</div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:34%">콘텐츠의 성격</th><th>맞는 패턴</th></tr>
+    <tr><td><b class="g">어느 정도 정적</b><br><small>제품 카탈로그 페이지</small></td><td><b class="g">Assembled Reformat</b> (패턴 30)</td></tr>
+    <tr><td><b class="gold">훨씬 동적</b><br><small>사용자의 여정 &middot; 프로필에 맞춘<br>마케팅 랜딩 페이지</small></td><td><b class="gold">Template Generation</b> (패턴 29)</td></tr>
+  </table>
+  <div class="warn" style="margin-top:12px">&#128161; <b>이 표가 반직관적입니다</b> &mdash; <b class="g">"동적"인 쪽에 오히려 사전 생성 패턴</b>이 붙습니다. 마케팅 랜딩 페이지는 <b class="g">조합이 정해져 있어(캠페인 &times; 프로필) 미리 만들 수 있지만</b>, 카탈로그는 <b class="g">제품마다 사실이 전부 달라</b> 미리 만들 수가 없기 때문입니다.</div>
+  <aside>"동적/정적"이 아니라 "조합이 유한한가"가 실제 기준입니다.</aside>
+</section>
+
+<!-- 11 참고문헌 -->
+<section class="slide" data-part="9.2.5 참고문헌">
+  <h2>&#128218; 9.2.5 <span class="g">참고문헌</span></h2>
+  <div class="hl">&#128218; <b>Valliappa Lakshmanan (2024)</b> &mdash; GenAI 애플리케이션에서 <b class="g">창의성과 위험의 균형</b>을 맞추는 법에 관해 쓴 글에서 소개됐다.</div>
+  <div class="warn" style="margin-top:16px">&#128209; <b>패턴 29와 같은 출처</b>입니다 &mdash; 두 패턴은 <b class="g">한 쌍으로 제안된 것</b>이며, 그래서 <b class="g">서로의 대안</b>으로 반복 언급됩니다.</div>
+  <div class="big" style="margin-top:18px">같은 질문에 대한<br><span class="y">두 가지 답</span></div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:20%"></th><th style="width:40%">패턴 29 템플릿 생성</th><th>패턴 30 조립 후 재포맷</th></tr>
+    <tr><td><b>LLM이 만드는 것</b></td><td><b class="g">문장 전체</b> (템플릿)</td><td><b class="g">표현만</b> (사실은 주어짐)</td></tr>
+    <tr><td><b>안전장치</b></td><td><b class="g">사람이 전부 검토</b></td><td><b class="g">사실이 외부에서 고정됨</b></td></tr>
+    <tr><td><b>성립 조건</b></td><td>조합이 <b class="g">검토 가능한 수</b></td><td>위험한 특성을 <b class="g">식별 &middot; 조립</b>할 수 있음</td></tr>
+    <tr><td><b>실행 시점 LLM 호출</b></td><td><b class="g">없음</b></td><td><b class="gold">있음</b> (재포맷)</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; 마지막 행이 중요합니다 &mdash; 패턴 30은 <b class="gold">실행 시점에 여전히 LLM을 부릅니다.</b> 그래서 29보다 <b class="gold">덜 안전하지만 더 확장 가능</b>합니다.</div>
+  <aside>둘의 차이를 한 표로 정리하면 선택이 쉬워집니다.</aside>
+</section>
+
+<!-- 12 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#128295; 사실과 문장을 <span class="g">갈라놓아라</span></h1>
+    <div class="big" style="margin-top:24px">사실은 <span class="y">기계가 모으고</span><br>문장만 <span class="y">LLM이 다듬는다</span><br><br><small>그러면 <b class="g">말하지 않을 것까지</b> 통제된다</small></div>
+    <p class="sub" style="margin-top:22px">패턴 30 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 31 자가 점검</b></p>
+  </div>
+  <aside>여기까지가 틀릴 자리를 줄이는 이야기. 다음은 틀린 자리를 찾는 이야기입니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

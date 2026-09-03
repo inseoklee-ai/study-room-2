@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9장 서론 — 안전장치 설치하기</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 9</div>
+    <h1 style="margin:18px 0">안전장치 <span class="g">설치하기</span></h1>
+    <p class="sub">Setting Safeguards &mdash; 패턴 29~32 &nbsp;&middot;&nbsp; <b>위험을 줄이는 네 가지 방법</b></p>
+  </div>
+  <aside>8장이 감당 가능하게 만드는 장이었다면, 9장은 안심하고 내보낼 수 있게 만드는 장입니다.</aside>
+</section>
+
+<!-- 2 이 덱의 자리 -->
+<section class="slide" data-part="표지">
+  <h2>&#128205; 이 덱은 <span class="g">9장 서론</span>입니다</h2>
+  <div class="hl">이 저장소의 9장은 <b class="g">덱 5개</b>로 나뉩니다 &mdash; 이 <b>서론 덱</b> 하나와 <b class="g">패턴별 덱 4개</b>.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:34%">덱</th><th>다루는 범위</th></tr>
+    <tr><td><b class="gold">9장 서론</b> (이 덱)</td><td>들어가며 &middot; 네 패턴 지도 &middot; <b>9.5 요약</b></td></tr>
+    <tr><td><b>패턴 29 템플릿 생성</b></td><td>9.1.1 ~ 9.1.5 <small>(5절)</small></td></tr>
+    <tr><td><b>패턴 30 조립 후 재포맷</b></td><td>9.2.1 ~ 9.2.5 <small>(5절)</small></td></tr>
+    <tr><td><b>패턴 31 자가 점검</b></td><td>9.3.1 ~ 9.3.5 <small>(5절)</small></td></tr>
+    <tr><td><b>패턴 32 가드레일</b></td><td>9.4.1 ~ 9.4.4 <small class="r">(해법 절에 번호가 없음)</small></td></tr>
+  </table>
+  <div class="warn">&#9888;&#65039; <b>패턴 32의 절 번호</b> &mdash; 「해법 &mdash; 가드레일 계층」이 <b class="r">9.4.1 문제 안에 하위 항목으로</b> 들어가 있고, <b class="r">9.4.2가 곧바로 예제</b>입니다. 다른 패턴들이 <b>문제(.1) &rarr; 해법(.2) &rarr; 예제(.3)</b>인 것과 어긋나는 <b class="g">원문의 편집 잔재</b>로 보입니다 &mdash; 번호를 임의로 붙이지 않고 원문 그대로 뒀습니다.</div>
+  <aside>8장에서도 절 없는 패턴을 그대로 뒀습니다. 같은 원칙입니다.</aside>
+</section>
+
+<!-- 3 왜 위험이 따라붙나 -->
+<section class="slide" data-part="서론">
+  <h2>&#9888;&#65039; 위험은 <span class="r">언제나 따라붙는다</span></h2>
+  <div class="big">GenAI 애플리케이션에는<br><span class="r">언제나 어느 정도의 위험</span>이 따라붙는다<br><small><b>파운데이션 모델</b> 위에 올려 짓기 때문이다</small></div>
+  <table class="t" style="margin-top:18px">
+    <tr><th style="width:26%">모델의 성질</th><th>그래서 생기는 일</th></tr>
+    <tr><td><b class="r">비결정적</b><br><small>nondeterministic</small></td><td>부정확하거나 <b class="r">환각(hallucination)</b>된 답을 내놓을 가능성을 늘 안고 있다</td></tr>
+    <tr><td><b class="r">범용</b><br><small>general-purpose</small></td><td>그 응답이 <b class="r">당신이 시키고 싶었던 일과 항상 들어맞으리라는 보장이 없다</b></td></tr>
+  </table>
+  <div class="hl" style="margin-top:18px">&#128188; <b>비유</b> &mdash; 아주 글을 잘 쓰는 <b>신입 사원</b>이 있습니다. 문장은 훌륭한데 <b class="r">가끔 사실을 지어냅니다.</b> 이 사람에게 하루 수천 통의 고객 편지를 맡겨도 될까요? 편지를 전부 상사가 읽어 보면 안전하지만, <b class="r">그러면 사람이 남아나지 않습니다.</b></div>
+  <div class="warn">&#128161; 이 장은 <b class="g">모델을 더 똑똑하게 만드는 대신</b> &mdash; 모델이 <b class="g">틀릴 수 있는 자리를 줄이거나</b>(29 &middot; 30), <b class="g">틀린 자리를 찾아내거나</b>(31), <b class="g">틀린 것이 밖으로 못 나가게</b>(32) 하는 네 가지 방법입니다.</div>
+  <aside>모델 성능 이야기가 아니라 시스템 설계 이야기라는 점이 이 장의 특징입니다.</aside>
+</section>
+
+<!-- 4 네 패턴 지도 -->
+<section class="slide" data-part="패턴 요약">
+  <h2>&#128218; 네 패턴 &mdash; <span class="g">언제 쓰나</span></h2>
+  <table class="t">
+    <tr><th style="width:8%">#</th><th style="width:26%">패턴</th><th>언제 쓰나</th></tr>
+    <tr><td><b>29</b></td><td><b class="g">Template Generation</b><br><small>템플릿 생성</small></td><td>사람 검토 없이 내보내는 위험은 아주 큰데, <b class="r">사람 검토가 통신량을 감당하지 못할</b> 때</td></tr>
+    <tr><td><b>30</b></td><td><b class="g">Assembled Reformat</b><br><small>조립 후 재포맷</small></td><td>콘텐츠를 <b class="g">매력적으로</b> 보여 줘야 하는데, <b class="r">동적 생성이 안기는 위험이 너무 클</b> 때</td></tr>
+    <tr><td><b>31</b></td><td><b class="g">Self-Check</b><br><small>자가 점검</small></td><td>잠재적 환각을 <b class="g">비용 효율적으로</b> 잡아내고 싶을 때</td></tr>
+    <tr><td><b>32</b></td><td><b class="g">Guardrails</b><br><small>가드레일</small></td><td>윤리적 &middot; 법적 &middot; 기능적 범위 안에서 동작하도록 <b class="g">포괄적인 안전장치</b>를 두르고 싶을 때</td></tr>
+  </table>
+  <div class="hl" style="margin-top:16px">&#128188; <b>신입 사원 비유로 이어 보면</b></div>
+  <table class="t" style="margin-top:10px">
+    <tr><th style="width:26%">패턴</th><th>비유</th></tr>
+    <tr><td><b class="g">29 템플릿 생성</b></td><td>편지를 통째로 맡기지 말고 <b class="g">양식(빈칸 있는 편지)을 24장만</b> 쓰게 한 뒤 사람이 검토. 실제 발송은 <b class="g">빈칸 채우기</b>뿐</td></tr>
+    <tr><td><b class="g">30 조립 후 재포맷</b></td><td>사실(가격 &middot; 부품번호)은 <b class="g">DB에서 그대로 가져오고</b>, 신입에게는 <b class="g">"이 사실들을 예쁘게 다듬어라"</b>만 시킴</td></tr>
+    <tr><td><b class="g">31 자가 점검</b></td><td>신입이 답할 때 <b class="g">얼마나 자신 있었는지</b>를 함께 받아 적어 두고, <b class="g">자신 없던 문장만</b> 따로 확인</td></tr>
+    <tr><td><b class="g">32 가드레일</b></td><td>사무실 <b class="g">입구와 출구에 검색대</b>를 세워 들어오는 말과 나가는 말을 모두 검사</td></tr>
+  </table>
+  <aside>이 표 하나가 9장 전체의 지도입니다.</aside>
+</section>
+
+<!-- 5 위험을 다루는 세 층위 -->
+<section class="slide" data-part="패턴 요약">
+  <h2>&#127919; 네 패턴은 <span class="g">서로 다른 층위</span>에서 작동한다</h2>
+  <div class="chain">
+    <div class="cell" style="border-color:var(--gr)"><small>사전</small><b class="g">29 &middot; 30</b><small>틀릴 자리를<br>줄인다</small></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gold)"><small>탐지</small><b class="gold">31</b><small>틀린 자리를<br>찾아낸다</small></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--red)"><small>차단</small><b class="r">32</b><small>틀린 것이<br>못 나가게</small></div>
+  </div>
+  <table class="t" style="margin-top:18px">
+    <tr><th style="width:20%">패턴</th><th style="width:28%">LLM이 하는 일</th><th>위험이 낮은 이유</th></tr>
+    <tr><td><b class="g">29</b></td><td><b>템플릿을 쓴다</b><br><small>오프라인 &middot; 소수</small></td><td>사람이 <b class="g">전부 검토</b>했고, 실행 시점에는 <b class="g">문자열 치환뿐</b></td></tr>
+    <tr><td><b class="g">30</b></td><td><b>사실을 다듬는다</b><br><small>재표현 &middot; 요약</small></td><td>사실은 <b class="g">DB &middot; RAG &middot; OCR</b>이 대고, LLM은 <b class="g">지어낼 이유가 없다</b></td></tr>
+    <tr><td><b class="gold">31</b></td><td><b>평소처럼 생성</b></td><td>생성하면서 이미 나온 <b class="gold">확신도 숫자(logprobs)</b>를 읽기만 한다</td></tr>
+    <tr><td><b class="r">32</b></td><td><b>평소처럼 생성</b></td><td>들고 나는 것을 <b class="r">별도 계층이 검사</b>한다 &mdash; <b class="r">복잡도가 가장 크다</b></td></tr>
+  </table>
+  <div class="hl" style="margin-top:16px">&#128161; <b>고를 순서가 있습니다</b> &mdash; 저자는 <b class="g">29를 먼저 보고</b>, 조합이 너무 많아 못 쓸 때 <b class="g">30</b>을, 그래도 안 되면 <b class="r">32</b>를 보라고 합니다. 32는 <b class="r">"엔지니어링 복잡도가 상당히 늘어난다"</b>고 명시적으로 경고합니다.</div>
+  <aside>가장 복잡한 것을 마지막에 고르라는 것이 이 장의 태도입니다.</aside>
+</section>
+
+<!-- 6 패턴 29 예고 -->
+<section class="slide" data-part="패턴 요약">
+  <h2>&#9312; 패턴 29 &mdash; <span class="g">템플릿 생성</span></h2>
+  <div class="hl"><b class="g">오프라인에서 검토할 수 있는 템플릿을 미리 생성</b>해 사람이 검토해야 할 항목 수를 줄인다. 추론 시점에는 <b class="g">검토를 마친 템플릿에 결정적인 문자열 치환</b>을 하는 것뿐이다.</div>
+  <div class="big" style="margin-top:16px">위험한 창작을<br><span class="y">미리, 적은 수만, 검토 가능한 형태로</span> 몰아 두고<br>실행 시점에는 <span class="y">빈칸만 채운다</span></div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:44%">방식</th><th>사람이 읽어야 할 문서 수</th></tr>
+    <tr><td><b class="r">편지를 매번 생성</b></td><td>하루 <b class="r">수천 장</b></td></tr>
+    <tr><td><b class="g">템플릿을 생성</b></td><td>총 <b class="g">24장</b> (목적지 3 &times; 패키지 4 &times; 언어 2), 그것도 <b class="g">딱 한 번</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; <b>한계도 분명합니다</b> &mdash; 조합이 늘면 템플릿 수가 <b class="r">곱셈으로 폭발</b>합니다. 목적지가 50곳이면 400장, 계절까지 넣으면 1,600장. <b class="r">사람이 검토할 수 있는 양을 넘는 순간</b> 이 패턴은 못 씁니다 &mdash; 그때가 <b class="g">패턴 30</b>이 필요한 시점입니다.</div>
+  <aside>메일 머지의 계보를 잇는 패턴입니다.</aside>
+</section>
+
+<!-- 7 패턴 30 예고 -->
+<section class="slide" data-part="패턴 요약">
+  <h2>&#9313; 패턴 30 &mdash; <span class="g">조립 후 재포맷</span></h2>
+  <div class="hl">콘텐츠 생성 작업을 <b class="g">위험이 낮은 두 단계로 분리</b>한다.</div>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell"><small>&#9312; 조립</small><b class="g">사실을<br>그러모은다</b><small>OCR &middot; RAG &middot;<br>Tool Calling &middot; DB</small></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>&#9313; 재포맷</small><b class="g">LLM이<br>다듬는다</b><small>표현 변경 &middot; 요약</small></div>
+  </div>
+  <div class="big" style="margin-top:18px">사실은 <span class="y">기계가 모으고</span><br>문장만 <span class="y">LLM이 다듬는다</span></div>
+  <div class="warn" style="margin-top:16px">&#128247; <b>왜 이렇게까지 하나 &mdash; 리튬 배터리 사례</b><br>리튬 배터리 카메라의 카탈로그 페이지가 <b class="r">"알칼라인"이라고 적었다면?</b> 리튬 배터리는 밀폐 공간에서 <b class="r">통제 불가능한 화재</b>를 일으킬 수 있어 <b class="r">비행기 위탁 수하물에 넣을 수 없습니다.</b> 화물칸에서 불이 붙거나, 항공사가 고객의 탑승을 막는다면?<br><br><b class="g">배터리 종류라는 사소해 보이는 오류 하나에 걸린 위험이 꽤 큽니다.</b></div>
+  <div class="hl">&#128161; <b>보너스</b> &mdash; 고장 유형을 <b class="g">딱 세 가지만</b> 넣어 주면 LLM은 그 세 가지만 다룹니다. 제조사가 공개하고 싶지 않은 <b class="g">네 번째 고장 유형은 아예 등장하지 않습니다.</b></div>
+  <aside>말하지 않을 것까지 통제된다는 점이 이 패턴의 숨은 이득입니다.</aside>
+</section>
+
+<!-- 8 패턴 31 예고 -->
+<section class="slide" data-part="패턴 요약">
+  <h2>&#9314; 패턴 31 &mdash; <span class="g">자가 점검</span></h2>
+  <div class="hl"><b class="g">토큰 확률(logprobs)</b>을 이용해 LLM 응답 안의 환각을 탐지한다. 사실을 묻는 질의에 LLM이 <b class="g">낮은 신뢰도로 답하는 것</b>을 막는 안전장치.</div>
+  <div class="big" style="margin-top:16px">모델에게 <span class="y">"확실해?"라고 다시 묻는 대신</span><br>답을 만들 때 <span class="y">이미 나온 확신도 숫자</span>를 읽는다</div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:34%">환각률 &mdash; Vectara 측정</th><th>가장 좋은 LLM</th><th>25번째</th></tr>
+    <tr><td><b>2024년 12월</b></td><td><b class="gold">1.3%</b></td><td><b class="gold">4.1%</b></td></tr>
+    <tr><td><b>2025년 4월</b> <small>(40~50% 하락)</small></td><td><b class="g">0.7%</b></td><td><b class="g">2.4%</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; <b>그래도 문제는 남습니다</b> &mdash; 이미지에서 추출한 필드의 정확도는 <b class="r">90~97% 수준</b>. 즉 청구서 &middot; 영수증에서 뽑아낸 숫자의 <b class="r">3~10%가 환각</b>입니다. 게다가 그 결과를 다른 LLM 호출에 넘기면 <b class="r">오류 확률이 복리로 불어납니다.</b></div>
+  <div class="hl">&#128161; <b>발상의 출발</b> &mdash; 겹치지 않는 데이터로 학습된 LLM 셋을 비교하면 환각을 짚을 수 있겠지만, 프런티어 모델의 학습 데이터는 <b class="r">상당히 겹치고</b> 비용도 <b class="r">곱절</b>이 됩니다. 그래서 <b class="g">응답 하나만 보고</b> 알아내는 방법을 찾습니다.</div>
+  <aside>모델 하나로 해결한다는 점이 이 패턴의 경제성입니다.</aside>
+</section>
+
+<!-- 9 패턴 32 예고 -->
+<section class="slide" data-part="패턴 요약">
+  <h2>&#9315; 패턴 32 &mdash; <span class="g">가드레일</span></h2>
+  <div class="hl">LLM의 <b class="g">입력 &middot; 출력 &middot; 컨텍스트 &middot; 도구 파라미터</b>에 작용하는 <b class="g">코드 계층</b>. LLM을 악의적 행위자로부터 보호하고 <b class="g">허용된 범위 안에서 동작하도록</b> 보장한다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:24%">지켜야 할 영역</th><th>무엇으로부터</th></tr>
+    <tr><td><b class="r">보안</b></td><td><b class="r">프롬프트 인젝션</b>과 <b class="r">탈옥</b> &mdash; LLM이 <b>시스템 프롬프트와 사용자 입력을 모두 텍스트로 처리</b>한다는 점을 파고든다</td></tr>
+    <tr><td><b class="r">데이터 프라이버시</b></td><td><b class="r">PII &middot; 영업 비밀 &middot; 기밀 콘텐츠</b>의 부주의한 노출</td></tr>
+    <tr><td><b class="r">콘텐츠 조정</b></td><td>입력과 출력 양쪽의 <b class="r">해롭거나 부적절한 콘텐츠</b></td></tr>
+    <tr><td><b class="r">환각</b></td><td>그럴듯하지만 <b class="r">사실은 틀린 정보</b> &mdash; 과학 &middot; 저널리즘 &middot; 의료 &middot; 법률 &middot; 금융에서 특히</td></tr>
+    <tr><td><b class="r">얼라인먼트</b></td><td><b class="r">회사 정책 &middot; 윤리 원칙</b> 위반, 경쟁사 언급, 정치 &middot; 종교 주제, 편향과 차별</td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; <b>가장 비싼 선택지</b> &mdash; 가드레일은 <b class="r">상당한 엔지니어링 복잡도와 지연</b>을 끌어들입니다. 저자는 <b class="r">"GenAI 애플리케이션을 구현하는 가장 복잡한 방식"</b>이라며 <b class="g">더 저렴하게 막을 방법이 없는지 먼저 보라</b>고 합니다.</div>
+  <div class="hl">&#128260; <b>그리고 영원하지 않습니다</b> &mdash; <b class="g">보안 조치와 우회 방법 사이의 끝없는 군비 경쟁</b>이므로, 가드레일은 <b class="g">몇 달마다 갈아 끼우는 래퍼</b>로 보라는 것이 저자의 권고입니다.</div>
+  <aside>공들여 만들지 말고 갈아 끼우기 쉽게 만들라는 조언이 인상적입니다.</aside>
+</section>
+
+<!-- 10 9.5 요약표 -->
+<section class="slide" data-part="9.5 요약">
+  <h2>&#128203; 9.5 요약 &mdash; <span class="g">표 9-2</span></h2>
+  <table class="t">
+    <tr><th style="width:14%">패턴</th><th style="width:24%">문제</th><th style="width:36%">해법</th><th>사용 시나리오</th></tr>
+    <tr><td><b class="g">Template<br>Generation</b><br><small>29</small></td><td>사람 검토 없이 내보내는 위험은 큰데, <b class="r">사람 검토가 통신량을 감당하지 못한다</b></td><td><b class="g">미리 검토된 템플릿을 사전 생성</b>한다. 추론 시점에는 <b class="g">결정적인 문자열 치환만</b> 하면 되므로 곧바로 보내도 안전하다</td><td><b class="g">B2C 환경의 개인화된 커뮤니케이션</b></td></tr>
+    <tr><td><b class="g">Assembled<br>Reformat</b><br><small>30</small></td><td>매력적으로 보여 줘야 하는데 <b class="r">동적 생성 콘텐츠의 위험이 너무 크다</b></td><td>위험이 낮은 <b class="g">두 단계로 나눈다</b> &mdash; 먼저 저위험 방식으로 <b class="g">데이터를 조립</b>하고, 그다음 그 데이터를 바탕으로 <b class="g">콘텐츠를 포맷</b></td><td>제품 카탈로그처럼 <b class="g">정확한 콘텐츠를 매력적으로</b> 보여 줘야 하는 상황</td></tr>
+    <tr><td><b class="g">Self-Check</b><br><small>31</small></td><td>잠재적 환각을 <b class="r">비용 효율적으로</b> 식별해야 한다</td><td><b class="g">토큰 확률</b>을 이용해 LLM 응답 안의 환각을 탐지한다</td><td>(창의적인 답이 아니라) <b class="g">사실에 근거한 답</b>이 필요한 모든 상황</td></tr>
+    <tr><td><b class="g">Guardrails</b><br><small>32</small></td><td><b class="r">보안 &middot; 프라이버시 &middot; 조정 &middot; 환각 &middot; 얼라인먼트</b>에 대한 안전장치가 필요하다</td><td>LLM 호출을 <b class="g">코드 계층으로 감싸</b> 입력을 전처리하고 출력을 후처리한다. <b class="g">지식 검색과 도구 사용도 함께</b> 보호</td><td><b class="g">악의적 적대자의 공격에 노출될 수 있는</b> 모든 애플리케이션</td></tr>
+  </table>
+  <aside>책의 표 9-2를 그대로 옮긴 것입니다.</aside>
+</section>
+
+<!-- 11 각주 세 개 -->
+<section class="slide" data-part="9.5 요약">
+  <h2>&#128204; 각주 세 개가 <span class="g">본문보다 재미있다</span></h2>
+  <div class="warn">&#127477;&#127473; <b>각주 1 &mdash; 폴란드어 원어민의 교정</b><br>템플릿이 꽤 좋다고 했지만 두 가지를 고치겠다고 했습니다.<br><br>
+    &bull; 폴란드어에는 <b class="g">문법적 성</b>이 있어 <code>[TOUR_GUIDE]</code> 자리에 누가 들어가느냐에 따라 동사 <i>mieć</i>(가지다)가 <b class="g">남성형 miał</b>이나 <b class="g">여성형 miała</b>가 돼야 한다<br>
+    &bull; 폴란드어 독자에게는 <b class="r">느낌표가 너무 많다</b><br><br>
+    &rarr; <b class="g">이것이 패턴 29가 왜 필요한지를 그대로 보여 준다</b> &mdash; 수천 통의 생성된 편지를 검토하는 것보다 <b class="g">템플릿 하나를 고치는 편이 쉽다.</b></div>
+  <div class="warn" style="margin-top:14px">&#128274; <b>각주 2 &mdash; 움라우트가 드러낸 학습 데이터</b><br>토큰 확률로부터 추론하면 OpenAI가 학습시킨 이 터키 정치가 관련 문서의 <b class="r">98.4%가 이름에서 움라우트를 빠뜨렸다</b>는 뜻입니다.<br><br>
+    &rarr; <b class="r">이런 종류의 학습 데이터 유출이야말로 일부 독점 모델이 logprobs 제공을 거부하는 이유일지도 모른다.</b> 움라우트 표기 문서가 단 하나뿐이었다면, 응답에 움라우트가 한 번도 안 나와도 <b class="r">그 문서가 학습에 쓰였다는 증거</b>가 되기 때문입니다.</div>
+  <div class="warn" style="margin-top:14px">&#129518; <b>각주 3 &mdash; 억지스러운 예임을 인정</b><br>영수증 계산 예제에 대해 &mdash; <b class="r">실제로는 수학 계산에 LLM을 쓰지 않는다.</b> 대신 <b class="g">계산기 도구를 붙여 준다</b>(7장 패턴 21). 다만 <b class="g">LLM 결과의 정확성을 자동으로 평가할 수 있다는 장점</b> 때문에 이 예를 골랐다고 밝힙니다.</div>
+  <aside>저자가 자기 예제의 한계를 스스로 밝히는 대목입니다.</aside>
+</section>
+
+<!-- 12 앞 장 연결 -->
+<section class="slide" data-part="마무리">
+  <h2>&#128279; 앞 장의 패턴들과 <span class="g">어떻게 이어지나</span></h2>
+  <table class="t">
+    <tr><th style="width:30%">앞 장의 패턴</th><th>9장에서 다시 나오는 자리</th></tr>
+    <tr><td><b class="g">패턴 1 로짓 마스킹</b> <small>(2장)</small></td><td><b>9.3.2</b> &mdash; 시퀀스 생성으로 거짓 양성을 줄이는 방법의 상세 설명이 그 절에 있다</td></tr>
+    <tr><td><b class="g">패턴 2 문법</b> <small>(2장)</small></td><td><b>9.3.1</b> &mdash; 응답을 숫자로 <b class="r">제약하면 환각된 숫자</b>가 돌아온다<br><b>9.3.4</b> &mdash; 필드를 <b class="g">유니온</b>으로 모델링해 한 갈래를 "모른다"로 두라</td></tr>
+    <tr><td><b class="g">패턴 6 기본 RAG</b> <small>(3장)</small></td><td><b>9.2.2</b> &mdash; 저위험 조립 수단의 하나<br><b>9.3.4</b> &mdash; <b class="g">검색된 두 청크가 상충하면</b> logprobs가 생성 경로가 둘이었음을 드러낸다</td></tr>
+    <tr><td><b class="g">패턴 13 CoT</b> <small>(5장)</small></td><td><b>9.1.2</b> &mdash; <b>퓨샷</b>으로 편집 작업을 최소로 줄인다</td></tr>
+    <tr><td><b class="g">패턴 17 심판자 LLM</b> <small>(6장)</small></td><td><b>9.2.4</b> &mdash; 재포맷 결과가 <b class="g">원시 데이터를 그대로 유지했는지</b> 검증<br><b>9.4</b> &mdash; <b class="g">커스텀 가드레일을 만드는 수단</b>(금지 주제 판정)</td></tr>
+    <tr><td><b class="g">패턴 21 툴 호출</b> <small>(7장)</small></td><td><b>9.2.2</b> &mdash; 저위험 조립 수단의 하나<br><b>각주 3</b> &mdash; 계산은 LLM이 아니라 <b class="g">계산기 도구</b>로</td></tr>
+    <tr><td><b class="g">패턴 24 SLM</b> <small>(8장)</small></td><td><b>9.4.3</b> &mdash; 가드레일을 <b class="g">SLM으로 구현</b>해 지연을 관리 가능한 범위로</td></tr>
+  </table>
+  <div class="hl">&#128161; 특히 <b class="g">패턴 17이 두 번</b> 나옵니다 &mdash; 6장에서 <b>품질 평가</b> 도구로 소개된 것이, 여기서는 <b class="g">안전 검사 도구</b>로 재활용됩니다. 채점표를 든 심사위원은 <b class="g">"잘 썼는가"뿐 아니라 "써도 되는가"도 판정할 수 있습니다.</b></div>
+  <aside>9장에는 새 기술이 거의 없습니다. 앞의 패턴들을 안전이라는 목적으로 다시 배치한 장입니다.</aside>
+</section>
+
+<!-- 13 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#128737;&#65039; 틀릴 자리를 <span class="g">줄이거나, 찾거나, 막거나</span></h1>
+    <div class="big" style="margin-top:24px">사전에 줄이면 <span class="y">29 &middot; 30</span><br>사후에 찾으면 <span class="y">31</span><br>밖으로 못 나가게 하면 <span class="y">32</span><br><br><small>그리고 <b class="g">가장 복잡한 32는 마지막에</b></small></div>
+    <p class="sub" style="margin-top:22px">9장 서론 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 29 템플릿 생성</b></p>
+  </div>
+  <aside>패턴별 덱으로 이어집니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>
