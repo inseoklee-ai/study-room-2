@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>생각의 나무 · 패턴 14 (5장)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 5 &middot; Pattern 14</div>
+    <h1 style="margin:18px 0">생각의 <span class="g">나무</span></h1>
+    <p class="sub">Tree of Thoughts &mdash; 여러 경로를 <b>만들고 · 점수 매기고 · 되돌아간다</b></p>
+  </div>
+  <aside>CoT는 선형 단계로 쪼개지는 과제만 다뤘습니다. ToT는 여러 해법 경로를 비선형적으로 평가합니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 5.3</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>5.3.1 문제</b> &mdash; 하나의 경로로는 안 되는 과제</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>5.3.2 해법</b> &mdash; 네 구성요소: 생각 생성 · 경로 평가 · 빔 서치 · 요약 생성</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>5.3.3 예제</b> &mdash; 공급망 최적화</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>5.3.4 고려사항</b> &mdash; 복잡도와 네 가지 대안</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>5.3.5 참고문헌</b></span></div>
+  </div>
+  <div class="hl">&#128161; <b>한 줄로</b> &mdash; 문제 해결을 <b>선형 시퀀스가 아니라 <span class="g">트리 탐색 과정</span></b>으로 다룬다.</div>
+  <div class="warn">&#9888;&#65039; 저자의 권고 &mdash; <b class="g">먼저 CoT로 시작하고</b>, 해법이 충분해 보이지 않을 때만 ToT로 옮겨 가세요.</div>
+  <aside>이 경고를 첫머리에 둔 이유가 있습니다. ToT는 비싸고 복잡해요.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="5.3.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">5.3.1 문제</h2>
+    <div class="who">하나의 경로로는 안 되는 과제</div>
+  </div>
+  <aside>전략적 사고나 논리적 추론을 요구하는 많은 과제는 하나의 다단계 경로를 밀어붙이는 것으로 풀리지 않습니다.</aside>
+</section>
+
+<!-- 4 에세이 문제 -->
+<section class="slide" data-part="5.3.1 문제">
+  <h2>&#128221; 문제 &mdash; <span class="g">네 문장 에세이</span></h2>
+  <p>무작위 문장 넷이 주어지고, <b>네 문단으로 된 일관된 글</b>을 쓰되 각 문단이 그 문장 중 하나로 끝나야 한다.</p>
+  <pre>1. To be or not to be, that is the question.        <span class="g">— 셰익스피어</span>
+2. Take me to your leader.                          <span class="g">— SF</span>
+3. It is a truth universally acknowledged, that a
+   single man in possession of a good fortune,
+   must be in want of a wife.                       <span class="g">— 오스틴</span>
+4. The only thing we have to fear is fear itself.   <span class="g">— 루스벨트</span></pre>
+  <div class="hl" style="margin-top:12px">&#127891; ToT 논문의 프린스턴·Google DeepMind 연구진은 이것을 <b class="g">창의적 사고와 상위 수준 계획을 둘 다 요구하는</b> 문제로 설명합니다.</div>
+  <div class="warn">&#9888;&#65039; CoT용 <b>단계별 지시를 구성하기 어렵고</b>, Few-shot CoT가 도움이 될지도 불분명합니다. 그래서 <b class="r">Zero-shot CoT만 남습니다.</b></div>
+  <aside>패턴 13의 세 변형 중 둘이 적용 불가라는 게 문제 정의의 출발점입니다.</aside>
+</section>
+
+<!-- 5 세 이유 -->
+<section class="slide" data-part="5.3.1 문제">
+  <h2>&#10060; 조건은 맞는데 <span class="r">겉도는 글</span></h2>
+  <div class="box" style="border-color:var(--red)"><h3 class="r">Zero-shot CoT의 두 번째 문단</h3><p style="margin:0"><i>인류 역사 내내 우리는 어려운 선택 앞에서 지침을 구해 왔고 &hellip; 고대 문명은 신탁과 주술사에게 물었고, 현대 사회는 멘토·치료사·영적 조언자에게 눈을 돌린다 &hellip; <b>Take me to your leader.</b></i></p></div>
+  <p style="margin-top:12px"><b>각 문단이 지정된 문장으로 끝나긴 했지만</b> 문단들이 말이 잘 안 된다.</p>
+  <table class="t">
+    <tr><th style="width:28%">이유</th><th>내용</th></tr>
+    <tr><td><b class="r">초기 경로에 갇힌다</b></td><td>『햄릿』 인용구가 철학적이라 에세이가 <b>철학적 방향</b>으로 흘러가는데, 이는 다음 두 인용구와 안 맞는다. <b class="r">초기 경로가 결함이 있으면 해답이 아예 안 나올 수 있다</b></td></tr>
+    <tr><td><b class="r">단 하나의 경로를 따른다</b></td><td>초기 경로가 합리적이어도 결과가 최적이 아닐 수 있다. LLM은 종종 특정 사고 흐름에 <b class="r">"갇히고" 되돌아갈 능력이 없다</b></td></tr>
+    <tr><td><b class="r">중간 평가가 없다</b></td><td>표준 CoT는 <b>중간 추론 단계의 품질을 평가</b>해서 무엇이 잘 통할지에 근거해 선택할 수 없다</td></tr>
+  </table>
+  <div class="big" style="margin-top:14px">ToT는 응답하기 <span class="y">전에</span><br>여러 추론 방향과 대안을 탐색한다</div>
+  <aside>세 이유가 그대로 ToT의 세 기능이 됩니다. 여러 경로 생성, 평가, 백트래킹.</aside>
+</section>
+
+<!-- 6 PART 2 -->
+<section class="slide" data-part="5.3.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">5.3.2 해법</h2>
+    <div class="who">트리 탐색으로 다루기</div>
+  </div>
+  <aside>인간이 어려운 문제에 접근하는 방식과 더 닮았습니다. 대안을 고려하고, 부분적 진전을 평가하고, 문제가 보이면 방향을 바꾸죠.</aside>
+</section>
+
+<!-- 7 네 구성요소 -->
+<section class="slide" data-part="5.3.2 해법">
+  <h2>&#129513; <span class="g">네 구성요소</span></h2>
+  <div class="chain">
+    <div class="cell"><small>1</small><b>생각 생성</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>2</small><b>경로 평가</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>3</small><b>빔 서치</b></div>
+    <span class="ar">&#8630;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>4</small><b class="g">요약 생성</b></div>
+  </div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:24%">구성요소</th><th>하는 일</th></tr>
+    <tr><td><b>생각 생성</b></td><td>매 턴마다 LLM이 <b>여러 개의 생각</b>을 만들어 낸다</td></tr>
+    <tr><td><b>경로 평가</b></td><td>각 경로가 <b>얼마나 유망해 보이는지</b> 점수를 매긴다</td></tr>
+    <tr><td><b>빔 서치</b></td><td>가장 유망한 <b>상위 K개 경로만</b> 유지한다</td></tr>
+    <tr><td><b>요약 생성</b></td><td>경로를 소진하면 가장 유망한 경로를 바탕으로 <b>최종 응답</b>을 생성한다</td></tr>
+  </table>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; <b>여기서의 빔 서치는 토큰 생성의 빔 서치와 다릅니다.</b> 2장 패턴 1에서 손댔던 그것은 <b>어떤 토큰 시퀀스를 낼지</b> 정하는 것이고, 여기서의 트리와 빔 서치는 <b class="g">더 높은 수준</b>에서 <b>추론 단계</b>로 작동합니다.</div>
+  <aside>같은 이름이라 헷갈리기 쉬워 저자가 따로 박스를 뒀습니다.</aside>
+</section>
+
+<!-- 8 생각 생성 -->
+<section class="slide" data-part="5.3.2 해법">
+  <h2>&#9312; <span class="g">생각 생성</span></h2>
+  <pre>prompt = f"""{state}
+You are solving a problem step-by-step using the <b>Tree of Thoughts</b> method.
+Generate {num_thoughts_per_step} <b>distinct and diverse</b> next steps.
+This is step {step} of up to {max_steps} steps.
+<b>Make each thought meaningfully different</b> to explore diverse approaches."""
+
+thoughts = json.loads(content)   <span class="g"># JSON 리스트로 반환</span></pre>
+  <p style="margin-top:10px">호출할 때마다 LLM에게 반복의 <b>현재 상태</b> &mdash; 지금의 상위 K개 해법 &mdash; 을 제시한다.</p>
+  <div class="plabel">에세이 문제 · 1단계에서 생성된 생각 셋</div>
+  <div class="box"><p style="margin:0"><b>1.</b> 인용구 <b>다수가 선택과 관련</b>되니 <b>의사결정</b>이라는 주제로 구성할 수 있겠다<br><b>2.</b> 창의적 서사를 만들 수 있겠다 &mdash; 아마도 <b>외계인과의 조우</b>가 철학적 성찰로 이어지는 이야기<br><b>3.</b> 먼저 <b>각 인용구의 주제를 식별</b>한 다음(실존적 물음 · 외계 접촉 · 사회적 기대 · 두려움 극복) 응집력 있는 에세이를 짓겠다</p></div>
+  <div class="hl">&#128161; 첫째는 <b>공통점 찾기</b>, 둘째는 <b>영감 어린 서사</b>, 셋째는 <b>전략적 접근</b>. 셋 다 통할 만한데 <b class="g">어느 것이 최선이고 먼저 탐색해야 할까?</b></div>
+  <aside>"meaningfully different"라는 지시가 중요합니다. 비슷한 생각 셋을 만들면 트리를 만드는 의미가 없어요.</aside>
+</section>
+
+<!-- 9 경로 평가 -->
+<section class="slide" data-part="5.3.2 해법">
+  <h2>&#9313; <span class="g">경로 평가</span> &mdash; 0~100점</h2>
+  <pre>prompt = f"""Problem: {problem}
+Reasoning path: {state}
+
+<b>On a scale from 0 to 100</b>, evaluate how promising this path is.
+Consider:
+1. <b>Correctness</b> - Is the reasoning logically sound?
+2. <b>Progress</b> - How much progress toward the solution?
+3. <b>Insight</b> - Does it show understanding of key aspects?
+4. <b>Potential</b> - How likely to lead to a complete solution?
+
+Respond with a single integer. Only the number, nothing else."""
+
+score = int(content) / 100.0   <span class="g"># 0~1 스케일로</span></pre>
+  <div class="plabel" style="margin-top:12px">1단계 후 상위 3개 상태</div>
+  <table class="t">
+    <tr><th style="width:16%">점수</th><th>경로</th></tr>
+    <tr><td><b class="g">0.75</b></td><td>먼저 <b>각 인용구의 주제를 식별</b>하겠다</td></tr>
+    <tr><td>0.60</td><td>창의적 서사를 잇겠다 (외계인 조우)</td></tr>
+    <tr><td>0.60</td><td>각 문단이 주어진 문장으로 끝나는 에세이를&hellip;</td></tr>
+  </table>
+  <div class="hl">&#9989; 가장 유망한 접근은 <b class="g">먼저 각 인용구의 주제를 식별하는 것</b>임을 알려 줍니다.</div>
+  <aside>네 가지 평가 기준이 명시적인 게 핵심입니다. "좋아 보이나?"만 물으면 점수가 의미 없어져요.</aside>
+</section>
+
+<!-- 10 트리 탐색 -->
+<section class="slide" data-part="5.3.2 해법">
+  <h2>&#9314; <span class="g">트리 탐색</span> &mdash; 음수 점수 트릭</h2>
+  <pre>thoughts = self.generate_thoughts(current_state, step)
+for thought in thoughts:
+    new_state = f"{current_state}\nStep {step}: {thought}"
+    new_score = self.evaluate_state(new_state, problem)
+    candidates.append((<b>-new_score</b>, new_state, new_path, step))
+                       <span class="g"># 가장 작은 값 = 최선이 되도록</span>
+
+beam = []
+for candidate in <b>heapq.nsmallest(self.beam_width, candidates)</b>:
+    score, state, path, s = candidate
+    beam.append((-score, state, path, s))</pre>
+  <div class="hl" style="margin-top:12px">&#128161; 이 개념이 <b>빔 서치에만 국한되지 않습니다.</b> <b>너비 우선 탐색</b>이나 <b>깊이 우선 탐색</b> 같은 다른 방법도 쓸 수 있습니다.</div>
+  <pre style="margin-top:12px"><span class="g"># 조기 종료 — 훌륭한 해법을 만나면</span>
+if new_score &gt; <b>0.9</b>:
+    best_final_states.append((new_score, new_state, new_path))</pre>
+  <div class="warn">&#128161; 평가 점수가 높은 해법을 만나면 <b class="g">트리 탐색을 조기 종료</b>하거나, <b>n단계 후 최선의 제안</b>을 고를 수 있습니다.</div>
+  <aside>heapq는 최소 힙이라 최댓값을 뽑으려면 부호를 뒤집는 게 관용적인 방법입니다.</aside>
+</section>
+
+<!-- 11 결과 -->
+<section class="slide" data-part="5.3.2 해법">
+  <h2>&#9315; <span class="g">요약 생성</span> &mdash; 그리고 결과</h2>
+  <div class="plabel">선택된 추론 경로</div>
+  <div class="box"><p style="margin:0"><b>1단계</b>: 창의적 서사 &mdash; 외계인과의 조우가 철학적 성찰로<br><b>2단계</b>: <b>인류의 탐험</b>에 관한 에세이 &mdash; 목적에 대한 물음 / 외계 생명 / 인간의 연결 / 두려움 넘기<br><b>3단계</b>: 이것을 <b class="g">문학 자체에 관한 에세이</b>로 틀 잡을 수 있겠다 &mdash; 셰익스피어의 실존적 물음, SF의 미지 탐구, 오스틴의 사회 비평, 루스벨트의 용기<br><b>4단계</b>: <b>문학을 통해 본 인간 본성</b>에 관한 에세이를 쓰겠다</p></div>
+  <div class="plabel" style="margin-top:12px">생성된 에세이 (첫 문단)</div>
+  <div class="box" style="border-color:var(--gr)"><p style="margin:0"><i><b># 문학의 지속되는 힘</b><br>인류 역사 내내 문학은 존재와 목적에 대한 우리의 가장 깊은 물음을 비추는 거울이었다 &hellip; 셰익스피어 같은 작가들은 실존적 딜레마를 비할 데 없는 웅변으로 포착해 &hellip; <b>To be or not to be, that is the question.</b></i></p></div>
+  <div class="big" style="margin-top:12px">훨씬 낫다 &mdash; <span class="y">약간의 계획과 평가</span>가 큰 차이를 만든다</div>
+  <div class="hl">&#128161; 1단계에서 <b>0.60점</b>이던 "외계인 조우"가 살아남아 3단계에서 <b class="g">"문학에 관한 에세이"</b>로 진화한 것에 주목하세요 &mdash; <b>초기 최고점이 최종 승자가 아닙니다.</b></div>
+  <aside>이게 트리 탐색의 진짜 가치입니다. 1등만 밀고 갔으면 이 경로는 사라졌을 거예요.</aside>
+</section>
+
+<!-- 12 PART 3 -->
+<section class="slide" data-part="5.3.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">5.3.3 예제</h2>
+    <div class="who">공급망 최적화</div>
+  </div>
+  <aside>해법이 여럿 있는 현실적인 전략 문제입니다. ToT는 전략적 문제에서 강한 결과를 보여 왔어요.</aside>
+</section>
+
+<!-- 13 문제 정의 -->
+<section class="slide" data-part="5.3.3 예제">
+  <h2>&#128666; 문제 &mdash; <span class="g">공급망 구성</span></h2>
+  <div class="plabel">현재 상황</div>
+  <pre>- 제조 후보지 <b>3곳</b> (멕시코, 베트남, 폴란드)
+- 물류센터 <b>4곳</b> (애틀랜타, 시카고, 댈러스, 시애틀)
+- 주요 운송 수단 <b>2가지</b> (항공, 해상)
+- 과거 수요 변동 <b>±20%</b>
+- 최근 <b class="r">아시아 해운 항로의 교란</b></pre>
+  <div class="plabel" style="margin-top:12px">요청</div>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t">서로 다른 <b>공급망 구성 3가지</b>를 생성</span></div>
+    <div class="st"><span class="n">2</span><span class="t">각 구성에 대해 <b>3가지 시나리오</b> 성능 탐색 &mdash; 정상 운영 / <b>대규모 해운 교란</b> / <b>수요 30% 증가</b></span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>총비용 · 배송 시간 신뢰성 · 교란 취약성</b>으로 평가</span></div>
+    <div class="st"><span class="n">4</span><span class="t">각 경로의 <b>리스크 조정 성능</b> 비교</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b class="g">비용 · 속도 · 복원력의 균형</b>이 가장 좋은 구성 식별</span></div>
+  </div>
+  <aside>CoT로는 이 다섯 요구를 동시에 다루기 어렵습니다. 구성마다 시나리오가 셋이니 조합이 아홉이에요.</aside>
+</section>
+
+<!-- 14 탐색 과정 -->
+<section class="slide" data-part="5.3.3 예제">
+  <h2>&#127794; 탐색 <span class="g">과정</span></h2>
+  <div class="plabel">1단계 생각 셋 → 채점</div>
+  <table class="t">
+    <tr><th style="width:16%">점수</th><th>생각</th></tr>
+    <tr><td><b class="g">0.65</b></td><td><b>운송 네트워크를 매핑</b>하고 항공·해상 기준 비용과 시간을 계산해 <b>병목과 취약점</b>을 식별</td></tr>
+    <tr><td>0.35</td><td>각 제조 후보지의 <b>핵심 속성을 정의</b>해 비교 기준선을</td></tr>
+    <tr><td>0.35</td><td>가장 유망한 <b>제조-물류 짝</b>을 먼저 식별한 뒤 구성 셋을</td></tr>
+  </table>
+  <div class="plabel" style="margin-top:12px">2단계 — 각 노드마다 다시 생각 셋 (첫 노드에서)</div>
+  <table class="t">
+    <tr><th style="width:16%">점수</th><th>생각</th></tr>
+    <tr><td><b class="g">0.75</b></td><td>구성 <b>A 비용 최소화</b>(멕시코+느린 운송) / <b>B 속도</b>(균형+항공) / <b>C 복원력</b>(전 지역 분산 제조)</td></tr>
+    <tr><td><b class="g">0.75</b></td><td>각 입지의 고유 특성(<b>인건비 · 시장 근접성 · 정치적 안정성 · 인프라</b>)을 먼저 분석</td></tr>
+    <tr><td>0.65</td><td>정량 <b>채점 매트릭스</b>를 만들어 세 시나리오를 평가</td></tr>
+  </table>
+  <div class="hl" style="margin-top:12px">&#128161; 2단계에서 점수가 <b>0.65 → 0.75</b>로 올라갑니다. <b class="g">경로가 구체화되면서 유망해지는 것</b>이 점수로 보입니다.</div>
+  <aside>둘째 노드에서도 생각 셋이 나오고, 셋째에서도 나옵니다. 매 층마다 후보가 아홉 개씩 생기는 거죠.</aside>
+</section>
+
+<!-- 15 결과 -->
+<section class="slide" data-part="5.3.3 예제">
+  <h2>&#127881; 최종 <span class="g">해법</span>과 비용</h2>
+  <div class="plabel">선택된 추론 경로 (4단계)</div>
+  <div class="box"><p style="margin:0"><b>1</b> 운송 네트워크 매핑 &rarr; <b>2</b> 구성 A/B/C 생성 &rarr; <b>3</b> 세 시나리오 아래 <b>성능 매트릭스</b> &rarr; <b>4</b> 각 시나리오의 <b class="g">확률을 변화시키며 민감도 분석</b></p></div>
+  <div class="box" style="margin-top:12px;border-color:var(--gr)"><h3 class="g">&#9989; 해법 요약</h3><p style="margin:0"><i>최적은 <b class="g">구성 C</b> &mdash; 멕시코·폴란드·베트남 <b>분산 제조</b> + 운송 수단 혼합.<br>&bull; <b>A</b>(비용 우선)는 정상 조건에선 좋았지만 <b class="r">교란 시 심각하게 무너졌다</b><br>&bull; <b>B</b>(속도 우선)는 신뢰성은 좋았지만 <b class="r">비용이 크게 높았다</b><br>&bull; <b class="g">C</b>는 모든 시나리오에서 균형이 가장 좋았다 &mdash; <b>내재된 이중화</b>로 교란과 수요 변동에 빠르게 적응</i></p></div>
+  <table class="t" style="margin-top:12px">
+    <tr><th style="width:30%">치른 비용</th><th>수치</th></tr>
+    <tr><td>모델 API 호출</td><td><b class="r">41회</b></td></tr>
+    <tr><td>전체 소요 시간</td><td><b class="r">93초</b> &mdash; 실제 애플리케이션에서는 상당한 시간</td></tr>
+  </table>
+  <div class="warn">&#9888;&#65039; 일부 생성을 <b>병렬로</b> 돌려 속도를 높일 수 있지만, 트리의 각 층에서 <b class="r">모든 후보가 갖춰져야</b> 한다는 제약 때문에 최적화 여지가 제한됩니다.</div>
+  <aside>41회 93초. 이 숫자가 다음 절 「고려사항」의 근거입니다.</aside>
+</section>
+
+<!-- 16 PART 4 -->
+<section class="slide" data-part="5.3.4 고려사항">
+  <h2>&#9888;&#65039; 5.3.4 <span class="r">복잡도</span></h2>
+  <div class="big">표준 프롬프팅이나 CoT로 충분한 단순 과제에서<br>ToT는 <span class="y">이득이 거의 없다</span></div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:24%">오버헤드</th><th>내용</th></tr>
+    <tr><td><b class="r">조합 폭발</b></td><td><b>빔 폭 · 탐색 깊이 · 반복당 생각 수</b>의 균형을 찾는 것 자체가 복잡도를 키운다. 어떤 문제는 <b class="r">탐색 공간이 지수적으로</b> 커져 탐색이 비현실적이 된다</td></tr>
+    <tr><td><b class="r">높은 지연과 비용</b></td><td>생각을 만들고 점수를 매기려면 요청을 여러 번 보내야 한다. 트리의 폭과 깊이에 따라 <b class="r">몇 분</b>이 걸릴 수 있는데, 이는 <b>현실 LLM 애플리케이션의 지연 한계를 넘어선다</b></td></tr>
+    <tr><td><b class="r">복잡성</b></td><td>생각 생성 · 채점 · 빔 서치 · 요약 생성이 다 필요하고 <b>상태 · 탐색된 경로 · 단계 수</b>를 추적해야 한다. 트리 탐색 구현 <b class="r">각각이 그 자체로 작은 프로젝트</b>이고, 복잡도가 늘면 <b>구현 버그의 여지</b>도 커진다</td></tr>
+  </table>
+  <div class="hl">&#128161; 그래서 <b class="g">CoT부터 시작</b>하라는 것입니다. 41회 호출과 93초는 사용자가 기다릴 수 있는 시간이 아닌 경우가 많습니다.</div>
+  <aside>파라미터 튜닝이 곧 복잡도라는 지적이 정확합니다. 빔 폭 하나 정하는 것도 실험이 필요해요.</aside>
+</section>
+
+<!-- 17 대안 1 -->
+<section class="slide" data-part="5.3.4 고려사항">
+  <h2>&#128257; 대안 &mdash; <span class="g">추론 모델</span>과 <span class="g">LtM</span></h2>
+  <div class="box" style="border-color:var(--gr)">
+    <h3 class="g">&#129504; 추론 모델</h3>
+    <p style="margin:6px 0 0">ToT가 처음 구상된 이후 <b>LLM은 진화해 훨씬 나은 추론 능력</b>을 갖게 됐다. 복잡성을 감당하는 대신 <b class="g">OpenAI o3 · Anthropic Opus · Gemini 2.5 Pro · DeepSeek-R1</b> 같은 강한 추론 모델을 쓰는 것이 좋은 대안이다.</p>
+    <p style="margin:8px 0 0">현대 LLM의 <b>사고 모드</b>는 외부 트리 아키텍처의 오버헤드 없이 추론을 끌어올린다. 이런 능력은 <b>어텐션 메커니즘이나 추가 처리 층</b>을 통해 <b class="g">아키텍처 수준에 통합</b>될 수 있어, <b>프로덕션 배포에 더 효율적이고 비용 효과적</b>이다.</p>
+  </div>
+  <div class="box" style="margin-top:12px">
+    <h3>&#128207; 최소-최대 프롬프팅 (LtM)</h3>
+    <p style="margin:6px 0 0">문제를 <b>더 단순한 순차적 하위 문제</b>로 분해한 뒤 (CoT처럼) 각 단계를 순서대로 푼다.</p>
+    <p style="margin:8px 0 0"><b>언제</b> &mdash; <b class="g">이전 단계가 이후 단계의 해법을 알려 주는</b> 순차적 분해가 자연스러운 문제(다단계 수학, 프로그래밍, 추론 사슬).</p>
+    <p style="margin:8px 0 0"><b class="gold">결합도 가능</b> &mdash; LtM으로 쪼갠 뒤, <b>특히 복잡한 하위 문제에만 ToT</b>를 적용.</p>
+  </div>
+  <aside>추론 모델이 나오면서 ToT를 직접 구현할 이유가 많이 줄었습니다. 그래도 개념은 알아야 사고 모드가 뭘 하는지 이해하죠.</aside>
+</section>
+
+<!-- 18 대안 2 -->
+<section class="slide" data-part="5.3.4 고려사항">
+  <h2>&#128257; 대안 &mdash; <span class="g">리플렉션</span>과 <span class="g">wait 주입</span></h2>
+  <div class="box">
+    <h3>&#128269; 리플렉션</h3>
+    <p style="margin:6px 0 0">LLM이 <b>자기 출력을 평가하고 비판</b>하게 하는 에이전트 기법. 자기 생성물을 "되돌아보고" 기대에 못 미치면 <b>폐기</b>할 수도 있다.</p>
+    <p style="margin:6px 0 0"><b class="r">다만</b> 리플렉션도 문제를 <b class="r">선형적으로</b> 다룬다. &rarr; <b>6장 패턴 18</b></p>
+  </div>
+  <div class="box" style="margin-top:12px;border-color:var(--gold)">
+    <h3 class="gold">&#9203; wait 주입 <small>(예산 강제, budget forcing)</small></h3>
+    <p style="margin:6px 0 0"><b>기발한 만큼 단순하다</b> &mdash; 모델이 출력을 끝내려 할 때 <b class="gold">Wait</b>라는 낱말을 끼워 넣는다. 생성 중에 <b>종료 토큰을 Wait로 덮어쓴다.</b></p>
+    <p style="margin:8px 0 0">시퀀스 종료 토큰이 사라지면 모델은 <b>생성을 계속</b>하게 되고, 결과적으로 <b class="g">앞선 진술을 재평가</b>하게 된다. 최종 응답은 처음보다 <b>훨씬 성찰적인 경우가 많다.</b></p>
+  </div>
+  <div class="hl" style="margin-top:12px">&#128209; 2장 패턴 1 <b>로짓 마스킹</b>과 같은 자리에서 개입합니다 &mdash; 종료 토큰을 막아 생성을 이어 가게 하는 것.</div>
+  <aside>wait 주입이 이 장에서 가장 저렴한 대안입니다. 구현이 몇 줄이면 되니까요.</aside>
+</section>
+
+<!-- 19 앤드류 응 -->
+<section class="slide" data-part="5.3.4 고려사항">
+  <h2>&#127891; <span class="g">앤드류 응</span>의 네 가지 에이전트 설계 패턴</h2>
+  <table class="t">
+    <tr><th style="width:26%">응의 패턴</th><th>이 책에서</th></tr>
+    <tr><td><b>리플렉션</b></td><td>패턴 18 (6장)</td></tr>
+    <tr><td><b>도구 사용</b></td><td>패턴 21 Tool Calling (7장)</td></tr>
+    <tr><td><b>멀티에이전트 협업</b></td><td>패턴 23 (7장)</td></tr>
+    <tr><td><b>계획</b></td><td><b class="g">Deep Search(12) · Chain of Thought(13) · ToT(14)</b>가 그 사례</td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">ToT는 <span class="y">네 가지 전부</span>에 해당한다</div>
+  <ul class="pts" style="margin-top:14px">
+    <li>생성에 뛰어들기 전에 <b>계획</b>하고</li>
+    <li><b>생각 생성 단계</b>는 리플렉션의 사례이며</li>
+    <li>단계 간 <b>오케스트레이션</b>은 멀티에이전트 협업을 요하고</li>
+    <li>어느 단계든 <b>외부 도구</b>를 쓸 수 있다</li>
+  </ul>
+  <div class="hl">&#128161; 이 책의 많은 패턴은 네 가지를 <b>재료로 함께 쓰므로</b> 여러 범주에 걸칩니다.</div>
+  <aside>패턴을 배타적 분류로 보지 말라는 뜻입니다. 조합해서 쓰는 재료예요.</aside>
+</section>
+
+<!-- 20 PART 5 -->
+<section class="slide" data-part="5.3.5 참고문헌">
+  <h2>&#128218; 5.3.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:30%">출처</th><th>기여</th></tr>
+    <tr><td><b>Yao 외 (2023)</b></td><td>「Tree of Thoughts: Deliberate Problem Solving with Large Language Models」 &mdash; <b>ToT 개념</b>을 상세히 기술</td></tr>
+    <tr><td><b>Muennighoff 외 (2025)</b></td><td><b>wait 주입</b>을 제안하고 <b>오픈소스 예제</b>도 제공</td></tr>
+  </table>
+  <div class="hl" style="margin-top:16px">&#128161; 논문 제목의 <b class="g">"Deliberate"</b>(숙고하는)라는 낱말이 이 패턴의 핵심입니다 &mdash; 반사적으로 답하지 않고 <b>따져 보고 고른다</b>는 뜻이죠.</div>
+  <div class="warn">&#128197; 2023년 ToT, 2025년 wait 주입 &mdash; 그 사이에 <b>추론 모델의 사고 모드</b>가 등장하면서 ToT를 직접 구현할 이유가 많이 줄었습니다. <b class="g">개념은 여전히 유효</b>하지만 구현 방식이 바뀐 것입니다.</div>
+  <aside>참고문헌이 둘뿐인 게 오히려 시사적입니다. 아이디어가 모델 안으로 흡수됐다는 뜻이거든요.</aside>
+</section>
+
+<!-- 21 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#127794; 갇히면 <span class="g">되돌아가라</span></h1>
+    <div class="big" style="margin-top:24px">여러 갈래를 만들고<br><span class="y">점수를 매기고</span><br>막히면 <span class="y">되돌아간다</span><br><br><small>단 &mdash; <span class="y">41회 호출 · 93초</span>. CoT로 되면 CoT를 쓰라</small></div>
+    <p class="sub" style="margin-top:22px">패턴 14 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 15 어댑터 튜닝</b> (프롬프트에서 가중치로)</p>
+  </div>
+  <aside>여기까지가 프롬프트로 푸는 두 패턴이었습니다. 다음부터는 모델 자체를 건드립니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

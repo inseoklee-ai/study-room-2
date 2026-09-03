@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>어댑터 튜닝 · 패턴 15 (5장)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 5 &middot; Pattern 15</div>
+    <h1 style="margin:18px 0">어댑터 <span class="gold">튜닝</span></h1>
+    <p class="sub">Adapter Tuning &mdash; 본체는 <b>얼려 두고</b> 덧붙인 작은 층만 학습한다</p>
+  </div>
+  <aside>여기부터는 프롬프트가 아니라 가중치를 건드립니다. 다만 아주 조금만요.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="gold">구조</span> <small>&mdash; 책 5.4</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>5.4.1 문제</b> &mdash; 프롬프트 엔지니어링도 퓨샷도 안 될 때</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>5.4.2 해법</b> &mdash; 어댑터 아키텍처 · 학습 · 추론 <b class="r">(+ 오용 경고)</b></span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>5.4.3 예제</b> &mdash; 영상의학 캡션 (멀티모달)</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>5.4.4 고려사항</b> &mdash; 모델 병합 · 클로즈드 웨이트 · 대안</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>5.4.5 참고문헌</b></span></div>
+  </div>
+  <div class="warn">&#9888;&#65039; 이 패턴은 <b class="r">워낙 자주 오용</b>되어, 저자가 한계를 「고려사항」이 아니라 <b>「해법」 절로 앞당겨</b> 강조합니다. 이 덱도 그렇게 배치했습니다.</div>
+  <aside>무엇에 좋고 무엇에 쓰면 안 되는지를 먼저 못 박는 게 이 패턴의 특징입니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="5.4.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">5.4.1 문제</h2>
+    <div class="who">응답이 원하는 모습이 아니라면</div>
+  </div>
+  <aside>모델의 능력을 여는 정석은 프롬프트입니다. 그런데 응답이 원하는 모습이 아니라면?</aside>
+</section>
+
+<!-- 4 아이스크림 -->
+<section class="slide" data-part="5.4.1 문제">
+  <h2>&#127848; <span class="r">원칙</span> vs <span class="g">구체적 아이디어</span></h2>
+  <div class="plabel">프롬프트</div>
+  <pre>아이스크림의 맛을 개선할 방법 <b>세 가지</b>를 제안해 줘.</pre>
+  <div class="grid2" style="margin-top:12px">
+    <div class="box" style="border-color:var(--red)"><h3 class="r">&#10060; 받은 응답 &mdash; 원칙</h3><p style="margin:0">1. <b>고품질의 신선한 재료</b>를 사용한다<br>2. 소금이나 로스팅한 재료를 더해 <b>맛의 깊이</b>를 살린다<br>3. 베이스를 충분히 냉각하고 빠르게 얼린다</p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 원하는 응답 &mdash; 구체적</h3><p style="margin:0">1. <b>민트나 시트러스 제스트</b>를 베이스에 인퓨징<br>2. <b>로스팅한 견과류나 부순 쿠키</b> 믹스인<br>3. 서빙 직전 <b>플레이크 소금</b>을 얹기</p></div>
+  </div>
+  <div class="big" style="margin-top:14px">나쁘지 않지만 이것들은 <span class="y">원칙</span>이다</div>
+  <div class="hl">&#128161; 이런 시연 예시를 <b class="g">수백 개</b> 갖고 있고, 애플리케이션이 그와 비슷한 응답을 내놓기를 바란다면 어떻게 해야 할까?</div>
+  <aside>차이가 미묘합니다. 틀린 답이 아니라 "우리 스타일이 아닌" 답이에요.</aside>
+</section>
+
+<!-- 5 두 선택지 -->
+<section class="slide" data-part="5.4.1 문제">
+  <h2>&#10060; 곧바로 떠오르는 <span class="r">두 선택지</span> &mdash; 둘 다 별로</h2>
+  <table class="t">
+    <tr><th style="width:26%">선택지</th><th>왜 안 되나</th></tr>
+    <tr><td><b>프롬프트 엔지니어링</b><br><small>상세 지시 붙이기</small></td><td>손으로 쓰는 것은 <b class="r">많은 과제로 확장되지 않는다</b>. 복잡한 프롬프트는 <b>비용을 키우고</b>, 표현이 조금만 달라져도 성능이 크게 달라져 <b class="r">테스트가 어렵다</b>. 무엇보다 응답을 시연된 응답에 가깝게 만드는 <b class="r">체계적인 방법이 없다</b></td></tr>
+    <tr><td><b>퓨샷 학습</b><br><small>컨텍스트에 예시 몇 개</small></td><td>선택한 예시가 <b class="r">분포 전체를 담지 못하면</b> 효과가 없다. 예시를 <b>추론 요청마다 함께 보내야</b> 해 컨텍스트를 잡아먹고 비용·지연을 늘린다. <b class="r">예시 몇 개를 넘어서면 확장되지 않는다</b></td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">Adapter Tuning은 &mdash;<br>프롬프트 엔지니어링보다 <span class="y">원칙적</span>이고<br>퓨샷보다 <span class="y">더 많은 예시로 확장</span>되며<br>전체 파인튜닝보다 <span class="y">덜 번거롭고 사고가 적다</span></div>
+  <aside>수백~수천 개의 입력-출력 쌍이 있다는 상황에서의 이야기입니다.</aside>
+</section>
+
+<!-- 6 PART 2 -->
+<section class="slide" data-part="5.4.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">5.4.2 해법</h2>
+    <div class="who">어댑터 아키텍처</div>
+  </div>
+  <aside>파라미터 효율적이고, 배포가 편하며, 추론이 빠른 특수한 아키텍처 덕분입니다.</aside>
+</section>
+
+<!-- 7 오용 경고 -->
+<section class="slide" data-part="5.4.2 해법">
+  <h2>&#9940; 먼저 &mdash; <span class="r">쓰면 안 되는 것</span></h2>
+  <div class="big">Adapter Tuning은 <span class="y">아주 작은 조정</span>을<br>그것도 <span class="y">몇 개 층에만</span> 가한다</div>
+  <p style="margin-top:14px">그래서 튜닝된 모델은 원래 하던 일을 <b>대체로 그대로 하면서</b>, 학습된 <b class="g">특화 과제만 조금 더 잘합니다.</b> 파운데이션 모델이 <b>이미 할 수 있는 것에 가까운</b> 능력을 더할 때 잘 작동합니다.</p>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:30%">하려는 것</th><th>써야 할 것</th></tr>
+    <tr><td><b class="r">업계 전문 용어 · 새 언어</b><br><small>새 낱말과 연관(당뇨병↔인슐린 결핍)</small></td><td><b class="gold">계속 사전학습(CPT)</b> &mdash; 보통 전체 파인튜닝을 수반. <b class="r">Adapter Tuning은 그런 학습이 가능할 만큼 모델을 바꾸지 못한다</b></td></tr>
+    <tr><td><b class="r">새 지식</b></td><td><b class="gold">RAG (3장)</b></td></tr>
+    <tr><td><b class="r">새로운 과제 집합</b></td><td><b class="gold">Evol-Instruct (패턴 16)</b> &mdash; 더 큰 데이터셋과 더 긴 학습</td></tr>
+    <tr><td><b class="g">특화 과제</b><br><small>분류 · 요약 · 추출형 QA · 브랜드 톤 챗봇</small></td><td><b class="g">Adapter Tuning</b></td></tr>
+  </table>
+  <div class="warn">&#128161; <b>왜 새 지식이 안 되나</b> &mdash; 어떤 나라가 새 총리를 선출했다고 해 봅시다. 그 이름이 든 문장 <b>수백 개</b>로 학습시킨다고 해서, 사전학습 <b class="r">당시</b> 총리에 대해 마주친 <b class="r">수천 건의 기사</b>를 이길 가능성은 매우 낮습니다.</div>
+  <aside>이 비유가 직관적입니다. 소수의 새 예시가 방대한 옛 학습을 못 덮어써요.</aside>
+</section>
+
+<!-- 8 아키텍처 -->
+<section class="slide" data-part="5.4.2 해법">
+  <h2>&#127959;&#65039; 어댑터 <span class="gold">층</span>의 구조</h2>
+  <p>어댑터 층은 파운데이션 모델의 기본 빌딩 블록인 <b>트랜스포머 블록 안에</b> 끼워 넣는다. 어디에 끼우는지는 방식마다 다르다.</p>
+  <div class="chain">
+    <div class="cell"><small>1</small><b>차원 축소<br><small style="color:var(--soft)">768 → 64</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>2</small><b>비선형 활성화<br><small style="color:var(--soft)">ReLU</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>3</small><b>차원 복원<br><small style="color:var(--soft)">64 → 768</small></b></div>
+  </div>
+  <div class="big" style="margin-top:16px">총 파라미터 = <span class="y">768 × 64 × 2</span><br><small>파운데이션 모델의 <b>수십억 개</b>보다 훨씬 작다</small></div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:26%">이름</th><th>유래</th></tr>
+    <tr><td><b>PeFT</b></td><td>학습할 파라미터가 훨씬 적어서 &mdash; <b>파라미터 효율적 파인튜닝</b></td></tr>
+    <tr><td><b>LoRA</b></td><td>비선형성이 트랜스포머 블록보다 <b>낮은 차원</b>(여기선 64)에서 일어나서 &mdash; <b>저랭크 적응</b>. <small>(연구자들이 말하는 엄밀한 LoRA 아키텍처는 아니지만 통칭)</small></td></tr>
+    <tr><td><b>QLoRA</b></td><td>파운데이션 모델의 <b>양자화된 버전</b>을 학습 &mdash; <b>양자화 인지</b> 저랭크 적응</td></tr>
+  </table>
+  <aside>768과 64는 예시 숫자입니다. r을 얼마로 잡느냐가 데이터셋 크기에 따라 달라져요.</aside>
+</section>
+
+<!-- 9 세 핵심 -->
+<section class="slide" data-part="5.4.2 해법">
+  <h2>&#127919; 세 가지 <span class="gold">핵심</span></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>특화 과제를 하는 법</b>을 가르친다 &mdash; 분류 · 요약 · 추출형 질의응답 · <b>회사 브랜드에 맞는 챗봇</b>. <b class="r">업계 전문 용어나 새로운 사실을 위한 것이 아니다</b></span></div>
+    <div class="st"><span class="n">2</span><span class="t">파운데이션 모델 가중치는 <b class="g">얼어 있고</b> 어댑터 층이 일부 층에 <b>작은 갱신</b>을 제공한다 &rarr; 매우 효율적. <b class="g">GPU 한 장으로 한 시간 안에</b> 끝나는 경우가 많다</span></div>
+    <div class="st"><span class="n">3</span><span class="t">학습 데이터셋이 <b class="g">딥러닝 통상보다 작아도 된다</b> &mdash; 전체 재학습(수백만 토큰)이나 CPT(<b class="r">파국적 망각 위험</b>)가 아니라 <b>어댑터 가중치만</b> 학습하므로. 실무에서 <b class="g">100개 예시</b>로도 충분할 수 있다</span></div>
+  </div>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell"><small>학습</small><b>어댑터 가중치만<br>조정</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>배포</small><b class="g">그 가중치만<br>저장</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>추론</small><b>파운데이션 모델에<br>다시 끼워 넣기</b></div>
+  </div>
+  <div class="hl">&#128161; 파운데이션 모델은 <b>수정되지 않았으므로</b> 어댑터 가중치만 저장하면 됩니다 &mdash; <b class="g">추가 저장 요구가 최소화</b>됩니다. 학습 시간의 대부분은 <b>파운데이션 모델이 여전히 추론을 해야 한다</b>는 사실에서 옵니다.</div>
+  <aside>학습이 빠른 이유가 파라미터가 적어서만은 아닙니다. 순전파는 여전히 전체 모델을 통과해야 하거든요.</aside>
+</section>
+
+<!-- 10 학습 코드 -->
+<section class="slide" data-part="5.4.2 해법">
+  <h2>&#128187; <span class="gold">학습</span> &mdash; 핵심 설정</h2>
+  <pre><span class="g"># ① 4비트 양자화로 로드 (QLoRA)</span>
+BitsAndBytesConfig(load_in_4bit=True,
+    bnb_4bit_use_double_quant=True, bnb_4bit_quant_type="nf4", ...)
+
+<span class="g"># ② 어댑터 설정</span>
+peft_config = LoraConfig(
+    <b>r=16</b>,               <span class="g"># 입력을 16차원으로 축소. 데이터셋 크기에 맞춰</span>
+    <b>lora_alpha=16</b>,      <span class="g"># 출력이 α/r 만큼 비례 → α=r 이면 그대로 쓰임</span>
+    lora_dropout=0.05,
+    target_modules="all-linear",
+    <b>modules_to_save=["lm_head", "embed_tokens"]</b>)
+                          <span class="g"># 어텐션 헤드와 입력 임베딩도 저장</span>
+
+<span class="g"># ③ 지도 학습</span>
+sft_config = SFTConfig(output_dir="gemma-radiology",
+    <b>num_train_epochs=1</b>, <b>learning_rate=2e-4</b>)  <span class="g"># QLoRA 논문 기준</span></pre>
+  <table class="t" style="margin-top:12px">
+    <tr><th style="width:24%">파라미터</th><th>의미</th></tr>
+    <tr><td><b>학습률</b></td><td>작을수록 <b class="g">원래 모델에서 벗어날 여지가 줄어든다</b></td></tr>
+    <tr><td><b>에폭 수</b></td><td>많을수록 학습 데이터셋에 더 맞춰지는데, 그 대가로 <b class="r">이전 학습을 잊을 수</b> 있다</td></tr>
+  </table>
+  <div class="warn">&#128161; 오픈 웨이트 모델에 하는 이유 둘 &mdash; ① 특화 과제엔 <b>더 작은 모델</b>이면 되고 GPT-4 같은 거대 모델이 필요 없다 ② <b class="g">인터넷과 분리된 로컬 하드웨어</b>에서 돌릴 수 있다</div>
+  <aside>클로즈드 웨이트 모델은 층에 접근할 수 없어서 완전 관리형 서비스로 우회합니다.</aside>
+</section>
+
+<!-- 11 메시지 형식 -->
+<section class="slide" data-part="5.4.2 해법">
+  <h2>&#128172; 학습 데이터도 <span class="gold">메시지</span>로</h2>
+  <p>대상 모델이 추론 시 <b>메시지</b>를 받는다면, 학습 데이터도 메시지로 구성해야 한다.</p>
+  <pre>[
+ {'role': '<b>system</b>',    'content': 'You are a food influencer.'},
+ {'role': '<b class="g">user</b>',      'content': 'Suggest 3 ways to improve
+                             the flavor of ice cream.'},
+ {'role': '<b class="g">assistant</b>', 'content': '1. Infuse the base with fresh
+                             ingredients like mint or citrus zest...'}
+]</pre>
+  <div class="chain" style="margin-top:12px">
+    <div class="cell"><small>입력 프롬프트</small><b class="g">user</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>출력 응답</small><b class="g">assistant</b></div>
+  </div>
+  <div class="hl" style="margin-top:12px">&#128161; 이 메시지들이 전달되면 모델은 <b class="g">자기 응답을 원하는 assistant 출력과 비교해</b> 학습 과정에서 그래디언트를 갱신합니다.</div>
+  <pre style="margin-top:12px">trainer = SFTTrainer(model=model, args=sft_config,
+    train_dataset=messages, peft_config=peft_config,
+    <b>data_collator=collate_fn</b>)   <span class="g"># 메시지 전처리가 필요한 경우</span>
+trainer.train(); trainer.save_model()</pre>
+  <aside>collate 함수는 뒤의 예제에서 이미지 URL을 실제 이미지 바이트로 바꾸는 데 씁니다.</aside>
+</section>
+
+<!-- 12 PART 3 -->
+<section class="slide" data-part="5.4.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">5.4.3 예제</h2>
+    <div class="who">영상의학 캡션 &mdash; 멀티모달</div>
+  </div>
+  <aside>파인튜닝은 텍스트 모델에만 국한되지 않습니다. 이미지를 입력받아 텍스트를 출력하도록 가르쳐 봅니다.</aside>
+</section>
+
+<!-- 13 목표 -->
+<section class="slide" data-part="5.4.3 예제">
+  <h2>&#127973; 목표 &mdash; <span class="gold">해부학적 서술만</span></h2>
+  <p>캡션이 이미지에 나타난 <b>해부 구조를 설명하고 문제를 간결히 기술</b>하되, <b class="r">완전한 진단이나 설명은 하지 않기를</b> 원한다.</p>
+  <div class="grid2">
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 원하는 캡션</h3><p style="margin:0"><i>좌측 상악동의 폐색을 보여 주는 <b>축상면 전산화 단층 촬영</b></i></p></div>
+    <div class="box" style="border-color:var(--red)"><h3 class="r">&#10060; 파운데이션 모델(Gemini) 응답</h3><p style="margin:0"><i>부비동의 축상면 CT 영상으로, 좌측 상악동 전체를 채우는 크고 팽창성이며 균질한 저감쇠 종괴가 관찰되어 <b class="r">점액낭종에 합치한다.</b> 팽창하는 병변의 <b class="r">압력 효과로 인한</b> 부비동 골벽의 얇아짐과 휘어짐에 주목하라.</i></p></div>
+  </div>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; <b>식별은 정확</b>하지만 <b class="r">너무 길고</b>, <b class="r">진단에 대한 긴 설명</b>이 붙었습니다.</div>
+  <div class="hl">&#128161; 프롬프트 엔지니어링("1~2문장으로", "진단을 설명하지 말 것")으로 고쳐 볼 수도 있지만 &mdash; <b class="g">그것이 선택지가 아닌 경우</b>를 다음 슬라이드에서 봅니다.</div>
+  <aside>답이 틀린 게 아니라 형식이 다른 겁니다. 아이스크림 예와 같은 구조예요.</aside>
+</section>
+
+<!-- 14 프롬프트 엔지니어링 배제 -->
+<section class="slide" data-part="5.4.3 예제">
+  <h2>&#128683; 프롬프트 엔지니어링이 <span class="r">선택지가 아닌</span> 때</h2>
+  <table class="t">
+    <tr><th style="width:20%">이유</th><th>내용</th></tr>
+    <tr><td><b class="r">비용</b></td><td>코너 케이스를 만날수록 프롬프트가 극도로 길어져 <b class="r">두세 쪽 분량의 상세 지시</b>가 되는 일도 드물지 않다. <b>토큰 수를 크게 늘리고</b> 애플리케이션의 확장을 <b class="r">너무 비싸게</b> 만든다 <small>(8장 패턴 26 프롬프트 압축 참조)</small></td></tr>
+    <tr><td><b class="r">위치</b></td><td>규제 때문에 <b>온프레미스</b>에서, 또는 연결성 때문에 <b>엣지</b>에서 돌려야 할 수 있다. 그러면 지시 수행 능력이 더 제한적인 <b class="r">더 작은 모델</b>(8장 패턴 24)을 써야 하고, <b>상세한 프롬프트가 잘 작동하지 않는다</b></td></tr>
+    <tr><td><b class="r">유지보수</b></td><td>상세해질수록 시스템이 <b class="r">프롬프트의 정확한 표현에 극도로 민감</b>해진다. 파운데이션 모델이 바뀔 때마다, <b>도구 중 하나가 바뀔 때조차</b> 통합 테스트를 해야 한다</td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">이런 상황이라면<br><span class="y">특정 과제를 위해 더 작은 모델을 사후 학습</span>하는 것을 고려하라</div>
+  <aside>프롬프트 엔지니어링은 개념 증명에는 유용하지만 프로덕션으로 옮길 때 이 셋에서 막힙니다.</aside>
+</section>
+
+<!-- 15 데이터셋과 학습 -->
+<section class="slide" data-part="5.4.3 예제">
+  <h2>&#128202; 데이터셋과 <span class="gold">학습 결과</span></h2>
+  <p>각 학습 예시는 <b>메시지 세 개</b>로 이루어진다.</p>
+  <pre>{'messages': [
+  {'role': 'system',    'content': 'You are an expert researcher
+                                    in radiology.'},            <span class="g"># 1</span>
+  {'role': 'user',      'content': [
+      {'type': 'text',  'text': 'Write a caption for this image...'},  <span class="g"># 2a</span>
+      {'type': '<b>image</b>', 'image': 'images/PMC2837471_....jpg'}]},     <span class="g"># 2b</span>
+  {'role': 'assistant', 'content': 'Bacterial contamination occurred
+                                    after root canal treatment...'}    <span class="g"># 3</span>
+]}</pre>
+  <div class="warn" style="margin-top:10px">&#9888;&#65039; 메시지에는 실제 이미지가 아니라 <b>위치</b>가 담깁니다. 그래서 <b class="g">토크나이징 시점에 배치에 해당하는 이미지를 읽어 들이도록</b> 학습 코드를 수정합니다 &mdash; <code>Image.open(image).convert("RGB")</code></div>
+  <table class="t" style="margin-top:12px">
+    <tr><th style="width:26%">항목</th><th>값</th></tr>
+    <tr><td>모델</td><td><b>40억 파라미터 Gemma</b> (멀티모달)</td></tr>
+    <tr><td>데이터</td><td>이미지-텍스트 쌍 <b class="g">500개</b>, 배치 크기 4</td></tr>
+    <tr><td>학습 손실</td><td><b>14.8</b>에서 시작 &rarr; <b class="g">95번째 배치</b>쯤 <b>4.0</b> 도달 &rarr; 마지막 30배치 동안 그 근처</td></tr>
+    <tr><td>판단</td><td><b class="g">500장이면 충분</b>했다는 뜻. 손실이 계속 떨어졌다면 더 썼을 것</td></tr>
+  </table>
+  <div class="hl">&#128161; <b>에폭 하나</b>만 학습했으므로 과적합은 걱정거리가 아니었습니다. 여러 에폭이라면 <b class="g">검증 세트로 평가</b>해 과적합을 잡아야 합니다.</div>
+  <aside>손실 곡선이 평평해지는 지점을 보고 데이터가 충분한지 판단하는 게 실무 감각입니다.</aside>
+</section>
+
+<!-- 16 추론 결과 -->
+<section class="slide" data-part="5.4.3 예제">
+  <h2>&#9989; 추론 &mdash; <span class="gold">학습 데이터에 없던 이미지</span></h2>
+  <pre>model = AutoModelForImageTextToText.from_pretrained(
+    <b>"gemma-radiology"</b>, device_map="auto", torch_dtype=torch.bfloat16)
+processor = AutoProcessor.from_pretrained("gemma-radiology")</pre>
+  <div class="hl" style="margin-top:10px">&#128161; 프레임워크가 이것을 <b>어댑터 층으로 인식</b>하므로, <b class="g">기반 파운데이션 모델도 함께 로드하고 어댑터 모듈을 끼워 넣습니다.</b></div>
+  <div class="warn" style="margin-top:12px">&#128221; 추론용 메시지에는 <b class="r">assistant 메시지가 없습니다</b> &mdash; <b>그것이 바로 모델이 생성할 출력</b>이니까요.</div>
+  <div class="box" style="margin-top:12px;border-color:var(--gr)"><h3 class="g">&#9989; 생성된 캡션</h3><p style="margin:0"><i>복강 내 종괴의 크기와 밀도를 보여 주는 <b>복부 CT 촬영</b></i></p><p style="margin:8px 0 0"><small><b>간결</b>하고 이미지에 나타난 <b class="g">해부학적 세부</b>에 초점 &mdash; 파인튜닝한 캡션 데이터셋에 비추어 <b>정확히 기대하던 결과</b></small></p></div>
+  <div class="big" style="margin-top:14px">비슷한 접근을 어떤<br><span class="y">이미지-투-텍스트</span> 문제에도 쓸 수 있다<br><small>이미지로 <b>제품 설명</b> 생성 · 지도로 <b>길 안내</b> 생성</small></div>
+  <aside>진단 설명이 사라지고 해부학적 서술만 남았습니다. 500장으로 형식을 가르친 결과예요.</aside>
+</section>
+
+<!-- 17 PART 4 변형 -->
+<section class="slide" data-part="5.4.4 고려사항">
+  <h2>&#128257; 5.4.4 <span class="gold">두 가지 변형</span></h2>
+  <div class="box">
+    <h3>&#9312; 모델 병합</h3>
+    <p style="margin:6px 0 0">예제에서는 어댑터 가중치를 기반 모델과 <b>따로</b> 저장했다 &mdash; <b class="g">저장 공간 절약</b>. 그러나 기반 모델을 로드해 어댑터를 끼워야 하므로 <b class="r">배포 관리가 어려워지고</b>(두 모델을 다 갖고 있어야 한다) <b>지연도 약간 늘어난다.</b></p>
+    <pre style="margin-top:8px">peft_model = PeftModel.from_pretrained(model, args.output_dir)
+merged_model = <b>peft_model.merge_and_unload()</b>
+merged_model.save_pretrained("merged_model", max_shard_size="2GB")</pre>
+  </div>
+  <div class="box" style="margin-top:12px">
+    <h3>&#9313; 클로즈드 웨이트 모델</h3>
+    <p style="margin:6px 0 0">독점 제공사들은 <b class="g">완전 관리형 서비스</b>를 제공한다 &mdash; 지정한 형식의 데이터셋을 가리켜 주기만 하면 파인튜닝하고 <b>엔드포인트에 배포</b>해 준다.</p>
+    <p style="margin:8px 0 0"><b>Vertex AI</b>에서는 데이터셋을 <b>같은 메시지 형식</b>으로 구성하고, 기반 모델과 에폭 수를 지정한다. 단순화를 위해 학습률과 어댑터는 <b class="gold">배수(multiplier)</b>로 설정한다.</p>
+    <p style="margin:8px 0 0"><b class="r">&#9888;&#65039; 어댑터를 더 크게 잡는 것은 보통 학습 예시가 더 많을 때만</b> 합니다.</p>
+  </div>
+  <aside>병합할지 말지는 저장 공간과 배포 편의의 트레이드오프입니다.</aside>
+</section>
+
+<!-- 18 대안 -->
+<section class="slide" data-part="5.4.4 고려사항">
+  <h2>&#129517; <span class="g">대안</span> &mdash; 정말 튜닝이 필요한가</h2>
+  <div class="big">파인튜닝이 더하는 복잡도보다<br><span class="y">얻는 이득이 큰지</span> 확인하라</div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:26%">대안</th><th>언제 더 잘 맞나</th></tr>
+    <tr><td><b>퓨샷 학습</b></td><td>과제가 <b class="g">단순하다면 충분한 경우가 많다.</b> 예시 몇 개면 흉내 내기에 충분할 수 있고 <b>데이터 요구량도 훨씬 적다.</b> 토큰이 늘어 질의 비용은 더 들지만 <b class="g">모델 버전을 유지·관리할 필요가 없다</b></td></tr>
+    <tr><td><b>Chain of Thought</b><br><small>패턴 13</small></td><td>과제가 <b class="g">시연 가능한 논리적 단계</b>를 요구한다면 충분한 경우가 많다. 비용은 더 들 수 있지만 <b>모델을 학습·관리하지 않아도 되는 것</b>이 그 비용을 상쇄하고도 남을 수 있다</td></tr>
+    <tr><td><b>Content Optimization</b><br><small>패턴 5 (2장)</small></td><td>좋은 응답을 시연할 <b class="r">기성 학습 데이터셋이 없다면.</b> LLM 응답의 <b class="g">자연스러운 변이를 바탕으로 부트스트랩</b>해 어떤 콘텐츠가 가장 잘 먹히는지 학습한다</td></tr>
+  </table>
+  <div class="hl">&#128209; 세 번째가 이 패턴의 전제 조건을 뒤집습니다 &mdash; <b>"수백 개의 입력-출력 쌍이 있다"</b>는 전제가 성립하지 않으면 2장으로 돌아가세요.</div>
+  <aside>1장에서 다룬 파인튜닝의 고려사항이 여기에도 모두 적용됩니다.</aside>
+</section>
+
+<!-- 19 PART 5 -->
+<section class="slide" data-part="5.4.5 참고문헌">
+  <h2>&#128218; 5.4.5 <span class="gold">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">출처</th><th>기여</th></tr>
+    <tr><td><b>Wei 외 (2021)</b></td><td>어시스턴트 모델 개발에서 결정적 개선을 보이며 <b>미지의 과제에 대한 제로샷 성능 향상</b>을 입증</td></tr>
+    <tr><td><b>Li · Liang (2021)</b></td><td>학습 파라미터의 <b class="g">아주 일부만으로</b> 생성 과제에서 <b>전체 파인튜닝에 필적</b>하는 성능</td></tr>
+    <tr><td><b>Lester 외 (2021)</b></td><td><b>프롬프트 임베딩 층</b>에서의 어댑터 튜닝이 수십억 파라미터 모델에서 전체 파인튜닝에 필적하면서도 <b class="g">작은 과제별 프롬프트만 저장</b>하면 됨을 보임</td></tr>
+    <tr><td><b>Xu 외 (2023)</b></td><td>여러 PeFT 방법들을 <b>파라미터 효율성과 메모리 효율성</b> 양면에서 비교·리뷰</td></tr>
+    <tr><td><b class="g">Dettmers 외 (2023)</b></td><td><b class="g">QLoRA</b> &mdash; <b>오늘날 가장 널리 쓰이는</b> Adapter Tuning 기법</td></tr>
+    <tr><td><b>Fractional AI</b></td><td>Adapter Tuning으로 GPT-3.5를 파인튜닝해 <b>Change.org의 콘텐츠 모더레이션</b>을 수행. 학습 데이터셋은 <b class="g">사람의 모더레이션 결정</b></td></tr>
+  </table>
+  <div class="hl">&#128161; 마지막 사례가 이 패턴의 전형입니다 &mdash; <b>사람이 이미 내린 판단 기록</b>이 그대로 학습 데이터가 되는 구조.</div>
+  <aside>2021년에 세 편이 몰려 있습니다. PeFT 아이디어가 그때 자리를 잡았어요.</aside>
+</section>
+
+<!-- 20 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#128295; 본체는 두고 <span class="gold">덧댄다</span></h1>
+    <div class="big" style="margin-top:24px">예시 <span class="y">수백 개</span>와 <span class="y">GPU 한 장 한 시간</span>으로<br>특화 과제를 가르친다<br><br><small><b class="r">단 &mdash; 전문 용어(CPT)도, 새 지식(RAG)도 아니다</b></small></div>
+    <p class="sub" style="margin-top:22px">패턴 15 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 16 지시문 진화</b> (데이터셋이 수천 개 필요하다면)</p>
+  </div>
+  <aside>어댑터 튜닝은 수백 개면 되지만, 새로운 과제 집합을 가르치려면 수천 개가 필요합니다. 그 데이터셋을 만드는 게 다음 패턴이에요.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>
