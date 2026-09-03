@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>패턴 23 멀티에이전트 협업 — Multiagent Collaboration</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 7 &middot; Pattern 23</div>
+    <h1 style="margin:18px 0">멀티에이전트 <span class="g">협업</span></h1>
+    <p class="sub">Multiagent Collaboration &mdash; <b>단일 목적의 전문 에이전트</b>들을 <b>인간의 조직 구조를 흉내 낸 방식</b>으로 조직한다</p>
+  </div>
+  <aside>단일 LLM 호출의 한계를 넘어서는 마지막 패턴입니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 7.3</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>7.3.1 문제</b> &mdash; 단일 에이전트의 네 가지 한계</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>7.3.2 해법</b> &mdash; 여러 전문 에이전트 &middot; 세 가지 아키텍처</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>7.3.3 예제</b> &mdash; AG2로 중3 워크북 만들기 (8단계)</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>7.3.4 고려사항</b> &mdash; 40~80% 실패, 그래도 쓰려면</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>7.3.5 참고문헌</b></span></div>
+  </div>
+  <div class="warn">&#128161; <b>미리 결론</b> &mdash; 이 장 저자들의 최종 권고는 뜻밖에도 <b class="r">"단일 에이전트로 되면 그냥 그렇게 하라"</b>입니다. 왜 그런지가 이 덱의 핵심입니다.</div>
+  <aside>패턴을 소개하면서 동시에 그 패턴을 아끼라고 말하는, 이 책에서 드문 절입니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="7.3.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">7.3.1 문제</h2>
+    <div class="who">단일 에이전트의 한계</div>
+  </div>
+  <aside>패턴 21, 22, 13, 18까지 왔는데도 왜 부족한가를 먼저 짚습니다.</aside>
+</section>
+
+<!-- 4 여기까지 왔는데 -->
+<section class="slide" data-part="7.3.1 문제">
+  <h2>&#128260; 여기까지 왔는데도 <span class="r">겨우 해내는 정도</span></h2>
+  <div class="chain">
+    <div class="cell"><small>패턴 21</small><b>Tool Calling</b></div>
+    <div class="cell"><small>패턴 22</small><b>Code Execution</b></div>
+    <div class="cell"><small>패턴 13</small><b>CoT</b></div>
+    <div class="cell"><small>패턴 18</small><b>Reflection</b></div>
+  </div>
+  <p style="margin-top:14px">이 패턴들은 <b>그저 응답하기만 하는 수동적 애플리케이션</b>을 넘어서게 해 준다. 에이전트는 <b class="g">행동하고, 피드백에 반응하고, 행동을 조정</b>할 수 있게 되어 더 자율적이 된다.</p>
+  <div class="big">그러나 이런 일을<br><span class="y"><i>겨우</i> 해내는 정도로는</span> 충분하지 않다<br><small>현실 애플리케이션의 요구는 대개 더 까다롭다</small></div>
+  <div class="hl" style="margin-top:14px">&#127919; <b>이상적인 AI 에이전트라면</b> &mdash; ① 서로 다른 툴이 필요한 <b>다단계 과제</b>를 처리하고 ② <b>긴 상호작용에 걸쳐 내용을 유지</b>하고 ③ <b>사용자 선호에 적응</b>하고 ④ <b>상황을 평가</b>해 ⑤ <b class="g">사람의 개입 없이 적절한 행동</b>을 취해야 한다.</div>
+  <aside>애플리케이션이 복잡해질수록 단일 에이전트의 한계가 뚜렷해집니다.</aside>
+</section>
+
+<!-- 5 네 가지 한계 -->
+<section class="slide" data-part="7.3.1 문제">
+  <h2>&#10060; 단일 에이전트의 <span class="r">네 가지 한계</span></h2>
+  <table class="t">
+    <tr><th style="width:30%">한계</th><th>내용</th></tr>
+    <tr><td><b class="r">인지적 병목</b><br><small>Cognitive bottlenecks</small></td><td>가장 진보한 LLM조차 <b>유한한 컨텍스트 윈도와 계산 능력</b>을 갖는다. 문제가 복잡해질수록 <b class="r">모든 측면에 걸쳐 일관성을 유지하기 어려워진다</b> &mdash; 여러 지식 도메인을 통합하거나 긴 컨텍스트에 걸쳐 추론할 때 특히</td></tr>
+    <tr><td><b class="r">파라미터 효율의 감소</b><br><small>Decreasing parameter efficiency</small></td><td>모델 크기를 키우면 능력은 향상되지만 계산 비용을 늘리면서 <b class="r">수확 체감</b>을 낳는다. 대안은 <b class="g">여러 작은 모델에 전문 지식을 분산</b>하는 것</td></tr>
+    <tr><td><b class="r">제한된 추론 깊이</b><br><small>Limited reasoning depth</small></td><td>트랜스포머 기반 추론의 <b>순차적 성질</b>이 병렬 추론 경로를 막는다. 추론을 <b class="g">너비 우선 탐색</b>처럼 다루고 토큰을 더 쓸 수 있게 하면 더 성공적일 것</td></tr>
+    <tr><td><b class="r">도메인 적응의 문제</b><br><small>Problems with domain adaptation</small></td><td>일반 데이터로 학습한 단일 모델은 특정 도메인 전문성이 부족하다. 파인튜닝이 일부 해소하지만 <b class="r">파국적 망각</b>(catastrophic forgetting)이나 다른 도메인 성능 저하를 대가로 치른다</td></tr>
+  </table>
+  <div class="warn">&#128209; <b>5장 패턴 14 ToT</b>가 "너비 우선 탐색"을 한 모델 안에서 시도한 것이었다면, 여기서는 <b class="g">그 갈래를 각각 다른 에이전트에게</b> 맡깁니다.</div>
+  <aside>네 가지 모두 "하나로는 안 되는 이유"입니다. 멀티에이전트가 이 넷을 겨냥합니다.</aside>
+</section>
+
+<!-- 6 PART 2 -->
+<section class="slide" data-part="7.3.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">7.3.2 해법</h2>
+    <div class="who">여러 전문 에이전트</div>
+  </div>
+  <aside>인간의 조직 구조를 반영한 인지 노동의 분업입니다.</aside>
+</section>
+
+<!-- 7 다섯 능력 -->
+<section class="slide" data-part="7.3.2 해법">
+  <h2>&#9989; 여러 전문 에이전트가 <span class="g">가능하게 하는 것</span></h2>
+  <div class="big">인간의 조직 구조를 반영한<br><span class="y">인지 노동의 분업</span><br><small>모델 용량을 더 효율적으로 배분한다</small></div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:28%">능력</th><th>내용</th></tr>
+    <tr><td><b class="g">과제 분해</b><br><small>Task decomposition</small></td><td>서브태스크로 쪼개 전문 에이전트에 배정 &rarr; <b>어느 한 에이전트의 인지 부하가 줄어든다</b>. 계획 &middot; 검색 &middot; 검증 &middot; 창의적 생성 같은 <b>인지 기능별</b> 특화도 가능</td></tr>
+    <tr><td><b class="g">병렬 처리</b><br><small>Parallel processing</small></td><td>서로 다른 측면을 동시에 작업 &rarr; 계산 자원 효율 &uarr;, <b>엔드투엔드 처리 시간 &darr;</b></td></tr>
+    <tr><td><b class="g">계층적 문제 해결</b></td><td>고수준 에이전트가 전문 에이전트들의 활동을 조율 &mdash; <b>인간 조직의 관리 구조</b>와 비슷하게</td></tr>
+    <tr><td><b class="g">도메인 특화 전문성</b></td><td>특정 도메인으로 학습 &middot; 파인튜닝 &rarr; <b>비슷한 크기의 범용 모델보다 더 깊은 전문성</b></td></tr>
+    <tr><td><b class="g">기능적 전문화</b></td><td>도메인을 넘어, 각 에이전트가 <b>조직 내 서로 다른 역할이 쓰는 소프트웨어 시스템의 인터페이스</b> 역할</td></tr>
+  </table>
+  <aside>앞 슬라이드의 네 한계와 하나씩 맞물립니다.</aside>
+</section>
+
+<!-- 8 확장성·견고성·창발 -->
+<section class="slide" data-part="7.3.2 해법">
+  <h2>&#128200; 확장성 &middot; 견고성 &middot; <span class="g">창발</span></h2>
+  <div class="grid2">
+    <div class="box"><b class="g">&#8593; 확장성 &mdash; 수직이 아니라 수평</b><br><br>
+      &bull; 모델 크기를 키우는 <b>수직 확장</b> 대신 <b class="g">전문 에이전트를 더 붙이는 수평 확장</b><br>
+      &bull; 시스템 전체를 <b>재학습시키지 않고</b> 개별 에이전트를 갱신 &middot; 교체 &rarr; 더 기민한 개발 &middot; 배포<br>
+      &bull; 계산 자원을 <b>동적으로 배분</b> &mdash; 무거운 서브태스크에 더 많이</div>
+    <div class="box"><b class="g">&#128737;&#65039; 견고성</b><br><br>
+      &bull; 핵심 능력을 <b>여러 에이전트에 복제</b> &rarr; 개별 실패의 영향 &darr;<br>
+      &bull; <b>서로 다른 방법론</b>으로 접근 &rarr; 효과적 해법을 찾을 확률 &uarr;<br>
+      &bull; <b class="g">서로의 출력을 검증</b> &rarr; 단일 에이전트라면 놓쳤을 오류를 잡는다</div>
+  </div>
+  <div class="hl" style="margin-top:14px">&#10024; <b>창발적 능력</b>(emergent capabilities) &mdash; 최근 연구는 멀티에이전트 시스템이 <b class="g">명시적으로 학습시키지 않은 행동</b>을 보일 수 있다고 시사한다. 상호작용과 협업을 통해 <b class="g">개별 구성 요소의 합을 넘어서는</b> 능력이 나타난다.</div>
+  <aside>서로 다른 관점과 능력을 가진 에이전트 간 상호작용이 단일 모델에서 나오기 힘든 접근으로 이어집니다.</aside>
+</section>
+
+<!-- 9 서로에게 배운다 -->
+<section class="slide" data-part="7.3.2 해법">
+  <h2>&#128260; 에이전트는 <span class="g">서로의 성공과 실패에서 배운다</span></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>코딩 에이전트</b>가 일부 <b class="r">엣지 케이스를 처리하지 못하는</b> 코드를 생성</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>테스트 에이전트</b>가 그 코드를 고쳐 <b class="g">변경분을 코딩 에이전트에 돌려준다</b> &rarr; 코딩 에이전트는 앞으로 엣지 케이스 처리를 넣는 법을 익힌다</span></div>
+    <div class="st"><span class="n">3</span><span class="t">반대로 테스트 에이전트가 <b class="r">회사 스타일 가이드에 맞지 않게</b> 고쳤다면, 코딩 에이전트가 다시 고친다</span></div>
+    <div class="st"><span class="n">4</span><span class="t">그 수정을 테스트 에이전트에게 보내면 <b class="g">다음번엔 더 규약에 맞는 코드</b>를 생성한다</span></div>
+  </div>
+  <div class="big" style="margin-top:16px">시스템 전체의<br><span class="y">지속적 개선</span></div>
+  <p style="margin-top:16px">여러 전문 에이전트를 두는 것은 좋다 &mdash; 그렇다면 특정 과제를 처리하기 위해 이들을 <b class="g">어떻게 조직</b>해야 할까?</p>
+  <aside>이 질문이 다음 세 슬라이드의 주제입니다.</aside>
+</section>
+
+<!-- 10 세 아키텍처 -->
+<section class="slide" data-part="7.3.2 해법">
+  <h2>&#127959;&#65039; 멀티에이전트 <span class="g">아키텍처</span> 세 가지</h2>
+  <div class="hl">&#128101; <b>비유</b> &mdash; 사람 여럿에게 일을 맡기는 방식은 예나 지금이나 세 가지입니다. &#9312; <b>회사</b> &mdash; 팀장이 나눠 주고 팀원이 한다. &#9313; <b>동아리</b> &mdash; 다 같이 논의하고 투표로 정한다. &#9314; <b>프리랜서 장터</b> &mdash; 일감을 올리면 각자 "제가 이 값에 하겠습니다" 하고 입찰한다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:20%">구조</th><th style="width:18%">결정 방식</th><th>잘 맞는 일</th><th>필요한 것</th></tr>
+    <tr><td><b class="g">계층형</b><br><small>Hierarchical</small></td><td>위에서 지시</td><td>단계가 정해진 일<br>(기획&rarr;작성&rarr;검수)</td><td>과제 분해, 스케줄링, 결과 통합</td></tr>
+    <tr><td><b class="b">P2P</b><br><small>Peer-to-peer</small></td><td>합의 &middot; 투표</td><td>여러 관점이 필요한 판단<br>(심사, 리뷰)</td><td>합의 알고리즘, 평판 시스템</td></tr>
+    <tr><td><b class="p">시장 기반</b><br><small>Market-based</small></td><td>입찰</td><td>"누가 제일 잘할지"<br>각자 아는 일</td><td>경매 알고리즘, 효용 함수</td></tr>
+  </table>
+  <div class="warn" style="margin-top:12px">&#128100; 이 중 하나를 고르는 것에 더해, <b class="g">사람이 어떻게 개입 &middot; 교정 &middot; 보완할지</b>도 정해야 합니다. 하이브리드도 가능합니다.</div>
+  <div class="big" style="margin-top:12px">순서가 정해졌으면 <span class="y">계층형</span><br>관점이 여럿이면 <span class="y">P2P</span><br>누가 잘할지 각자 알면 <span class="y">시장 기반</span></div>
+  <aside>한 줄 요약 슬라이드입니다. 이것만 기억해도 됩니다.</aside>
+</section>
+
+<!-- 11 계층형 -->
+<section class="slide" data-part="7.3.2 해법">
+  <h2>&#127970; 계층 구조 &mdash; 가장 단순한 형태는 <span class="g">프롬프트 체이닝</span></h2>
+  <ul class="pts">
+    <li><b class="g">임원-작업자</b>(executive-worker) &mdash; 고수준 임원 에이전트가 과제를 분해해 전문 작업자에 위임하고, 그 출력들을 통합해 일관된 응답을 만든다</li>
+    <li><b>다층 계층</b> &mdash; 임원-작업자 계층이 여러 겹, <b>중간 관리자</b>가 전문 에이전트 그룹을 조율</li>
+    <li>보통 <b class="g">의사결정을 중앙집중</b>시키며 상위가 하위에 대한 권한을 갖는다</li>
+  </ul>
+  <div class="hl">&#128279; <b>프롬프트 체이닝</b> = <b>순차 워크플로</b> &mdash; 첫 에이전트의 응답이 두 번째의 입력이 되고, 그런 식으로 이어진다. 트리로 보면 <b class="g">리프 노드가 하나뿐이고 나머지 모든 노드가 자식을 정확히 하나씩 갖는 계층</b> &mdash; 즉 <b>가지가 안 갈라진 트리</b>다.</div>
+  <div class="plabel">LangChain SequentialChain — 문단 → 제목 → 키워드</div>
+  <pre>paragraph_chain = LLMChain(llm=llm, prompt=paragraph_prompt,
+      <b class="g">output_key="paragraph"</b>)
+
+title_prompt = PromptTemplate(<b class="g">input_variables=["paragraph"]</b>,
+      template="Write a catchy title for ... {paragraph}")
+title_chain = LLMChain(llm=llm, prompt=title_prompt, output_key="title")
+
+keywords_prompt = PromptTemplate(
+      <b class="g">input_variables=["paragraph", "title"]</b>, ...)
+
+overall_chain = <b class="g">SequentialChain(</b>
+    chains=[paragraph_chain, title_chain, keywords_chain],
+    input_variables=["topic"],
+    output_variables=["paragraph", "title", "keywords"],
+)</pre>
+  <div class="warn">&#128161; 각 에이전트는 <code>input_variables</code>와 <code>output_key</code>를 통해 <b class="g">계층의 위아래 에이전트와 협업</b>합니다.</div>
+  <aside>이름은 거창하지만 줄줄이 이어 붙인 것뿐입니다.</aside>
+</section>
+
+<!-- 12 P2P -->
+<section class="slide" data-part="7.3.2 해법">
+  <h2>&#129309; P2P 네트워크 &mdash; <span class="b">합의와 투표</span></h2>
+  <p>권한과 책임을 에이전트들에 <b class="g">더 고르게 분산</b>시킨다. 에이전트들은 <b>동등한 자격</b>으로 일하며, 경직된 계층적 통제 없이 정보를 공유하고 활동을 조율한다. 과제는 하향식 배정이 아니라 <b class="g">집단적 노력</b>으로 처리된다.</p>
+  <div class="plabel">CrewAI — 세 에이전트에게서 합의를 이끌어 내는 태스크</div>
+  <pre># peer-to-peer task
+voting_and_consensus_task = Task(
+    description="""Review the preliminary recommendations from all
+editors for article '{article_id}'. Engage in <b class="g">up to 3 rounds of
+discussion</b> to reach a consensus on whether to ACCEPT, REJECT, or
+REVISE the article. <b class="gold">If a consensus is not reached after 3 rounds,
+a majority vote will determine the outcome.</b>""",
+    agent=[senior_editor,
+           content_editor,
+           research_editor],   <b class="g"># 모두가 이 태스크에 참여</b>
+    context=[senior_editor_review_task,
+             content_editor_review_task,
+             research_editor_review_task],
+    callback=lambda output: print(f"## Final Decision: ...")
+)</pre>
+  <div class="hl">&#128736;&#65039; P2P 네트워크는 보통 <b class="g">분산 합의 알고리즘</b>, <b>피어 탐색 &middot; 통신 프로토콜</b>, 그리고 각 에이전트의 기여와 능력을 평가하는 <b class="g">평판 시스템</b>(reputation system)을 갖춘다.</div>
+  <div class="warn">&#128161; <b>합의 실패에 대비한 규칙</b>이 코드에 명시돼 있는 점을 보세요 &mdash; "3라운드 안에 합의 못 하면 다수결". 이런 <b class="g">탈출구</b>가 없으면 무한 토론이 됩니다.</div>
+  <aside>6장 패턴 17 LLM-as-Judge의 여러 심사위원 구성과 발상이 닮았습니다.</aside>
+</section>
+
+<!-- 13 시장 기반 -->
+<section class="slide" data-part="7.3.2 해법">
+  <h2>&#128176; 시장 기반 &mdash; <span class="p">경매와 효용 극대화</span></h2>
+  <p><b>경매</b>와 <b>효용 극대화</b> 같은 경제학적 아이디어로 활동을 조율한다. 에이전트가 <b class="g">자기 능력과 가용성에 따라 입찰</b>하는 과정을 통해 과제나 자원을 배분한다.</p>
+  <div class="plabel">밀봉 입찰 경매 — 중고차</div>
+  <pre>def run_auction(agents, car_description):
+    bids = {}
+    for agent in agents:
+        prompt = f"""Here is the car for auction:\n {car_description}\n\n
+<b class="g">What is your maximum bid?</b> Please respond with only the number."""
+        bid_response = agent.run(prompt)
+        bids[agent.name] = int(bid_response.output)
+
+    highest_bid = 0; winner = None
+    for agent_name, bid_amount in bids.items():
+        if bid_amount &gt; highest_bid:
+            highest_bid = bid_amount; winner = agent_name
+    return winner, highest_bid</pre>
+  <div class="hl" style="margin-top:12px">&#128161; <b>중고차 이야기가 아닙니다</b> &mdash; <b class="g">각 에이전트가 현재 자원으로 그 과제를 얼마나 잘 해낼 수 있는지 독립적으로 판단할 수 있는</b> 모든 과제 배정에 경매를 쓸 수 있습니다. 예: 서로 다른 알고리즘으로 최적화 문제를 푸는 에이전트들이 <b>예상 개선폭</b>이나 <b>예상 최적화 시간</b>에 근거해 입찰.</div>
+  <aside>입찰가는 곧 "내가 이 일을 얼마나 잘할 수 있는가"의 자기 신고입니다.</aside>
+</section>
+
+<!-- 14 영국식 경매 -->
+<section class="slide" data-part="7.3.2 해법">
+  <h2>&#128227; 더 복잡한 형태 &mdash; <span class="p">영국식 경매</span></h2>
+  <p>경매인이 <b>최저가</b>를 정하고, 입찰자들이 <b class="g">공개적으로 점점 높은 가격</b>을 부르며, <b class="r">자원이 소진된 에이전트는 빠진다.</b></p>
+  <pre>while len(active_bidders) &gt; 1:
+    time.sleep(2)   <b class="g"># 에이전트가 자원을 모을 시간을 준다</b>
+    for agent in active_bidders:
+        prompt = f"""{task_description}
+The current bid is ${current_bid:,}. <b class="g">Are you willing to place a
+higher bid?</b> Your bid must be at least ${current_bid + increment:,}.
+If you are not willing to bid higher, <b class="gold">respond with 'pass'</b>."""
+        response = agent.run(prompt)
+        if response.lower() != "pass" and int(response) &gt;= ...:
+            bids_this_round[agent.name] = current_bid + increment
+        else:
+            <b class="r">bidders_to_remove.append(agent)</b>
+
+    if not bids_this_round: <b class="r">break</b>   # 새 입찰이 없으면 종료
+    current_bid = bids_this_round[round_winner_name]</pre>
+  <div class="hl">&#128736;&#65039; 시장 기반 아키텍처에는 <b class="g">경매 알고리즘</b>, <b>효용 함수</b>, 그리고/또는 자원 배분을 위한 일종의 <b class="g">가상 통화</b>가 필요하다.</div>
+  <aside>밀봉 입찰이 한 번에 끝나는 데 비해, 영국식은 라운드를 돌며 남은 자원을 드러냅니다.</aside>
+</section>
+
+<!-- 15 human in the loop -->
+<section class="slide" data-part="7.3.2 해법">
+  <h2>&#128100; 사람이 개입하는 고리 &mdash; <span class="g">Human-in-the-loop</span></h2>
+  <div class="big">P2P와 시장 기반 시스템에는<br><span class="y">충돌을 해소할 메커니즘</span>이 필요하다</div>
+  <div class="steps" style="margin-top:16px">
+    <div class="st"><span class="n">1</span><span class="t">에이전트 중 하나를 <b class="g">사람의 대리인</b>으로 삼는다</span></div>
+    <div class="st"><span class="n">2</span><span class="t">충돌을 <b>그 사람에게 넘긴다</b></span></div>
+    <div class="st"><span class="n">3</span><span class="t">사람이 해소한 뒤 <b class="g">에이전트 메커니즘이 계속 진행</b>된다</span></div>
+  </div>
+  <div class="hl" style="margin-top:14px">&#128161; 사람의 <b class="g">선호와 입력</b>도 같은 메커니즘으로, 즉 사람을 대리하는 에이전트와 협업하는 방식으로 <b class="g">프로세스의 어느 지점에서든</b> 들어올 수 있습니다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:26%">용어</th><th>뜻</th></tr>
+    <tr><td><b>임원-작업자</b><br><small>executive-worker</small></td><td>위 에이전트가 쪼개 주고 아래 에이전트가 처리하는 <b>가장 흔한 계층</b></td></tr>
+    <tr><td><b class="g">라우터</b><br><small>router</small></td><td>작업자들 앞에 <b>분류기</b>를 둬 알맞은 작업자에게 넘기는 형태 &mdash; <b>다음 예제에 나온다</b></td></tr>
+    <tr><td><b>평판 시스템</b><br><small>reputation system</small></td><td>어느 에이전트 말을 <b>얼마나 믿을지 점수</b>로 관리하는 장치</td></tr>
+  </table>
+  <aside>충돌을 사람에게 넘길 통로가 없으면 P2P는 교착에 빠집니다.</aside>
+</section>
+
+<!-- 16 유스케이스 -->
+<section class="slide" data-part="7.3.2 해법">
+  <h2>&#127919; 여러 에이전트로 <span class="g">이득을 보는 일곱 가지</span></h2>
+  <table class="t">
+    <tr><th style="width:28%">유스케이스</th><th>내용</th></tr>
+    <tr><td><b class="g">너비 우선 &middot; 병렬 실행</b></td><td>병렬 처리 가능한 단계로 쪼갤 수 있으면 실행 시간 &darr;. 여러 파일 병렬 처리 &gt;&gt; 한 에이전트 안 순차 처리. <b class="gold">단연 가장 흔하고, 유용하고, 덜 복잡한 활용</b></td></tr>
+    <tr><td><b>복잡한 추론</b></td><td>여러 관점 &middot; 전문 지식이 필요한 과제 &mdash; 서로 다른 수학 영역, 법률 분야 &middot; 판례 &middot; 관할, 또는 문헌 조사 &middot; 가설 생성 &middot; 실험 설계 &middot; 데이터 분석</td></tr>
+    <tr><td><b>다단계 문제 해결</b></td><td>의존 관계가 있는 순차 단계 &mdash; 계획 &middot; 실행 &middot; 모니터링 &middot; 적응을 나눠 맡거나, 해법을 <b class="g">점진적으로 다듬거나</b>, 단계마다 <b class="g">검증 에이전트</b>가 정확성 &middot; 일관성 &middot; 안전성을 검사</td></tr>
+    <tr><td><b>협업적 콘텐츠 생성</b></td><td>조사 &middot; 개요 &middot; 초안 &middot; 편집 &middot; 팩트체크 특화, 또는 텍스트 &middot; 이미지 &middot; 오디오 &middot; 비디오 특화, 또는 각기 다른 캐릭터 &middot; 서사 요소를 맡은 스토리텔링</td></tr>
+    <tr><td><b>적대적 검증</b></td><td><b class="r">레드팀</b>이 결함 &middot; 편향 &middot; 취약점을 찾고 <b class="b">블루팀</b>이 방어 &middot; 개선. 또는 한 주제에 서로 다른 입장을 변론시켜 약점을 찾는다</td></tr>
+    <tr><td><b>전문 도메인 통합</b></td><td>도메인 특화 툴 &middot; DB &middot; API의 인터페이스 역할, 서로 다른 모달리티(텍스트 &middot; 이미지 &middot; 오디오 &middot; 비디오)나 채널(웹 &middot; 음성 &middot; 텍스트) 통합</td></tr>
+    <tr><td><b>자기 개선 시스템</b></td><td><b class="g">평가자 에이전트</b>가 다른 에이전트들의 성능을 평가하고 개선점을 짚어 낸다</td></tr>
+  </table>
+  <div class="warn">&#128161; 저자가 굳이 <b>"단연 가장 흔하고, 유용하고, 덜 복잡한"</b>이라고 못 박은 것은 <b class="g">병렬 실행</b> 하나뿐입니다. 나머지는 그만큼 조심해서 쓰라는 뜻이죠.</div>
+  <aside>다음 예제는 이 특성을 여럿 포함합니다.</aside>
+</section>
+
+<!-- 17 PART 3 -->
+<section class="slide" data-part="7.3.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">7.3.3 예제</h2>
+    <div class="who">AG2로 중3 워크북 만들기</div>
+  </div>
+  <aside>마이크로소프트에서 출발한 오픈소스 멀티에이전트 협업 프레임워크 AG2를 씁니다.</aside>
+</section>
+
+<!-- 18 8단계 -->
+<section class="slide" data-part="7.3.3 예제">
+  <h2>&#128218; 여덟 단계 <span class="g">워크플로</span></h2>
+  <p><b>중3 수준 워크북</b> 제작을 맡았고, 그 콘텐츠를 만드는 데 에이전틱 접근을 쓴다.</p>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t">사람 사용자가 <b class="g">Task Assigner</b>(과제 배정자)에 주제를 보내며 시작</span></div>
+    <div class="st"><span class="n">2</span><span class="t">Task Assigner가 콘텐츠 작성 팀 중 하나에게 배정 &mdash; "플라시 전투는 왜 결정적이었나?"라면 <b>역사 텍스트로 학습된 에이전트</b>에게</span></div>
+    <div class="st"><span class="n">3</span><span class="t">역사 작성 에이전트가 <b class="g">팩트체커와 교과서(RAG)</b> 같은 툴을 써서 초안 생성</span></div>
+    <div class="st"><span class="n">4</span><span class="t">초안이 여러 역할의 에이전트로 이루어진 <b class="g">검토 패널</b>에 보내진다</span></div>
+    <div class="st"><span class="n">5</span><span class="t">검토 패널이 <b>서로 다른 관점</b>을 제시하며 토론</span></div>
+    <div class="st"><span class="n">6</span><span class="t">패널 <b class="g">서기</b>(secretary)가 피드백을 <b>구체적인 지시 목록</b>으로 요약</span></div>
+    <div class="st"><span class="n">7</span><span class="t">그 피드백이 역사 작성 에이전트에게 전달된다</span></div>
+    <div class="st"><span class="n">8</span><span class="t">작성 에이전트가 반영해 <b class="g">다시 쓰고 최종 콘텐츠로 제출</b></span></div>
+  </div>
+  <div class="hl">&#128209; <b>여러 패턴이 한 워크플로에</b> &mdash; 라우터(계층형) + RAG(패턴 6) + 검토 패널(P2P) + Reflection(패턴 18)의 성격이 모두 들어 있습니다.</div>
+  <aside>그림 7-6이 이 상호작용을 그린 것입니다.</aside>
+</section>
+
+<!-- 19 1단계 -->
+<section class="slide" data-part="7.3.3 예제">
+  <h2>&#9312; 1단계 &mdash; 워크플로 설정 &middot; <span class="g">라우터</span></h2>
+  <p>워크플로의 초기 부분은 <b class="g">계층 구조</b>다 &mdash; 모든 요청이 Task Assigner로 흘러가고, Task Assigner가 작성자 중 하나를 고른다. 작업자 무리 앞에 분류기를 세운 이 패턴을 <b class="g">라우터(router)</b>라고 부른다.</p>
+  <div class="chain">
+    <div class="cell"><small>사람</small><b>human</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gold)"><small>분류기</small><b class="gold">task_assigner</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>작성자 A</small><b>history_writer</b></div>
+    <div class="cell"><small>작성자 B</small><b>math_writer</b></div>
+  </div>
+  <pre>llm_config = LLMConfig(
+    api_type="google", model="gemini-2.0-flash",
+    api_key=os.environ.get("GEMINI_API_KEY"),
+    <b class="g">temperature=0.2</b>,
+)
+history_writer_prompt="You are a historian ..."
+math_writer_prompt="You are a math teacher ..."
+with llm_config:
+    history_writer = ConversableAgent(name="history_writer",
+                            system_message=history_writer_prompt)
+    math_writer = ConversableAgent(name="math_writer",
+                            system_message=math_writer_prompt)
+    human = ConversableAgent(name="human",
+                            <b class="g">human_input_mode="ALWAYS"</b>)</pre>
+  <aside>에이전트는 넷입니다 — 사람 프록시, Task Assigner, 작성자 둘.</aside>
+</section>
+
+<!-- 20 Task Assigner 제약 -->
+<section class="slide" data-part="7.3.3 예제">
+  <h2>&#127919; Task Assigner에는 <span class="r">창의성이 너무 많으면 곤란</span>하다</h2>
+  <p>그러므로 <b class="g">temperature를 0</b>으로 두고 <b class="g">출력을 제약</b>한다 &mdash; <b>2장 패턴 2 Grammar</b> 사용.</p>
+  <pre>task_assigner_prompt="""You have two writers, one who is ....
+assign it to the person who is likely to be better informed and
+able to create content to answer it."""
+
+<b class="g">class TaskAssignmentResponse(BaseModel):
+    writer: Literal['HISTORIAN', 'MATH WRITER']</b>
+
+llm_task_config = LLMConfig(
+    ...
+    <b class="g">temperature=0.0</b>,
+    <b class="g">response_format=TaskAssignmentResponse</b>
+)
+with llm_task_config:
+    task_assigner = ConversableAgent(name="task_assigner",
+                                     system_message=task_assigner_prompt)</pre>
+  <div class="warn">&#128209; <b class="g">2장 패턴 2 Grammar</b>가 여기서 살아납니다 &mdash; 라우터의 출력은 <b>다음 코드가 분기에 쓸 값</b>이므로 <b class="r">자유 텍스트여서는 안 됩니다</b>. <code>Literal</code>로 두 값만 허용하면 파싱이 절대 실패하지 않습니다.</div>
+  <div class="hl">&#128161; 온도 0 + 문법 제약은 <b class="g">"판단하는 에이전트"의 표준 설정</b>입니다. 창작하는 에이전트(작성자 둘)는 0.2를 쓴 것과 대비해 보세요.</div>
+  <aside>같은 시스템 안에서도 역할에 따라 온도를 달리 준다는 점이 실무 포인트입니다.</aside>
+</section>
+
+<!-- 21 2~3단계 -->
+<section class="slide" data-part="7.3.3 예제">
+  <h2>&#9313;&#9314; 2~3단계 &mdash; 배정하고 <span class="g">초안 만들기</span></h2>
+  <pre>task_response = human.run(recipient=task_assigner,
+                            message=question, <b class="g">max_turns=1</b>)
+task_response.process()
+
+writer = json.loads(task_response.messages[-1]['content'])['writer']
+if writer == 'HISTORIAN': writer = history_writer
+else:                     writer = math_writer
+
+content_response = task_assigner.run(recipient=writer,
+                        message=question, max_turns=1)
+initial_draft = content_response.messages[-1]['content']</pre>
+  <div class="hl">&#128161; <code>max_turns</code>를 늘리면 Task Assigner가 사람에게 <b class="g">후속 질문이나 명확화 질문</b>을 할 수 있습니다.</div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="box"><b>질문</b> &mdash; <i>플라시 전투는 왜 그렇게 결정적이었나?</i><br><br><b class="gold">&rarr; {"writer": "HISTORIAN"}</b><br><br><small>초안(발췌) &mdash; "…이 전투의 의의는 영국이 인도 아대륙 전체에 대한 지배를 <b>점진적으로 확대해 가는 길을 열었다</b>는 데 있다. 벵골에서 얻은 부로 영국 동인도회사는 군사 &middot; 행정 활동에 자금을 댈 수 있었고…"</small></div>
+    <div class="box"><b>질문</b> &mdash; <i>x&sup2;+50=150. Solve for x.</i><br><br><b class="gold">&rarr; {"writer": "MATH WRITER"}</b><br><br><small>초안(발췌) &mdash; "자, 여러분, 이 방정식을 같이 풀어 봅시다. 우리 목표는 'x'를 <b>고립시키는 것</b>…등식 양변에 제곱근을 취합니다: &radic;(x&sup2;) = &plusmn;&radic;100. <b class="r">'&plusmn;' 기호에 주목하세요!</b> 이건 아주 중요합니다…"</small></div>
+  </div>
+  <aside>같은 라우터가 전혀 다른 톤의 두 작성자에게 정확히 나눠 보냅니다.</aside>
+</section>
+
+<!-- 22 4단계 -->
+<section class="slide" data-part="7.3.3 예제">
+  <h2>&#9315; 4단계 &mdash; <span class="g">교육과정 검토 패널</span> 구성</h2>
+  <pre>reviewers = []
+with llm_config:
+    reviewers.append(ConversableAgent(name=<b class="g">"district_admin"</b>,
+      system_message="""You are a school district representative who
+wants to ensure that materials are <b>concise and easy to understand</b>.
+You want to keep the cost of printing and remedial education down."""))
+    reviewers.append(ConversableAgent(name=<b class="g">"school_admin"</b>, ...))
+    reviewers.append(ConversableAgent(name=<b class="g">"secretary"</b>, ...))
+    reviewers.append(ConversableAgent(name=<b class="g">"conservative_parent"</b>, ...))
+    reviewers.append(ConversableAgent(name=<b class="g">"liberal_parent"</b>, ...))</pre>
+  <p style="margin-top:12px">앞에서는 <b>상호작용과 인계(handoff)를 직접 코딩</b>했다. AG2에는 <b class="g">사전 제작 오케스트레이션 패턴</b>이 여럿 들어 있는데, 모든 구성원에게 발언 기회를 주는 <b class="g">라운드 로빈</b>이 검토 패널에 알맞다.</p>
+  <pre>pattern = <b class="g">RoundRobinPattern(</b>
+    initial_agent=reviewers[0], agents=reviewers, user_agent=None,
+    group_manager_args={"llm_config": llm_config})
+
+reviews, context, last_agent = initiate_group_chat(
+    pattern=pattern,
+    <b class="g">max_rounds=len(reviewers)+1</b>,   # 모두가 한 번씩 발언
+    messages=f"""You are part of a review panel ...
+    {question} ... {answer}""")</pre>
+  <aside>검토 패널은 P2P 성격입니다 — 서로 다른 관점이 동등하게 발언합니다.</aside>
+</section>
+
+<!-- 23 5단계 토론 -->
+<section class="slide" data-part="7.3.3 예제">
+  <h2>&#9316; 5단계 &mdash; 검토 패널 <span class="g">토론</span></h2>
+  <p>플라시 전투에 관한 글을 놓고 각 검토자가 <b class="g">자기 관점에서</b> 피드백을 주고 다른 이의 피드백에 응답한다.</p>
+  <div class="qa">
+    <div class="q"><b>교육구 행정관</b><br>"부와 권력을 <b class="gold">축재한다</b>(Amass wealth and power)": 좋습니다만, "축재하다(amass)"보다 더 <b class="g">친숙한 단어</b>를 쓸 수 있지 않을까요? "얻다(gain)"나 "모으다(collect)"는 어떨까요?</div>
+    <div class="q a"><b>보수 성향 학부모</b><br>"영국 <b class="gold">지배</b>의 확립(Establishment of British dominance)": 이것을 <b class="r">본질적으로 부정적인 것으로 규정하지 않도록</b> "영국의 <b class="g">관여</b>(British involvement)"로 완화했습니다. 학생들이 <b>일방적 서사가 아니라 복잡성</b>을 이해하기를 바랍니다.</div>
+    <div class="q"><b>진보 성향 학부모</b><br>… 다시 말하지만 "<b class="gold">무역 활동</b>(trade operations)"이라는 말은 <b class="r">무해하게 들립니다</b>. 동인도회사는 단지 무역을 관리한 것이 아니라 <b class="g">정치적 &middot; 군사적 통제를 적극적으로 확대</b>하고 있었습니다.</div>
+  </div>
+  <div class="hl" style="margin-top:14px">&#128161; 세 검토자가 <b class="g">정확히 반대 방향으로</b> 밀고 있는 데 주목하세요. 이것이 <b>P2P의 값어치</b>입니다 &mdash; 단일 에이전트라면 어느 한쪽으로 기울어 끝났을 텐데, 여기서는 <b class="g">긴장이 그대로 기록</b>됩니다.</div>
+  <aside>어느 한쪽 손을 들어 주지 않는 것이 이 패널의 목적입니다.</aside>
+</section>
+
+<!-- 24 6~8단계 -->
+<section class="slide" data-part="7.3.3 예제">
+  <h2>&#9317;&#9318;&#9319; 6~8단계 &mdash; 요약 &middot; 전달 &middot; <span class="g">재작성</span></h2>
+  <div class="hl">&#128221; 라운드 로빈은 에이전트를 <b class="g">추가한 순서대로</b> 호출하므로 <b>마지막에 말하는 것은 서기</b>다. 서기의 시스템 프롬프트는 전체 대화를 요약해 <b class="g">단계 목록으로 종합</b>하라고 지시한다.</div>
+  <div class="box" style="margin-top:12px"><b>서기의 지시</b><br>"자원을 <b class="r">추출한다</b>(Extract resources)"를 "<b class="g">수익을 창출한다</b>(generate revenue)"로 바꿀 것. 회사의 재정적 목표를 여전히 정확히 반영하면서도 <b>덜 비난조인</b> 표현이다.</div>
+  <pre>rewrite_response = last_agent.run(recipient=history_writer,
+      <b class="g">max_turns=2</b>, message=f"""
+Please incorporate the feedback from a review panel to update
+content you wrote for a 9th-grade workbook.
+You were asked: {question}
+You wrote: {answer}
+The reviewer panel has provided the following feedback:
+<b class="g">{reviews.chat_history[-1]['content']}</b>
+Incorporate the feedback to rewrite the content.""")</pre>
+  <div class="warn"><code>max_turns=2</code> &mdash; <b class="g">명확화 질문을 한 차례 주고받을 수 있다</b>는 뜻입니다.</div>
+  <aside>서기의 요약이 그대로 작성 에이전트의 입력이 됩니다.</aside>
+</section>
+
+<!-- 25 최종 결과 -->
+<section class="slide" data-part="7.3.3 예제">
+  <h2>&#127881; 최종 콘텐츠 &mdash; <span class="g">더 명료하고 균형 잡힌 답</span></h2>
+  <div class="box"><b>최종 콘텐츠 (발췌)</b><br><br>1757년의 플라시 전투는 인도에서 영국의 영향력이 형성되는 역사에서 전환점이 됐다. …회사의 승리는 <b>태수 궁정 내부의 분열과 불화</b>에 힘입은 것이었고… 이 승리로 영국 동인도회사는 세력을 공고히 하고 인도 영토에 대한 지배를 확대할 수 있었으며, <b class="g">무역 활동을 더 효과적으로 관리하고 수익을 창출</b>할 수 있게 됐다. …영국의 존재가 <b>철도와 관개 시설 개발 같은 기반 시설의 진전</b>을 가져오기도 했지만, 여기에 <b class="g">인도의 자원과 노동이 상당히 동원되었고 그것이 많은 인도인에게 장기적인 경제적 &middot; 사회적 어려움을 남겼다</b>는 점도 함께 인정해야 한다.</div>
+  <div class="box" style="margin-top:12px"><b>서기의 추가 지시</b> &mdash; <b class="g">마지막 두 문장을 합칠 것</b>: 그러면 장기적 영향을 강조하는 더 강한 마무리 문장이 된다.</div>
+  <div class="hl" style="margin-top:12px"><b>최종 마무리</b><br>플라시 전투로 인해 영국은 결정적 발판과 인도에서 영향력을 확대하는 데 필요한 자원을 얻었다. 이 전투는 <b class="g">오래도록 지속되는 결과를 남겨, 여러 세대에 걸쳐 그 지역의 경제와 사회를 빚어냈다.</b></div>
+  <div class="warn" style="margin-top:12px">&#128161; 초안의 "지배를 <b class="r">점진적으로 확대해 가는 길</b>"이 최종본에서는 <b class="g">공과를 나란히 적는 문장</b>으로 바뀌었습니다. 이것을 해낸 것은 더 큰 모델이 아니라 <b class="g">서로 다른 입장의 검토자들</b>입니다.</div>
+  <aside>패널의 긴장이 실제로 결과물의 균형으로 옮겨졌습니다.</aside>
+</section>
+
+<!-- 26 PART 4 -->
+<section class="slide" data-part="7.3.4 고려사항">
+  <div class="part">
+    <div class="pno">4</div>
+    <h2 style="margin:0">7.3.4 고려사항</h2>
+    <div class="who">중대한 과제가 남아 있다</div>
+  </div>
+  <aside>여기가 이 절에서 가장 중요한 부분입니다.</aside>
+</section>
+
+<!-- 27 오버헤드/일관성 -->
+<section class="slide" data-part="7.3.4 고려사항">
+  <h2>&#9881;&#65039; 오버헤드와 <span class="r">일관성</span></h2>
+  <p>집필 시점 기준 멀티에이전트 시스템의 구현과 평가에는 여전히 중대한 과제가 남아 있다 &mdash; <b class="r">계산 오버헤드, 일관성 유지, 오류 누적, 예측 불가능한 창발 행동.</b></p>
+  <ul class="pts">
+    <li><b class="g">가능하면 동료 관계로 병렬 실행</b> &mdash; <b>체감 시간(wall-clock time)</b>이 줄어든다. <b class="gold">전체 계산 오버헤드는 그대로지만.</b> 비동기 수행으로 지연 시간을 더 줄일 수 있다</li>
+    <li><b class="r">통신 오버헤드는 상당하다</b> &mdash; 조율의 계산 비용은 에이전트 수에 대해 <b class="r">비선형으로 증가</b>하므로 확장성을 제한한다</li>
+    <li><b class="r">일관성 유지가 어렵다</b> &mdash; 에이전트마다 속도나 지연이 다를 때 특히. 전문 에이전트로 나누는 접근은 <b class="g">일관성의 복잡도를 통신의 복잡도와 맞바꾸는</b> 셈이다</li>
+    <li><b class="r">예상하지 못한 행동</b> &mdash; 에이전트 간 <b class="r">양성 피드백 루프</b>가 오류와 편향을 증폭시켜 시스템 불안정을 초래할 수 있다. 에이전트가 <b class="r">시스템 전체 목표를 희생하며 자기 목표를 최적화</b>하는 전략을 발전시킬 수도 있다</li>
+  </ul>
+  <div class="warn">&#127970; <b>Anthropic의 권고</b> &mdash; 이런 시스템을 구현할 때 <b class="r">복잡한 프레임워크보다</b> <b class="g">단순하고 조합 가능한 패턴</b>을 쓰라.</div>
+  <aside>"오버헤드는 그대로다"라는 단서가 중요합니다. 병렬화는 비용이 아니라 시간을 줄입니다.</aside>
+</section>
+
+<!-- 28 A2A -->
+<section class="slide" data-part="7.3.4 고려사항">
+  <h2>&#128225; Agent2Agent 프로토콜이 <span class="g">통신을 단순화한다</span></h2>
+  <p>A2A는 <b class="g">서로 다른 프레임워크로 작성돼 서로 다른 머신에서 도는 에이전트들</b>이 매끄럽게 통신하게 해 준다.</p>
+  <div class="plabel">파이썬 (Pydantic AI) — A2A로 노출</div>
+  <pre>from pydantic_ai import Agent
+agent = Agent('openai:gpt-4.1', ...)
+app = <b class="g">agent.to_a2a()</b></pre>
+  <pre>uvicorn agent_to_a2a:app --host 0.0.0.0 --port 8093</pre>
+  <div class="plabel" style="margin-top:10px">TypeScript (Mastra) — 그 URL만 알면 호출</div>
+  <pre>import { A2A } from "@mastra/client-js";
+const a2a = new A2A({ <b class="g">serverUrl: "https://...server.com:8093"</b> });
+
+const task = await a2a.sendTask({
+  id: randomUUID(),
+  message: { role: 'user', parts: [...] }
+});
+const stream = a2a.streamTaskUpdates(task.id, (update) =&gt; {
+  console.log("Task update:", update);
+});</pre>
+  <div class="hl">&#128209; <b>패턴 21의 MCP와 짝</b> &mdash; MCP가 <b class="g">에이전트&harr;툴</b>의 표준이라면, A2A는 <b class="g">에이전트&harr;에이전트</b>의 표준입니다.</div>
+  <aside>프런트엔드 개발자가 파이썬 에이전트를 웹 URL 하나로 부를 수 있게 됩니다.</aside>
+</section>
+
+<!-- 29 오류 누적 -->
+<section class="slide" data-part="7.3.4 고려사항">
+  <h2>&#128201; <span class="r">오류는 사슬을 따라 누적</span>된다</h2>
+  <div class="hl">&#127939; <b>비유</b> &mdash; 사람 8명이 이어달리기로 문서를 만든다고 합시다. 한 사람이 <b>95% 정확도</b>로 일한다면, 8명을 거친 결과는 <b class="r">0.95<sup>8</sup> &asymp; 66%</b>입니다. <b class="g">각자는 훌륭한데 전체는 3분의 1이 망가집니다.</b></div>
+  <p style="margin-top:14px">LLM은 결정론적이지 않으므로 <b class="r">한 번은 성공한 단계가 다음번에는 실패할 수 있다.</b> 그러므로</p>
+  <div class="big">단계의 사슬이 길수록<br>과제를 성공적으로 완수할 확률은<br><span class="r">낮아진다</span></div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:34%">단계 수 (각 95%)</th><th>전체 성공률</th></tr>
+    <tr><td>2단계</td><td><b class="g">90%</b></td></tr>
+    <tr><td>4단계</td><td><b class="gold">81%</b></td></tr>
+    <tr><td>8단계</td><td><b class="r">66%</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:12px">&#128209; 7장 서론에서 본 것과 같은 계산입니다. 이 숫자 하나가 <b class="g">"사슬을 짧게"</b>라는 실무 원칙의 근거입니다.</div>
+  <aside>곱셈이라는 점이 무섭습니다. 개별 품질을 올리는 것보다 단계를 줄이는 게 빠를 때가 많습니다.</aside>
+</section>
+
+<!-- 30 40~80% -->
+<section class="slide" data-part="7.3.4 고려사항">
+  <h2>&#128680; 과제의 <span class="r">40~80%가 실패</span>한다</h2>
+  <div class="big">2025년의 한 분석 &mdash;<br>멀티에이전트 시스템에서<br><span class="r">과제의 40~80%가 실패</span><br><small>시스템 설계 &middot; 에이전트 조율 &middot; 품질 관리의 문제</small></div>
+  <p style="margin-top:16px">연구자들은 <b class="g">14가지 고유한 실패 모드</b>를 식별하고 이를 <b>세 가지 상위 범주</b>로 정리했다.</p>
+  <table class="t">
+    <tr><th style="width:22%">범주</th><th style="width:22%">쉽게 말하면</th><th>내용</th></tr>
+    <tr><td><b class="r">명세 문제</b><br><small>Specification issues</small></td><td>애초에 <b>지시가 부실</b>했다</td><td>시스템 설계 결정, 빈약하거나 모호한 프롬프트 명세, <b>에이전트 역할을 제대로 정의하지 않거나 지키지 않은 것</b>, 바탕 LLM의 한계 &rarr; 역할 미준수, <b>단계 반복</b>, 컨텍스트 상실, <b>과제 완료를 인지하지 못함</b></td></tr>
+    <tr><td><b class="r">에이전트 간 어긋남</b><br><small>Interagent misalignment</small></td><td>서로 <b>말이 안 통했다</b></td><td>대화의 예기치 않은 초기화, <b>불명확한 데이터에 명확화를 요청하지 않음</b>, 과제 탈선, <b>결정적 정보를 감춤</b>, 남의 입력 무시, 추론과 행동의 불일치. <b class="gold">서로 다른 근본 원인이 표면적으로 비슷해 보여 진단이 복잡</b></td></tr>
+    <tr><td><b class="r">과제 검증</b><br><small>Task verification</small></td><td>아무도 <b>확인을 안 했다</b></td><td>오류를 탐지 &middot; 교정하지 못하는 부적절한 검증 절차, <b>과제의 조기 종료</b></td></tr>
+  </table>
+  <aside>세 범주 모두 모델 성능이 아니라 시스템 설계의 문제라는 점이 핵심입니다.</aside>
+</section>
+
+<!-- 31 최종 권고 -->
+<section class="slide" data-part="7.3.4 고려사항">
+  <h2>&#128161; 그래서 <span class="g">실무 조언은</span></h2>
+  <div class="warn">&#9888;&#65039; 이 영역들을 개선하는 것만으로 <b class="r">높은 신뢰성에 도달하기에 항상 충분하지는 않다.</b> 이는 <b>에이전트 조직 &middot; 통신 프로토콜 &middot; 컨텍스트 관리 &middot; 검증 통합</b>에 <b class="r">더 근본적인 변화</b>가 필요함을 시사한다.</div>
+  <div class="steps" style="margin-top:14px">
+    <div class="st"><span class="n">1</span><span class="t"><b class="g">사슬을 짧게</b> &mdash; 단계가 늘수록 성공률이 <b>곱셈으로</b> 깎인다</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b class="g">가능하면 병렬로</b> &mdash; 순서 의존이 없으면 나란히 돌려 체감 시간을 줄인다</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b class="g">단순한 조합 패턴을 우선</b> &mdash; Anthropic의 권고. 화려한 프레임워크보다 낫다</span></div>
+    <div class="st" style="border-color:var(--gold)"><span class="n" style="background:var(--gold);color:#1a1a1a">4</span><span class="t"><b class="gold">단일 에이전트로 되면 그냥 그렇게</b> &mdash; UX 설계를 활용하거나, 사람을 고리에 넣거나, <b>고객 기대치를 조정</b>해서 단일 에이전트로 충분하게 만들 수 있다면 <b class="g">그쪽을 택하라</b></span></div>
+  </div>
+  <div class="big" style="margin-top:16px">에이전트를 늘리면<br>능력만 늘어나는 게 아니라<br><span class="r">실패 지점도 함께 늘어난다</span></div>
+  <div class="hl" style="margin-top:14px">&#10067; 늘리기 전에 <b class="g">"정말 하나로는 안 되나"</b>를 먼저 묻자.</div>
+  <aside>패턴을 소개한 저자들이 직접 내린 결론입니다. 무겁게 받아들일 만합니다.</aside>
+</section>
+
+<!-- 32 참고문헌 -->
+<section class="slide" data-part="7.3.5 참고문헌">
+  <h2>&#128218; 7.3.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">출처</th><th>기여</th></tr>
+    <tr><td><b>Andrew Ng<br>(2024년 5월)</b></td><td>에이전틱 설계 패턴 한 벌 &mdash; <b class="g">Reflection(패턴 18) &middot; Tool Use(패턴 21) &middot; Planning &middot; Multiagent Collaboration(패턴 23)</b></td></tr>
+    <tr><td><b>OpenAI</b></td><td>여기에 <b class="g">LLM-as-Judge(패턴 17) &middot; Parallelization &middot; Router &middot; Guardrails(패턴 32)</b>를 더한다</td></tr>
+    <tr><td><b>Anthropic</b></td><td>미리 정해진 상호작용인 <b class="g"><i>워크플로</i></b>(순차 프롬프트 체이닝, Router 등)와 <b>자율적 오케스트레이션이 개입하는</b> <b class="g"><i>에이전트</i></b>를 구분한다. 2024년 블로그 글은 <b>조합 가능한 패턴</b>을 권했다</td></tr>
+    <tr><td><b>Google (2025)</b></td><td>멀티에이전트 시스템 구축 <b>백서</b>. <b class="g">CoT &middot; ReAct &middot; ToT를 인지 패턴</b>으로 식별</td></tr>
+    <tr><td><b>Cemri 외 (2025)</b></td><td>멀티에이전트 시스템이 <b class="r">실패하는 이유</b>에 대한 좋은 분석 (<b>40~80%</b>, 14가지 실패 모드)</td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#128187; <b>Devin</b> &mdash; 구현 계획을 세우고, 코드를 쓰고, <b class="g">샌드박스에서 코드를 실행</b>하고(패턴 22), 문제를 디버깅하고, <b class="g">웹 검색으로 해법을 찾는</b>(패턴 21) <b>서브에이전트들을 띄우는</b> 자율 코딩 어시스턴트. <b>서브에이전트들을 오케스트레이션하며 성공할 때까지 계속</b>한다.</div>
+  <div class="hl">&#128209; <b>10장</b>에서 멀티에이전트 시스템을 <b class="g">직접 만들어 본다.</b></div>
+  <aside>워크플로와 에이전트의 구분은 실무에서 자주 인용되는 정의입니다.</aside>
+</section>
+
+<!-- 33 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#129309; 늘리기 전에 <span class="g">한 번 더 묻자</span></h1>
+    <div class="big" style="margin-top:24px">멀티에이전트는<br><span class="y">능력의 확장</span>이자<br><span class="r">실패 지점의 확장</span><br><br><small>순서면 계층형 &middot; 관점이면 P2P &middot; 능력이면 시장 기반<br>그리고 <b>하나로 되면 하나로</b></small></div>
+    <p class="sub" style="margin-top:22px">7장 &mdash; 여기까지 &nbsp;&middot;&nbsp; 패턴 21 &middot; 22 &middot; 23 완료</p>
+  </div>
+  <aside>7장이 끝났습니다. 다음 장은 사용자가 본문을 주시면 이어서 만듭니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

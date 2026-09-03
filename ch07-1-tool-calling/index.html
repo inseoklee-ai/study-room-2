@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>패턴 21 툴 호출 — Tool Calling</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 7 &middot; Pattern 21</div>
+    <h1 style="margin:18px 0">툴 <span class="g">호출</span></h1>
+    <p class="sub">Tool Calling &mdash; LLM이 <b>세상에서 행동</b>하게 한다</p>
+  </div>
+  <aside>이 장에서 가장 중요한 패턴입니다. 나머지 둘이 이것 위에 얹혀 있어요.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 7.1</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>7.1.1 문제</b> &mdash; 문장은 생성하는데 실행은 못 한다</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>7.1.2 해법</b> &mdash; 작동 원리 · OpenAI 5단계 · LangGraph와 MCP</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>7.1.3 예제</b> &mdash; 실시간 날씨 질의응답</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>7.1.4 고려사항</b> &mdash; 신뢰성 · MCP 한계 · <b class="r">프롬프트 인젝션</b></span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>7.1.5 참고문헌</b></span></div>
+  </div>
+  <div class="hl">&#128161; <b>한 줄로</b> &mdash; 모델은 <b class="g">"무엇을 호출할지 말할 뿐"</b>이고, 실제 실행은 언제나 <b>당신 코드</b>가 한다.</div>
+  <div class="warn">&#9888;&#65039; 저자의 권고 &mdash; 실무에서는 MCP 방식만 쓰게 되더라도 <b class="g">내부가 어떻게 돌아가는지 알아 두면</b> Tool Calling이 기대대로 작동하지 않을 때 원인을 짚는 데 도움이 됩니다.</div>
+  <aside>여러 겹의 추상화로 감싸여 있어 실제로 무슨 일이 벌어지는지 파악하기 어려운 패턴입니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="7.1.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">7.1.1 문제</h2>
+    <div class="who">LLM과 API 사이의 간극</div>
+  </div>
+  <aside>멀티모달 LLM은 여러 형태의 콘텐츠를 생성합니다. 리서치 리포트, 번역, 코드 생성에는 그것으로 충분하죠.</aside>
+</section>
+
+<!-- 4 간극 -->
+<section class="slide" data-part="7.1.1 문제">
+  <h2>&#128683; <span class="r">문장</span>과 <span class="r">실행</span> 사이</h2>
+  <div class="big">환불이 처리됐다는 <span class="y">이메일 문구</span>는 생성할 수 있지만<br><span class="y">당신 은행 계좌에 돈이 들어오게 만들 수는 없다</span></div>
+  <div class="box" style="margin-top:16px"><h3>&#9992;&#65039; 구체적으로</h3><p style="margin:6px 0 0">LLM은 <i>"6월 12일 모리셔스발 이스탄불행 <b>TK 161</b> 항공편 좌석 한 자리를 예약하라"</i>는 문장을 <b class="g">생성할 수 있다.</b></p><p style="margin:8px 0 0">그런데 어떻게 하면 그 텍스트를 생성하는 데서 그치지 않고, 항공사의 예약 API나 <b>Booking.com·Expedia</b> 같은 여행 중개사를 통해 <b class="r">실제로 항공편을 예약</b>하게 만들 수 있을까?</p></div>
+  <div class="hl" style="margin-top:14px">&#10067; <b class="g">LLM과 API 사이의 간극을 어떻게 메워야</b> LLM이 그 API를 호출해 일을 끝낼 수 있을까?</div>
+  <aside>RAG로 지식을 주입할 수는 있지만, 지식이 아니라 행동이 필요한 겁니다.</aside>
+</section>
+
+<!-- 5 PART 2 -->
+<section class="slide" data-part="7.1.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">7.1.2 해법</h2>
+    <div class="who">특별한 토큰을 뱉는다</div>
+  </div>
+  <aside>Tool Calling은 2장 패턴 2 Grammar의 확장입니다.</aside>
+</section>
+
+<!-- 6 작동 원리 -->
+<section class="slide" data-part="7.1.2 해법">
+  <h2>&#128295; 작동 <span class="g">원리</span></h2>
+  <p>LLM은 <b>함수를 호출해야 할 때마다 특별한 토큰을 인자와 함께 내보내도록</b> 학습돼 있다.</p>
+  <div class="plabel">모델 출력</div>
+  <pre>항공편을 예약해 주셔서 감사합니다!
+<b class="g">[CALL_TOOL: book_flight, TK 161, 2025-06-12, Economy]</b></pre>
+  <div class="plabel" style="margin-top:10px">당신 코드가 처리</div>
+  <pre>fd = <b>book_flight</b>("TK 161", datetime.strptime("2025-06-12"), "Economy")</pre>
+  <p style="margin-top:10px">프로그램이 <b class="g">함수 이름과 인자를 뽑아내고</b>, 필요한 형 변환(날짜 같은 것)을 한 뒤 호출한다. 반환값은 원래 응답에서 <b class="g">툴 호출이 있던 자리에</b> 끼워 넣어진다.</p>
+  <div class="plabel">최종 응답</div>
+  <pre>항공편을 예약해 주셔서 감사합니다!
+예약 확인 내역입니다:
+{fd.flight_number} {fd.departure_time} … {fd.seat_number}
+{fd.payment_method}로 {fd.invoiced_amount}를 청구했습니다.</pre>
+  <div class="hl" style="margin-top:10px">&#128161; 호출이 <b class="r">실패하면</b> 그 자리에는 <b>적절한 오류 메시지</b>가 대신 들어갑니다. <small>(실제 툴 호출 형식은 보통 JSON입니다 &mdash; 위는 설명용 예)</small></div>
+  <aside>손이 없는 비서에 비유하면 딱 맞습니다. 말할 수만 있고, 전화기는 당신이 듭니다.</aside>
+</section>
+
+<!-- 7 무엇이 열리나 -->
+<section class="slide" data-part="7.1.2 해법">
+  <h2>&#128273; Tool Calling이 <span class="g">열어 주는 것</span></h2>
+  <table class="t">
+    <tr><th style="width:24%">영역</th><th>내용</th></tr>
+    <tr><td><b>최신 지식</b></td><td>RAG는 비교적 정적이고 <b>미리 색인해 둘 수 있는</b> 출처에만 작동한다. 툴은 더 동적 &mdash; <b class="g">현재 뉴스 · 날씨 · 주가</b></td></tr>
+    <tr><td><b>개인화</b></td><td>개인 작업 공간(<b>이메일 · 캘린더</b>)에 연결해 응답을 개인화</td></tr>
+    <tr><td><b>엔터프라이즈 API</b></td><td>사내 검색 엔진, 사내 DB. 제품 정보를 <b class="r">기억에서 떠올리는</b> 데 그치지 않고 <b class="g">최신 상세 정보와 가격</b>을 가져온다</td></tr>
+    <tr><td><b>계산</b></td><td><b>계산기 · GIS 분석 · 최적화 솔버</b></td></tr>
+    <tr><td><b class="g">ReAct</b></td><td>CoT(패턴 13)가 단계를 <b>나열</b>하는 데 그치지 않고 <b class="g">실제로 수행</b>하며, 툴의 응답에 따라 <b>행동을 바꾼다</b> &mdash; <b>re</b>asoning + <b>act</b>ion</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128209; <b>ReAct는 CoT와 Tool Calling의 조합"일 뿐"</b>이므로 이 책에서 별도 패턴으로 두지 않았습니다.</div>
+  <aside>RAG와 툴의 차이가 명확합니다. 미리 색인할 수 있으면 RAG, 지금 물어봐야 하면 툴.</aside>
+</section>
+
+<!-- 8 5단계 -->
+<section class="slide" data-part="7.1.2 해법">
+  <h2>&#128207; OpenAI 함수 호출 &mdash; <span class="g">5단계</span></h2>
+  <table class="t">
+    <tr><th style="width:10%">단계</th><th style="width:16%">누가</th><th>무슨 일</th></tr>
+    <tr><td><b>1</b></td><td>당신</td><td><b>함수를 짠다</b> &mdash; 외부 API에 위임하고 정형 응답을 돌려주는 <code>book_flight</code></td></tr>
+    <tr><td><b>2</b></td><td>당신</td><td>함수 <b class="g">설명서</b>를 모델에 건넨다 &mdash; <b class="r">함수 자체가 아니라!</b></td></tr>
+    <tr><td><b>3</b></td><td>모델 &rarr; 당신</td><td>모델이 <b>"이거 호출해"</b>라고 뱉고, <b class="g">당신 코드가 실제로 호출</b></td></tr>
+    <tr><td><b>4</b></td><td>당신</td><td>결과를 대화에 붙여 모델을 <b class="g">한 번 더</b> 부른다</td></tr>
+    <tr><td><b>5</b></td><td>모델</td><td>결과를 <b>자연어 답변에 녹여 낸다</b></td></tr>
+  </table>
+  <pre style="margin-top:14px">tools = [{"type": "function", "name": "book_flight",
+  "description": "Books a flight using the airline API",
+  "parameters": {"type": "object", "properties": {
+    "flight_code": {"type": "string",
+       "description": "<b>IATA flight code like AA 123</b>"},
+    "cabin_class": {"type": "string",
+       <b class="g">"enum": ["economy", "premium_economy", "business", "first"]</b>}
+  }}}]
+
+response = client.responses.create(model="gpt-4.1",
+    input=[...], <b>tools=tools</b>)</pre>
+  <div class="hl">&#128161; 모델이 <b>적절한 정형 데이터를 생성할 수 있느냐</b>에 달려 있으므로, <b class="g">좋은 명명 규칙과 문서화 주석으로 함수를 자기 설명적으로</b> 만드는 것이 중요합니다.</div>
+  <aside>enum을 쓴 것도 2장 Grammar 패턴을 활용한 겁니다.</aside>
+</section>
+
+<!-- 9 왜 직접 호출 안 하나 -->
+<section class="slide" data-part="7.1.2 해법">
+  <h2>&#128274; 3단계 &mdash; <span class="r">모델이 직접 호출하지 않는다</span></h2>
+  <pre>[{
+  "type": "<b>function_call</b>",
+  "call_id": "call_12345xyz",
+  "name": "book_flight",
+  "arguments": "{\"flight_code\":\"TK 161\", ...
+}]</pre>
+  <pre style="margin-top:10px">tool_call = response.output[0]
+if tool_call.name == "book_flight":
+     args = json.loads(tool_call.arguments)
+     result = <b class="g">book_flight(args["flight_code"], ...)</b>   <span class="g"># 당신이 호출</span></pre>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; <b class="r">그러면 안전하지 않기 때문</b>입니다(웹 검색이나 샌드박스 코드 실행처럼 지원되는 툴이 아닌 한). <b class="r">OpenAI는 적대적 행위자가 자기 LLM에 임의의 코드를 주입하는 것을 원하지 않습니다!</b></div>
+  <div class="hl">&#9989; <code>book_flight()</code> 함수는 <b class="g">당신이 직접 짰으니 신뢰한다고 봐도</b> 될 것입니다 &mdash; 그래서 클라이언트 쪽에서 호출합니다.</div>
+  <p style="margin-top:12px">이용 가능한 항공편 검색, 요금 비교, 여권 정보 추출 등 <b>다른 함수들도 있을 수 있고</b>, LLM은 대화나 워크플로의 맥락에서 <b class="g">호출할 올바른 함수를 고른다</b> &mdash; 이런 단계를 여러 개 묶어 CoT로 엮는 것이 바로 <b>ReAct</b>다.</p>
+  <aside>보안이 설계의 이유입니다. 그래서 "calling"이 "use"보다 정확한 이름이라는 거고요.</aside>
+</section>
+
+<!-- 10 LLM마다 다르다 -->
+<section class="slide" data-part="7.1.2 해법">
+  <h2>&#9888;&#65039; LLM마다 <span class="r">툴 정의 형식이 다르다</span></h2>
+  <table class="t">
+    <tr><th style="width:20%">LLM</th><th>인자를 어디에</th></tr>
+    <tr><td><b>OpenAI</b></td><td><code>parameters</code></td></tr>
+    <tr><td><b>Anthropic</b></td><td><code class="r">input_schema</code></td></tr>
+    <tr><td><b>Llama</b></td><td><code>parameters</code>지만 정의를 <code class="r">function</code> 키 아래에 <b>한 겹 더 중첩</b></td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">같은 내용을 <span class="y">세 번 다르게</span> 써야 한다</div>
+  <div class="warn" style="margin-top:14px">&#128161; 세 가지가 겹칩니다 &mdash; ① <b>LLM 간 차이</b> ② 에이전틱 유스케이스에서 <b>Tool Calling의 중요성</b> ③ <b class="r">프로젝트 도중 LLM을 여러 번 바꾸게 될 가능성</b></div>
+  <div class="hl">&#128273; 이 셋 모두가 <b class="g">LLM 비의존적 프레임워크</b>(PydanticAI · LangChain · LangGraph · LiteLLM)로 개발해야 한다는 쪽을 가리킵니다. 다른 선택지가 없는 경우가 아니라면 <b class="r">개발 단계에서 모델 제공자의 클라이언트 API를 직접 쓰지 마세요.</b></div>
+  <aside>6장 패턴 19(의존성 주입)에서 "LLM에 종속되지 않아야 한다"고 했던 이유가 여기서 구체적으로 드러납니다.</aside>
+</section>
+
+<!-- 11 MCP -->
+<section class="slide" data-part="7.1.2 해법">
+  <h2>&#128268; <span class="g">MCP</span> &mdash; AI 툴 세계의 USB-C</h2>
+  <div class="hl">&#128161; 예전에는 전자제품마다 <b>충전 단자가 제각각</b>이었습니다. USB-C가 나오면서 <b class="g">한 케이블로 다 되게</b> 바뀌었죠. <b>MCP(Model Context Protocol)</b>가 그 역할입니다.</div>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell"><small>1·2단계</small><b class="g">MCP<br><small style="color:var(--soft)">함수 상세 공급</small></b></div>
+    <span class="ar">+</span>
+    <div class="cell"><small>3·4단계</small><b class="g">LangGraph<br><small style="color:var(--soft)">클라이언트 처리</small></b></div>
+    <span class="ar">+</span>
+    <div class="cell"><small>5단계</small><b>그대로</b></div>
+  </div>
+  <div class="box" style="margin-top:14px">
+    <h3>&#128190; MCP 서버 &mdash; 툴을 <b>내놓는</b> 쪽</h3>
+    <pre style="margin:8px 0 0"><b class="g">@mcp.tool()</b>
+async def book_flight(flight_code: str, departure_date: datetime,
+                      cabin_class: CabinClass, ...) -&gt; BookingData:
+    """<b>Books a flight using the airline API</b>
+    Args:
+        flight_code: IATA airline flight code such as AA 123
+        departure_date: Date of departure ...
+    Returns:
+        Booking confirmation details including booking reference ..."""</pre>
+    <p style="margin:8px 0 0"><b class="g">docstring이 곧 모델에게 주는 설명서</b>입니다 &mdash; OpenAI 2단계에서 적었을 모든 설명이 <b>이제는 함수 정의 자체에</b> 담깁니다.</p>
+  </div>
+  <table class="t" style="margin-top:12px">
+    <tr><th style="width:30%">전송 방식</th><th>언제</th></tr>
+    <tr><td><code>stdio</code></td><td>클라이언트도 <b>전부 파이썬</b>, 같은 컴퓨터 안 &mdash; 프로세스 간 통신</td></tr>
+    <tr><td><code>streamable-http</code></td><td><b>다른 언어</b>이거나 <b>다른 머신</b>에 있을 때</td></tr>
+  </table>
+  <aside>어노테이션 한 줄로 시스템마다·LLM마다 달랐던 툴 호출이 표준화된 패턴에 가까워집니다.</aside>
+</section>
+
+<!-- 12 MCP 클라이언트 -->
+<section class="slide" data-part="7.1.2 해법">
+  <h2>&#128225; MCP <span class="g">클라이언트</span>와 ReAct 에이전트</h2>
+  <pre>async with MultiServerMCPClient({
+    "flight_booking": {
+        "command": "python",
+        "args": ["/path/to/flight_booking.py"],
+        "transport": <b>"stdio"</b>,
+    },
+    "flight_options": {
+        "url": "http://localhost:8000/mcp",
+        "transport": <b>"streamable_http"</b>,
+    }
+}) as client:</pre>
+  <pre style="margin-top:10px">agent = langgraph.prebuilt.<b class="g">create_react_agent</b>(
+        "anthropic:claude-3-7-sonnet-latest",
+        <b>client.get_tools()</b>)
+
+booking_details = await agent.ainvoke(
+    {"messages": [{"role": "user", "content":
+     "Book me an economy class ticket from Mauritius to Istanbul..."}]})</pre>
+  <div class="big" style="margin-top:14px">이 에이전트가 <span class="y">언제 툴을 호출할지</span>와<br><span class="y">그 응답을 어떻게 쓸지</span>를 스스로 추론한다</div>
+  <div class="hl">&#128161; 남이 만든 MCP 서버를 <b class="g">주소만 알면 바로 붙여 쓸 수</b> 있습니다 &mdash; GitHub, Sentry, Zapier 같은 회사들이 이미 공개해 뒀습니다. <b>툴을 직접 다 짤 필요가 없어집니다.</b></div>
+  <aside>OpenAI Responses API를 쓰는 저수준 방식보다 훨씬 간결합니다.</aside>
+</section>
+
+<!-- 13 PART 3 -->
+<section class="slide" data-part="7.1.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">7.1.3 예제</h2>
+    <div class="who">실시간 날씨 질의응답</div>
+  </div>
+  <aside>"화요일에 시카고에 비가 올까?" 같은 질문에 답합니다. MCP를 쓰되 LangGraph는 쓰지 않습니다.</aside>
+</section>
+
+<!-- 14 두 툴 -->
+<section class="slide" data-part="7.1.3 예제">
+  <h2>&#127782; <span class="g">두 개의 툴</span>이 필요하다</h2>
+  <pre><b class="g">@mcp.tool()</b>
+async def get_weather_from_nws(latitude: float, longitude: float) -&gt; str:
+    """Fetches weather data from the National Weather Service API
+    for a specific geographic location."""
+    points_url = f"https://api.weather.gov/points/{latitude},{longitude}"
+    metadata = requests.get(points_url, headers=headers).json()
+    forecast_url = metadata.get("properties", {}).get("forecast")
+    weather_data = requests.get(forecast_url, headers=headers).json()
+    return weather_data.get("properties", {}).get("periods")</pre>
+  <div class="warn" style="margin-top:12px">&#10067; 그런데 &mdash; <b class="r">시카고의 위도와 경도는 얼마인가?</b></div>
+  <pre style="margin-top:12px"><b class="g">@mcp.tool()</b>
+async def latlon_geocoder(location: str) -&gt; (float, float):
+    """Converts a place name such as "Kalamazoo, Michigan"
+    to latitude and longitude coordinates"""
+    geocode_result = gmaps.geocode(location)
+    return (round(...['lat'], 4), round(...['lng'], 4))</pre>
+  <div class="hl" style="margin-top:12px">&#128161; 툴 <b class="g">두 개를 이어서</b> 써야 합니다 &mdash; 지오코딩으로 좌표를 얻고, 그 좌표로 예보를 받는다. 이 <b>순서를 에이전트가 스스로 추론</b>합니다.</div>
+  <aside>미국 국립기상청 API는 그리드 포인트를 먼저 알아내야 예보를 받을 수 있는 구조입니다.</aside>
+</section>
+
+<!-- 15 서버·클라이언트 -->
+<section class="slide" data-part="7.1.3 예제">
+  <h2>&#9881;&#65039; 서버 · 클라이언트 · <span class="g">퓨샷 예시</span></h2>
+  <pre>mcp = FastMCP("weather")
+if __name__ == '__main__':
+    mcp.run(transport="streamable-http")
+<span class="g"># Cloud Run · AWS Fargate · Azure Container Instances 에 배포</span></pre>
+  <pre style="margin-top:10px">agent = create_react_agent("anthropic:claude-3-7-sonnet-latest",
+                           client.get_tools(),
+                           <b class="g">prompt = system_message</b>)</pre>
+  <div class="plabel" style="margin-top:10px">시스템 프롬프트에 넣은 퓨샷 예시</div>
+  <pre>Question: What's the weather in Kalamazoo, Michigan?
+<b>Step 1</b>: The user is asking about Kalamazoo, Michigan.
+<b>Step 2</b>: Use the <b class="g">latlon_geocoder</b> tool to get the lat/lon.
+<b>Step 3</b>: latitude, longitude is (42.2917, -85.5872)
+<b>Step 4</b>: Use the <b class="g">get_weather_from_nws</b> tool at the lat/lon
+<b>Step 5</b>: The detailed forecast reads 'Showers and thunderstorms...'
+<b>Answer</b>: It will rain tonight. Temperature is around 70 F.</pre>
+  <div class="hl" style="margin-top:12px">&#128209; <b>5장 패턴 13 Few-shot CoT</b>가 여기 그대로 쓰입니다 &mdash; <b class="g">툴을 어떤 순서로 쓸지</b>를 예시로 시연한 것입니다.</div>
+  <aside>단계 번호까지 그대로 따라 하게 만드는 게 CoT의 효과였죠.</aside>
+</section>
+
+<!-- 16 PART 4 -->
+<section class="slide" data-part="7.1.4 고려사항">
+  <div class="part">
+    <div class="pno">4</div>
+    <h2 style="margin:0">7.1.4 고려사항</h2>
+    <div class="who">신뢰성 &middot; MCP 한계 &middot; 프롬프트 인젝션</div>
+  </div>
+  <aside>Tool Calling은 LLM이 툴을 호출해야 한다는 판단을 내리고 그 호출을 생성하는 것에 의존합니다.</aside>
+</section>
+
+<!-- 17 신뢰성 -->
+<section class="slide" data-part="7.1.4 고려사항">
+  <h2>&#127919; <span class="g">신뢰성</span> 높이기</h2>
+  <ul class="pts">
+    <li><b>명확하고 상세한 함수 이름과 파라미터 설명</b>을 쓴다</li>
+    <li>시스템 프롬프트로 <b class="g">각 함수를 언제 쓸지에 대한 정책</b>을 서술한다 &mdash; 항공편을 <b>검색</b>할 때와 <b>예약</b>할 때의 구분, 검색 결과가 얼마나 오래 유효한지</li>
+    <li>유효한 입력의 <b>예시</b>(항공편 코드 같은 것)를 넣고, <b class="g">Grammar 패턴을 활용하도록 파라미터 타입(enum)</b>을 쓴다</li>
+    <li>오류가 났을 때는 <b class="g">서술적인 메시지</b>를 돌려줘야 <b>패턴 18 Reflection</b>으로 입력을 고쳐 재시도할 수 있다</li>
+  </ul>
+  <div class="big" style="margin-top:16px">함수와 파라미터가 <span class="y">적을수록</span> 모델은 더 정확해진다<br><small>2025년 6월 기준 LLM에 따라 <b class="g">3~10개 툴</b>이 한계로 보인다</small></div>
+  <div class="warn" style="margin-top:12px">&#128161; <b class="g">결정론적으로 이미 알고 있는 정보를 모델이 채우게 하지 마세요.</b> 승객 상세 정보를 이미 알고 있다면 그것을 관리하는 부담을 <b>모델에서 덜어 낼 수</b> 있습니다.</div>
+  <div class="hl">&#128073; 함수가 <b>SQL 같은 DSL</b>을 입력으로 받는다면 <b class="g">패턴 22 Code Execution</b>이 더 나은 해법일 수 있습니다.</div>
+  <aside>3~10개라는 숫자가 실무적입니다. 툴을 무한정 늘릴 수 없어요.</aside>
+</section>
+
+<!-- 18 MCP 한계 -->
+<section class="slide" data-part="7.1.4 고려사항">
+  <h2>&#9888;&#65039; MCP의 <span class="r">한계</span> <small>(2025년 5월 기준)</small></h2>
+  <table class="t">
+    <tr><th style="width:20%">영역</th><th>내용</th></tr>
+    <tr><td><b class="r">보안</b></td><td>MCP는 <b class="r">언어 상호운용 프로토콜에 가까워서 어떤 보안 원칙도 강제하지 않는다.</b> 인증·인가, 역할 분리, 클라이언트별 능력 지정이 필요한데도. <b class="g">Cloudflare가 Workers OAuth Provider 라이브러리를 확장</b>해 이 공백을 메우려 한다</td></tr>
+    <tr><td><b class="r">협업</b></td><td>클라이언트-서버 통신이 대체로 <b>단방향</b>인 반면 현실에서는 <b>협업적·상호작용적 워크플로</b>가 필요할 수 있다. Google의 <b class="g">A2A</b>, IBM의 <b>ACP</b>가 2025년 4·5월에 에이전트 간 통신을 도입</td></tr>
+    <tr><td><b class="r">스트리밍</b></td><td>툴 호출은 오래 걸릴 수 있다. <b>실시간 진행 상황</b>을 보여 주면 UX가 개선된다. 표준 MCP 호출은 네트워크 구성에 따라 <b class="r">30~60초</b>에 종료된다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; 그러나 MCP는 빠르게 진화 중이라 <b>여러분이 읽을 때쯤이면 이 단점 중 일부 또는 전부가 해결됐을</b> 가능성이 높습니다. 혹은 <b>MCP가 더 나은 무언가로 대체됐을</b> 수도 있고요.</div>
+  <div class="big" style="margin-top:12px">어느 프로토콜이 "이기든" 간에<br><span class="y">Tool Calling이 유용하고 중요한 패턴으로 남으리라는 점</span>은<br>비교적 확신한다</div>
+  <aside>프로토콜과 패턴을 구분해서 보라는 조언입니다.</aside>
+</section>
+
+<!-- 19 프롬프트 인젝션 -->
+<section class="slide" data-part="7.1.4 고려사항">
+  <h2>&#128165; <span class="r">프롬프트 인젝션</span></h2>
+  <div class="big">적대적 행위자가 LLM이 처리하는 콘텐츠에<br><span class="y">악성 텍스트를 심어</span><br><span class="y">의도하지 않은 툴 호출</span>을 만들어 낸다</div>
+  <ul class="pts" style="margin-top:16px">
+    <li>호출되는 <b>외부 툴 자체를 조작</b>해, 그 툴의 출력을 쓰는 애플리케이션에 <b class="r">하류 피해</b>를 입힐 수도 있다</li>
+    <li><b class="r">공격 표면은 LLM과 툴 사이의 왕복 횟수가 늘수록 커진다</b></li>
+  </ul>
+  <div class="hl" style="margin-top:14px">&#128188; <b>비유</b> &mdash; 신입에게 "메일을 읽고 <b>요약</b>해 주세요"면 최악이 <b>요약 오류</b>지만, "메일을 읽고 <b class="r">지시대로 송금</b>해 주세요"면 <b class="r">사기 메일 한 통에 회사 돈이 나갑니다.</b> 같은 신입, 같은 실수, <b class="g">전혀 다른 피해</b>.</div>
+  <div class="warn">&#128161; LLM은 <b>"시스템 프롬프트(당신의 지시)"</b>와 <b>"읽으라고 준 데이터"</b>를 <b class="r">글자로만 구분</b>합니다. 그래서 웹페이지나 이메일 안에 <b>"이전 지시는 무시하고&hellip;"</b>라고 써 두면 <b class="r">지시로 착각</b>할 수 있습니다.</div>
+  <aside>다음 슬라이드에서 Beurer-Kellner 외의 2025년 논문이 소개한 여섯 가지 방어를 봅니다.</aside>
+</section>
+
+<!-- 20 여섯 방어 -->
+<section class="slide" data-part="7.1.4 고려사항">
+  <h2>&#128737;&#65039; 방어 <span class="g">여섯 가지</span> <small>&mdash; Beurer-Kellner 외 (2025)</small></h2>
+  <table class="t">
+    <tr><th style="width:22%">방식</th><th>내용</th></tr>
+    <tr><td><b>Action-Selector</b></td><td><b>미리 정의된 행동 집합만</b> 허용하고, 그 행동들로부터의 <b class="g">피드백이 에이전트로 되돌아가는 것을 막는다</b></td></tr>
+    <tr><td><b>Plan-Then-Execute</b></td><td>먼저 <b class="g">고정된 행동 계획</b>을 세운다. 툴 피드백이 콘텐츠에 추가돼도 <b>원래 계획에서 벗어나지 않는다</b></td></tr>
+    <tr><td><b>Map-Reduce</b></td><td><b>격리된 서브에이전트</b>를 파견해 신뢰할 수 없는 프롬프트 조각을 처리. "reduce"에서는 <b class="g">LLM을 아예 쓰지 않거나</b> 제한된 Action-Selector로</td></tr>
+    <tr><td><b>Dual-LLM</b></td><td>계획하고 툴을 쓰는 <b class="g">특권 LLM</b> + 툴 접근 없이 신뢰할 수 없는 데이터를 처리하는 <b class="g">샌드박스 LLM</b></td></tr>
+    <tr><td><b>Code-Then-Execute</b></td><td>LLM이 <b>형식적 컴퓨터 프로그램</b>을 작성한다. 데이터가 악의적이더라도 <b class="g">제어 흐름이 고정</b>된다 &rarr; <b>패턴 22</b></td></tr>
+    <tr><td><b>Context-Minimization</b></td><td>불필요한 콘텐츠를 제거. 특히 <b class="g">이후 단계에서는 사용자의 원래 프롬프트를 컨텍스트에서 빼라</b></td></tr>
+  </table>
+  <div class="hl" style="margin-top:12px">&#128161; <b>세 부류로 묶으면</b> &mdash; <b class="g">할 수 있는 일을 미리 못 박기</b>(1·2·5) · <b class="g">오염된 데이터를 격리하기</b>(3·4) · <b class="g">보여 주는 것을 줄이기</b>(6)</div>
+  <div class="warn">&#9888;&#65039; 현대 LLM들이 이 중 하나 이상으로 방어하며 웹 검색·코드 실행을 내장하기 시작했지만, <b class="r">프롬프트 인젝션으로부터 지키는 일은 여전히 진행 중인 과제</b>입니다.</div>
+  <aside>공통점은 "무엇을 할 수 있는지"를 미리 좁혀 두는 것입니다.</aside>
+</section>
+
+<!-- 21 PART 5 -->
+<section class="slide" data-part="7.1.5 참고문헌">
+  <h2>&#128218; 7.1.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:28%">출처</th><th>기여</th></tr>
+    <tr><td><b>Yao 외 (2022)</b></td><td><b class="g">ReAct</b> &mdash; 추론과 행동을 교차시킨다는 아이디어</td></tr>
+    <tr><td><b>Schick 외 (2023)</b></td><td><b class="g">Toolformer</b> &mdash; LLM이 <b>툴을 언제 쓸지 학습할 수 있다</b>는 사실</td></tr>
+    <tr><td><b>Beurer-Kellner 외 (2025)</b></td><td>Tool Calling LLM 에이전트를 <b>프롬프트 인젝션으로부터 지키는 설계 패턴</b></td></tr>
+    <tr><td><b>문서들</b></td><td>OpenAI 함수 호출 · LangGraph ToolNode · Anthropic MCP · Google A2A 블로그 &mdash; <b class="g">추상화 계층이 어떻게 진화해 왔는지</b> 보여 준다</td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#127970; <b>실무 사례</b><br>
+  &bull; <b>GitHub</b> &mdash; 버전 관리와 지속적 통합에 쓸 수 있는 MCP 서버<br>
+  &bull; <b>Sentry</b> &mdash; AI 어시스턴트가 MCP로 연결해 <b>오류 처리와 성능 모니터링</b><br>
+  &bull; <b>Zapier AI Actions</b> &mdash; 엔터프라이즈 규모의 툴 호출. 에이전틱 앱이 <b class="g">수천 개 앱에 걸친 자동화 워크플로</b>에서 행동 수행</div>
+  <aside>Zapier 사례가 MCP의 지향점을 보여 줍니다. 툴을 직접 짜지 않고 이미 있는 걸 붙이는 거죠.</aside>
+</section>
+
+<!-- 22 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#9742;&#65039; 손이 없는 <span class="g">비서</span></h1>
+    <div class="big" style="margin-top:24px">모델은 <span class="y">"무엇을 호출할지 말할 뿐"</span><br>실제 실행은 언제나 <span class="y">당신 코드</span>가 한다<br><br><small>그 분리가 <b>보안</b>이고, 그래서 이름이 <b>calling</b>이다</small></div>
+    <p class="sub" style="margin-top:22px">패턴 21 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 22 코드 실행</b> (값이 아니라 코드를 넘겨야 한다면)</p>
+  </div>
+  <aside>파라미터 몇 개로 안 되는 경우가 다음 패턴의 출발점입니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

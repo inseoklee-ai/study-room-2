@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>패턴 22 코드 실행 — Code Execution</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 7 &middot; Pattern 22</div>
+    <h1 style="margin:18px 0">코드 <span class="g">실행</span></h1>
+    <p class="sub">Code Execution &mdash; LLM이 <b>코드를 생성</b>하고 외부 시스템이 <b>실행</b>한다</p>
+  </div>
+  <aside>패턴 21이 값 몇 개를 넘기는 것이라면, 이건 코드 덩어리를 넘기는 겁니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 7.2</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>7.2.1 문제</b> &mdash; DSL로 된 긴 구문을 넘겨야 할 때</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>7.2.2 해법</b> &mdash; 두 단계 프로세스</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>7.2.3 예제</b> &mdash; 토너먼트 대진표 그리기</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>7.2.4 고려사항</b> &mdash; 샌드박스와 보안</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>7.2.5 참고문헌</b></span></div>
+  </div>
+  <div class="hl">&#128161; <b>한 줄로</b> &mdash; 넘길 것이 <b class="g">값 몇 개면 툴</b>, <b class="g">문법을 갖춘 코드 덩어리면 코드 실행</b>. 그리고 코드 실행은 반드시 <b class="r">격리된 방</b>에서.</div>
+  <aside>패턴 21과 갈리는 기준이 명확한 패턴입니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="7.2.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">7.2.1 문제</h2>
+    <div class="who">툴 호출로는 부족할 때</div>
+  </div>
+  <aside>LLM은 그래프를 그리거나 이미지에 텍스트로 주석을 다는 일에 그다지 능하지 않습니다.</aside>
+</section>
+
+<!-- 4 왜 부족한가 -->
+<section class="slide" data-part="7.2.1 문제">
+  <h2>&#10060; 그래프를 그릴 때 <span class="r">API를 부르지 않는다</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">하려는 일</th><th>실제로 필요한 것</th></tr>
+    <tr><td><b>그래프 그리기</b></td><td>Matplotlib 같은 프로그래밍 언어나 Mermaid 같은 DSL로 <b class="g">그래프 명세를 작성</b></td></tr>
+    <tr><td><b>이미지에 주석 달기</b></td><td>ImageMagick 같은 프레임워크를 <b class="g">일련의 명령줄 지시</b>로 호출해 명세를 공급</td></tr>
+    <tr><td><b>데이터베이스 조회</b></td><td><b class="g">SQL</b>을 입력으로 받는 함수 &mdash; 대표적인 사례</td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">호출할 함수가<br><span class="y">짧은 파라미터 목록이 아니라</span><br><span class="y">DSL로 된 긴 구문</span>을 입력으로 받는 경우<br>Tool Calling으로는 충분하지 않다</div>
+  <div class="hl" style="margin-top:14px">&#127859; <b>비유</b> &mdash; ① <b>메뉴판에서 고르기</b>("2번 세트, 매운맛, 곱빼기") &mdash; 고를 수 있는 게 정해져 있고 옵션은 몇 개뿐 ② <b class="g">레시피를 적어 주방에 넘기기</b>("이 재료를 이 순서로, 이 온도에서") &mdash; <b class="g">표현할 수 있는 게 무한</b></div>
+  <aside>①이 Tool Calling, ②가 Code Execution입니다.</aside>
+</section>
+
+<!-- 5 PART 2 -->
+<section class="slide" data-part="7.2.2 해법">
+  <h2>&#9989; 7.2.2 해법 &mdash; <span class="g">두 단계 프로세스</span></h2>
+  <div class="chain">
+    <div class="cell"><small>1</small><b>LLM이<br>DSL 코드 생성</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--red)"><small>2</small><b class="r">샌드박스에서<br>실행</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>3</small><b class="g">최종 응답</b></div>
+  </div>
+  <p style="margin-top:16px">원하는 일을 이미 해 주는 소프트웨어 시스템이 있는데 그것이 <b class="g">DSL로 구동된다면</b>, Code Execution을 쓰는 편이 낫다.</p>
+  <div class="hl">&#128161; 파운데이션 모델들은 <b class="g">Matplotlib 코드 · SQL 구문 · Mermaid 마크다운</b>을 꽤 잘 생성합니다. 그러므로 <b>그래프를 만들고, 데이터베이스를 조회하고, 차트를 그릴 수</b> 있습니다.</div>
+  <div class="warn" style="margin-top:14px">&#128190; <b>데이터베이스를 갱신해야 할 때</b> &mdash; LLM이 <b class="r">데이터 무결성을 유지해 주기를 기대하는 것</b>보다, LLM이 <b class="g">SQL을 생성하고 그것을 하나의 트랜잭션으로</b> 데이터베이스에 보내는 편이 쉽습니다.</div>
+  <div class="big" style="margin-top:14px">Code Execution은<br><span class="y">자연어 이해</span>와 <span class="y">계산적 문제 해결</span> 사이의 간극을 메운다</div>
+  <div class="hl">&#128209; <b>ReAct 프레임워크의 일부</b>로 구현할 수도 있습니다 &mdash; 교차되는 행동 중 일부가 <b>툴 호출이 아니라 코드 실행</b>이 되는 식으로.</div>
+  <aside>자연어 지시에 응답해 문제를 풀고, 데이터를 분석하고, 시각화를 만드는 인터랙티브 계산 도구를 만들 수 있게 됩니다.</aside>
+</section>
+
+<!-- 6 PART 3 -->
+<section class="slide" data-part="7.2.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">7.2.3 예제</h2>
+    <div class="who">농구 토너먼트 대진표</div>
+  </div>
+  <aside>조지아가 64강에서 곤자가에 졌고, 그 곤자가는 32강에서 탈락했다는 걸 그림으로 보여 주려 합니다.</aside>
+</section>
+
+<!-- 7 1단계 DSL -->
+<section class="slide" data-part="7.2.3 예제">
+  <h2>&#9312; LLM이 <span class="g">DOT 코드</span>를 생성한다</h2>
+  <p>Graphviz라는 그래프 그리기 프로그램의 DSL인 <b class="g">DOT</b>은 그래프를 간결하게 표현할 수 있게 해 준다. 변환 예시를 LLM에게 보여 준다.</p>
+  <div class="plabel">프롬프트 — 입력 예시</div>
+  <pre>• Saturday, March 29, 2025 (Elite Eight)
+• (1) Florida 84, (3) Texas Tech 79
+• (1) Duke 85, (2) Alabama 65</pre>
+  <div class="plabel" style="margin-top:10px">프롬프트 — 출력 예시 (DOT)</div>
+  <pre>"Florida" -&gt; "Texas Tech" [label="84-79"]
+"Duke" -&gt; "Alabama" [label="85-65"]
+<b class="g">subgraph cluster_elite_eight {</b>
+  label = "Elite Eight"
+  {rank = same; "Texas Tech"; "Alabama"; ... }
+}</pre>
+  <div class="hl" style="margin-top:12px">&#128161; 프롬프트에 <b class="g">"서브그래프 이름은 반드시 cluster_xxx 형태로"</b> 같은 제약을 명시합니다 &mdash; DSL의 문법 규칙을 지키게 하는 것이죠.</div>
+  <div class="warn">&#128209; <b>5장 패턴 13 Few-shot CoT</b>가 여기서도 쓰입니다 &mdash; 변환 <b>예시 하나</b>로 형식을 시연합니다.</div>
+  <aside>토너먼트 결과 자체는 웹 검색(패턴 21)이나 RAG(패턴 6)로 얻을 수 있습니다.</aside>
+</section>
+
+<!-- 8 2단계 실행 -->
+<section class="slide" data-part="7.2.3 예제">
+  <h2>&#9313; 생성된 DSL을 <span class="g">실행</span>한다</h2>
+  <pre>dot -Grankdir=LR -Tpng tournament.dot -o tournament.png</pre>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell"><small>1</small><b>LLM이<br>tournament.dot 생성</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>2</small><b>파일로 저장</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>3</small><b class="g">dot 프로그램이<br>PNG 생성</b></div>
+  </div>
+  <div class="big" style="margin-top:16px">LLM은 <span class="y">그림을 그리지 않는다</span><br>그림을 그릴 <span class="y">설계도를 쓴다</span></div>
+  <div class="hl" style="margin-top:14px">&#128161; 이 분업이 핵심입니다 &mdash; LLM은 <b class="g">"무엇을 그릴지"를 아는 데</b> 능하고, Graphviz는 <b class="g">"어떻게 배치할지"를 계산하는 데</b> 능합니다. 각자 잘하는 걸 합니다.</div>
+  <div class="warn">&#128200; 결과 이미지는 <b>64강 → 32강</b>으로 이어지는 토너먼트 진행을 한눈에 보여 줍니다. 라벨은 DOT 코드에 적힌 문자열 그대로입니다.</div>
+  <aside>LLM에게 좌표를 계산시켰다면 훨씬 나쁜 결과가 나왔을 겁니다. 레이아웃은 Graphviz가 훨씬 잘하죠.</aside>
+</section>
+
+<!-- 9 PART 4 -->
+<section class="slide" data-part="7.2.4 고려사항">
+  <h2>&#128274; 7.2.4 &mdash; 반드시 <span class="r">샌드박스</span>에서</h2>
+  <p><b class="g">샌드박스(sandbox environment)</b>는 LLM이 생성한 코드를 <b>기반 시스템을 위험에 빠뜨리지 않고</b> 실행할 수 있는 격리되고 안전한 공간이다.</p>
+  <table class="t">
+    <tr><th style="width:26%">항목</th><th>내용</th></tr>
+    <tr><td><b>제약</b></td><td><b>CPU · 메모리 · 네트워크 접근 · 실행 시간</b>에 제약. <b class="g">무한 루프와 자원 고갈</b>을 막기 위해 모니터링</td></tr>
+    <tr><td><b>구현</b></td><td><b>Docker</b> 같은 컨테이너, 가상 머신, 또는 <b>강한 보안 경계를 갖춘 특수 런타임</b></td></tr>
+  </table>
+  <div class="steps" style="margin-top:14px">
+    <div class="st"><span class="n">1</span><span class="t">샌드박스 안이라 하더라도 곧바로 실행하기보다 <b class="g">먼저 검증</b>하라 &mdash; 단순한 <b>구문 확인</b>부터 <b>정적 코드 분석</b>, <b>형식적 정확성 검사</b>까지</span></div>
+    <div class="st"><span class="n">2</span><span class="t">컴파일 오류나 검증·런타임 실패는 <b class="g">LLM에 돌려보내 수정 후 재시도</b>하게 한다 (<b>6장 패턴 18 Reflection</b>)</span></div>
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">3</span><span class="t"><b class="r">샌드박스 컨테이너를 최신 상태로 유지</b>하라 &mdash; 샌드박스 OS나 격리 메커니즘의 취약점이 <b class="r">호스트 시스템 접근을 허용</b>할 수 있다</span></div>
+  </div>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; 샌드박스와 검증을 갖추더라도 보안은 여전히 과제입니다 &mdash; 악의적 사용자는 <b class="r">자원 제약을 초과시키거나, 데이터를 빼내거나, 유해한 코드를 생성하도록</b> 프롬프트를 조작하려 합니다.</div>
+  <aside>패턴 21의 프롬프트 인젝션 이야기가 여기서도 그대로 적용됩니다.</aside>
+</section>
+
+<!-- 9b 갈림길 -->
+<section class="slide" data-part="7.2.4 고려사항">
+  <h2>&#128681; Tool Calling과 Code Execution의 <span class="g">갈림길</span></h2>
+  <table class="t">
+    <tr><th style="width:64%">상황</th><th>선택</th></tr>
+    <tr><td>항공권 예약 &mdash; 편명 &middot; 날짜 &middot; 좌석등급 <b>세 개면 끝</b></td><td><b class="b">Tool Calling</b></td></tr>
+    <tr><td>DB 조회 &mdash; <b class="g">SQL 한 덩어리</b>를 넘겨야 함</td><td><b class="g">Code Execution</b></td></tr>
+    <tr><td>차트 그리기 &mdash; Matplotlib / Mermaid <b class="g">명세를 써야</b> 함</td><td><b class="g">Code Execution</b></td></tr>
+    <tr><td>주가 조회 &mdash; 종목코드 하나</td><td><b class="b">Tool Calling</b></td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">파라미터 몇 개로 말이 되면 <span class="y">툴</span><br>문법이 있는 긴 문장을 써야 하면 <span class="y">코드</span></div>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; <b>대신 위험이 커진다</b> &mdash; 코드는 <b class="r">무엇이든 할 수 있다는 게 장점이자 문제</b>입니다. 파일을 못 건드리게, 네트워크를 못 쓰게, 오래 못 돌게 <b>미리 막아 둔 방</b>에서 돌려야 합니다.</div>
+  <ul class="pts">
+    <li><b class="g">DSL</b>(domain-specific language) &mdash; 한 가지 일만 위한 작은 언어. SQL, Graphviz의 DOT, Mermaid</li>
+    <li><b class="g">샌드박스</b>(sandbox) &mdash; 코드가 바깥에 손대지 못하게 가둔 실행 환경</li>
+    <li><b class="g">Reflection</b>(패턴 18) &mdash; 실행이 실패하면 오류 메시지를 모델에 돌려주고 고쳐 오게 하는 것</li>
+  </ul>
+  <aside>패턴 21과 22를 가르는 실무 기준입니다. 이 표만 기억해도 충분해요.</aside>
+</section>
+
+<!-- 10 신뢰도 -->
+<section class="slide" data-part="7.2.4 고려사항">
+  <h2>&#9888;&#65039; 언제 <span class="g">잘 작동하나</span></h2>
+  <div class="big">2025년 6월 기준 &mdash;<br>코드 실행 환경은 <span class="y">입력이 아주 엄격히 통제되거나</span><br><span class="y">Reflection이 가능한 샌드박스</span>에서 돌지 않는 한<br><span class="r">신뢰도가 떨어지는 편</span></div>
+  <div class="hl" style="margin-top:16px">&#9989; Code Execution은 생성되는 코드가 <b class="g">좁은 DSL</b>이고 실행 환경에 <b class="g">파서가 있을 때</b> 더 잘 작동합니다 &mdash; 예제의 <b>Graphviz 코드</b>가 그런 경우입니다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:34%">조건</th><th>판단</th></tr>
+    <tr><td><b class="g">좁은 DSL</b> + 파서 있음<br><small>Graphviz DOT · Mermaid · SQL</small></td><td><b class="g">잘 작동한다</b></td></tr>
+    <tr><td><b class="r">범용 프로그래밍 언어</b><br><small>임의의 파이썬 코드</small></td><td><b class="r">엄격한 통제나 Reflection 없이는 위험</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:12px">&#128161; 왜 좁은 DSL이 유리한가 &mdash; <b class="g">할 수 있는 일이 애초에 적기</b> 때문입니다. DOT으로는 파일을 지울 수도, 네트워크를 부를 수도 없습니다.</div>
+  <aside>패턴 21의 "무엇을 할 수 있는지 미리 좁혀 두라"는 원칙이 여기서도 통합니다.</aside>
+</section>
+
+<!-- 11 PART 5 -->
+<section class="slide" data-part="7.2.5 참고문헌">
+  <h2>&#128218; 7.2.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:28%">출처</th><th>기여</th></tr>
+    <tr><td><b>Wang 외 (2021)</b></td><td><b class="g">CodeT5</b> &mdash; 코드 의미론, 특히 <b>식별자</b>를 활용해 코드 이해·생성 과제를 잘 수행하는 트랜스포머 모델</td></tr>
+    <tr><td><b>DeepMind AlphaCode<br>OpenAI Codex<br>StarCoder</b></td><td>이 분야를 <b class="g">실용적으로 진전</b>시킨 모델들 (마지막은 오픈소스)</td></tr>
+    <tr><td><b>Hyunh · Lin (2025)</b></td><td>코드 생성용 LLM 개괄</td></tr>
+    <tr><td><b>Chen 외 (2021)</b></td><td><b class="g">HumanEval</b> &mdash; 코드 생성 능력을 평가하는 <b>표준 벤치마크</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#127970; <b>실무 사례</b><br>
+  &bull; <b>Claude</b> &mdash; 아키텍처 다이어그램과 플로차트를 만들 때 <b class="g">Mermaid 코드를 중간 형식</b>으로 쓴다<br>
+  &bull; <b>Gemini</b> &mdash; 금융 분석을 수행하기 위해 <b class="g">Pandas 코드를 생성</b>한다</div>
+  <div class="hl">&#128161; 두 사례 모두 <b class="g">"그림"이나 "분석 결과"를 직접 만들지 않고</b> 그것을 만들 <b>코드를 만든다</b>는 공통점이 있습니다.</div>
+  <aside>이 정리본을 만드는 이 저장소의 덱들도 mermaid를 지원합니다. 같은 발상이죠.</aside>
+</section>
+
+<!-- 12 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#128221; 레시피를 <span class="g">적어 넘겨라</span></h1>
+    <div class="big" style="margin-top:24px">값 몇 개면 <span class="y">툴</span><br>문법을 갖춘 코드 덩어리면 <span class="y">코드 실행</span><br><br><small>그리고 코드 실행은 <b>반드시 격리된 방</b>에서</small></div>
+    <p class="sub" style="margin-top:22px">패턴 22 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 23 멀티에이전트 협업</b></p>
+  </div>
+  <aside>여기까지가 한 에이전트의 능력을 넓히는 이야기였습니다. 다음은 에이전트 자체를 늘리는 이야기예요.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

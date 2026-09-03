@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7장 서론 — 에이전트가 행동하게 하기</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Generative AI Design Patterns &middot; Chapter 7</div>
+    <h1 style="margin:18px 0">에이전트가 <span class="g">행동하게</span> 하기</h1>
+    <p class="sub">7장 서론 &mdash; 콘텐츠 생성을 넘어 <b>행동</b>으로</p>
+    <p class="sub" style="margin-top:6px"><small>패턴 21 툴 호출 &middot; 22 코드 실행 &middot; 23 멀티에이전트 협업</small></p>
+  </div>
+  <aside>이 책에서 지금까지 다룬 패턴들은 어떤 형태로든 콘텐츠를 만들어 내는 일에 관한 것이었습니다. 이 장부터 선을 넘습니다.</aside>
+</section>
+
+<!-- 2 선을 넘는다 -->
+<section class="slide" data-part="서론">
+  <h2>&#128683; 지금까지는 <span class="r">말만</span> 할 수 있었다</h2>
+  <div class="big">환불이 처리됐다는 <span class="y">이메일 문구</span>는 생성할 수 있지만<br><span class="y">당신 은행 계좌에 돈이 들어오게 만들 수는 없다</span></div>
+  <p style="margin-top:16px">소프트웨어는 콘텐츠 생성 말고도 아주 다양한 일을 한다 &mdash; <b>계산을 하고, 항공권을 예약하고, 환불을 처리</b>한다. LLM 혼자서는 이런 일을 할 수 없다.</p>
+  <div class="chain" style="margin-top:14px">
+    <div class="cell"><small>1~6장</small><b>콘텐츠 생성</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>7장</small><b class="g">세상과 상호작용</b></div>
+  </div>
+  <div class="hl" style="margin-top:16px">&#128161; 흔히 이 선을 넘어선 애플리케이션을 두고 <b class="g">에이전틱(agentic)</b>하다고 부릅니다.</div>
+  <aside>파운데이션 모델 위에 세운 애플리케이션이 세상과 상호작용하게 만드는 세 가지 패턴입니다.</aside>
+</section>
+
+<!-- 3 세 패턴 -->
+<section class="slide" data-part="서론">
+  <h2>&#128203; 7장의 <span class="g">세 패턴</span></h2>
+  <table class="t">
+    <tr><th style="width:6%">#</th><th style="width:26%">패턴</th><th>한 줄 요약</th></tr>
+    <tr><td><b>21</b></td><td><b>툴 호출</b><br><small>Tool Calling</small></td><td>모델이 <b>정형화된 인터페이스를 통해 외부 함수를 호출</b>하게 한다</td></tr>
+    <tr><td><b>22</b></td><td><b>코드 실행</b><br><small>Code Execution</small></td><td>모델이 <b>코드를 써서 실행</b>하게 해 복잡한 문제를 푼다</td></tr>
+    <tr><td><b>23</b></td><td><b>멀티에이전트 협업</b><br><small>Multiagent Collaboration</small></td><td>전문 에이전트들을 <b>계층형·P2P·시장 기반</b> 구조로 엮어 분업한다</td></tr>
+  </table>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell"><small>21</small><b>값 몇 개를<br>넘긴다</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>22</small><b>코드 덩어리를<br>넘긴다</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>23</small><b>일을 여러 에이전트에<br>나눈다</b></div>
+  </div>
+  <div class="hl" style="margin-top:14px">&#128161; 21과 22를 가르는 기준은 단순합니다 &mdash; <b class="g">파라미터 몇 개로 말이 되면 툴, 문법이 있는 긴 문장을 써야 하면 코드.</b></div>
+  <aside>21과 22가 한 에이전트의 능력을 넓히는 것이라면, 23은 에이전트 자체를 늘리는 이야기입니다.</aside>
+</section>
+
+<!-- 4 패턴 21 요약 -->
+<section class="slide" data-part="패턴 요약">
+  <h2><span class="g">패턴 21</span> 툴 호출 &mdash; 요약</h2>
+  <div class="grid2">
+    <div class="box"><h3 class="r">&#10060; 문제</h3><p style="margin:0">"TK 161 좌석 한 자리 예약"이라는 <b>문장은 생성</b>할 수 있는데, 어떻게 <b class="r">실제로 예약</b>하게 만드나? LLM과 API 사이의 <b>간극</b></p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 해법</h3><p style="margin:0">LLM이 <b class="g">특별한 토큰과 인자를 뱉으면</b>, 클라이언트 후처리기가 <b>실제로 호출</b>하고 결과를 되돌려 준다</p></div>
+  </div>
+  <div class="big" style="margin-top:14px">모델은 <span class="y">"무엇을 호출할지 말할 뿐"</span><br>실제 실행은 언제나 <span class="y">당신 코드</span>가 한다</div>
+  <div class="warn" style="margin-top:12px">&#128274; <b>왜 나눠 두나</b> &mdash; 모델에 전화기를 직접 쥐여 주면 <b class="r">누가 모델을 속였을 때</b> 무슨 짓을 할지 모릅니다. 그래서 "말하는 쪽"과 "실행하는 쪽"을 <b class="g">일부러 분리</b>해 뒀습니다.</div>
+  <p class="sub" style="margin-top:10px;text-align:center"><small>상세 &rarr; <b>패턴 21 덱</b></small></p>
+  <aside>ReAct — 추론과 행동을 교차시키는 것 — 는 CoT와 Tool Calling의 조합"일 뿐"이라 별도 패턴으로 두지 않았습니다.</aside>
+</section>
+
+<!-- 5 패턴 22 요약 -->
+<section class="slide" data-part="패턴 요약">
+  <h2><span class="g">패턴 22</span> 코드 실행 &mdash; 요약</h2>
+  <div class="grid2">
+    <div class="box"><h3 class="r">&#10060; 문제</h3><p style="margin:0">그래프를 그릴 때 <b>API를 부르지 않는다</b> &mdash; Matplotlib이나 Mermaid로 <b>명세를 작성</b>한다. 호출할 함수가 <b class="r">DSL로 된 긴 구문</b>을 받으면 Tool Calling으로는 부족하다</p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 해법</h3><p style="margin:0">LLM이 <b class="g">DSL 코드를 생성</b>하고, <b>샌드박스</b> 안의 후처리기가 그것을 실행할 시스템에 보낸다</p></div>
+  </div>
+  <div class="hl" style="margin-top:14px">&#127859; <b>비유</b> &mdash; ① <b>메뉴판에서 고르기</b>("2번 세트, 매운맛") = Tool Calling ② <b>레시피를 적어 주방에 넘기기</b>("이 재료를 이 순서로, 이 온도에서") = Code Execution. <b class="g">표현할 수 있는 게 무한</b>합니다.</div>
+  <div class="warn">&#9888;&#65039; 대신 위험이 커집니다 &mdash; 코드는 <b class="r">무엇이든 할 수 있으니까요.</b> 반드시 <b class="g">샌드박스</b>에서 돌립니다.</div>
+  <p class="sub" style="margin-top:10px;text-align:center"><small>상세 &rarr; <b>패턴 22 덱</b></small></p>
+  <aside>데이터베이스를 갱신할 때는 LLM이 데이터 무결성을 지켜 주길 기대하는 것보다 SQL을 생성해 하나의 트랜잭션으로 보내는 편이 쉽습니다.</aside>
+</section>
+
+<!-- 6 패턴 23 요약 -->
+<section class="slide" data-part="패턴 요약">
+  <h2><span class="g">패턴 23</span> 멀티에이전트 협업 &mdash; 요약</h2>
+  <div class="grid2">
+    <div class="box"><h3 class="r">&#10060; 문제</h3><p style="margin:0"><b>인지적 병목</b>(유한한 컨텍스트) · <b>파라미터 효율 감소</b> · <b>제한된 추론 깊이</b> · <b>도메인 적응 문제</b> &mdash; 복잡해질수록 <b class="r">단일 에이전트의 한계</b>가 뚜렷해진다</p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 해법</h3><p style="margin:0"><b class="g">인간의 조직 구조를 반영한 인지 노동의 분업</b> &mdash; 계층형 · P2P · 시장 기반</p></div>
+  </div>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; <b class="r">그런데 2025년 분석에 따르면 과제의 40~80%가 실패합니다.</b> 원인은 <b>명세 문제 · 에이전트 간 어긋남 · 과제 검증</b> 세 갈래.</div>
+  <div class="big" style="margin-top:12px">저자들의 최종 권고 &mdash;<br><span class="y">단일 에이전트로 충분하게 만들 수 있다면 그쪽을 택하라</span></div>
+  <p class="sub" style="margin-top:10px;text-align:center"><small>상세 &rarr; <b>패턴 23 덱</b></small></p>
+  <aside>능력만 늘어나는 게 아니라 실패 지점도 함께 늘어납니다. 이 장에서 가장 조심스럽게 다뤄야 할 패턴이에요.</aside>
+</section>
+
+<!-- 7 오류 누적 -->
+<section class="slide" data-part="서론">
+  <h2>&#128200; 왜 <span class="r">사슬이 길수록 위험한가</span></h2>
+  <pre>사람 8명이 이어달리기로 문서를 만든다.
+각자 <b>95% 정확도</b>로 일한다면 —
+
+  0.95<sup>8</sup> ≈ <b class="r">66%</b>
+
+각자는 훌륭한데 <b class="r">전체는 3분의 1이 망가진다</b></pre>
+  <div class="hl" style="margin-top:14px">&#128161; LLM은 결정론적이지 않으므로 <b>한 번은 성공한 단계가 다음번에는 실패</b>할 수 있습니다. 그러므로 <b class="g">단계의 사슬이 길수록 과제를 성공적으로 완수할 확률은 낮아집니다.</b></div>
+  <div class="warn" style="margin-top:14px">&#127919; <b>그래서 이 장의 실무 원칙 넷</b><br>
+  ① <b>사슬을 짧게</b> &mdash; 단계가 늘수록 성공률이 곱셈으로 깎인다<br>
+  ② <b>가능하면 병렬로</b> &mdash; 순서 의존이 없으면 나란히 돌려 <b class="g">체감 시간</b>을 줄인다<br>
+  ③ <b>단순한 조합 패턴을 우선</b> &mdash; Anthropic의 권고. 화려한 프레임워크보다 낫다<br>
+  ④ <b class="g">단일 에이전트로 되면 그냥 그렇게</b></div>
+  <aside>이 계산이 7장 전체를 관통하는 긴장입니다. 능력을 늘리면 신뢰성이 깎여요.</aside>
+</section>
+
+<!-- 8 위험의 급 -->
+<section class="slide" data-part="서론">
+  <h2>&#9888;&#65039; 행동하는 순간 <span class="r">위험의 급이 바뀐다</span></h2>
+  <div class="grid2">
+    <div class="box"><h3>&#128221; 말만 할 때</h3><p style="margin:0">"받은 메일을 읽고 <b>요약</b>해 주세요"<br><small>&rarr; 최악의 경우 <b>요약이 틀린다</b></small></p></div>
+    <div class="box" style="border-color:var(--red)"><h3 class="r">&#128176; 행동할 때</h3><p style="margin:0">"받은 메일을 읽고 <b class="r">지시대로 송금</b>해 주세요"<br><small>&rarr; <b class="r">사기 메일 한 통에 회사 돈이 나간다</b></small></p></div>
+  </div>
+  <div class="big" style="margin-top:16px">같은 모델, 같은 실수<br><span class="y">전혀 다른 피해</span></div>
+  <div class="hl" style="margin-top:14px">&#128161; <b>프롬프트 인젝션</b> &mdash; LLM은 "시스템 프롬프트(당신의 지시)"와 "읽으라고 준 데이터"를 <b class="r">글자로만</b> 구분합니다. 공격자가 웹페이지나 이메일 안에 <b>"이전 지시는 무시하고&hellip;"</b>라고 써 두면 모델이 그걸 <b class="r">지시로 착각</b>할 수 있습니다.</div>
+  <div class="warn">&#128274; <b>공격 표면은 LLM과 툴 사이의 왕복 횟수가 늘수록 커집니다.</b> 그래서 "무엇을 할 수 있는지"를 <b class="g">미리 좁혀 두는 것</b>이 최선의 방어입니다.</div>
+  <aside>패턴 21 덱에서 여섯 가지 방어 설계 패턴을 봅니다.</aside>
+</section>
+
+<!-- 9 이름 -->
+<section class="slide" data-part="서론">
+  <h2>&#127801; 이름이 다르다고 <span class="g">다른 것은 아니다</span></h2>
+  <p>Tool Calling의 바탕이 되는 기법을 처음 만든 연구자들은 그것을 <b>Toolformer</b>라고 불렀다. 이 책은 패턴을 만든 사람들이 붙인 이름(CoT, ToT, Grammar 등)을 그대로 지켜 왔지만, <b class="r">Toolformer라는 이름은 끝내 자리 잡지 못했다.</b></p>
+  <table class="t">
+    <tr><th style="width:30%">부르는 곳</th><th>이름</th></tr>
+    <tr><td>Andrew Ng · Anthropic</td><td><b>Tool Use</b></td></tr>
+    <tr><td>OpenAI · Gemini</td><td><b>Function Calling</b></td></tr>
+    <tr><td><b class="g">이 책</b></td><td><b class="g">Tool Calling</b></td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; <b>저자들의 선택 이유</b> &mdash; <b>tool</b>이 더 일반적이어서 <b>API와 원격 프록시까지</b> 아우른다. 그리고 <b class="g">calling</b>이 use보다 더 서술적이다 &mdash; <b class="r">LLM은 함수 이름과 인자를 생성만 하고 실제 호출은 클라이언트 코드가 해야 한다</b>는 점을 상기시켜 주기 때문.</div>
+  <aside>이름 하나에 이 패턴의 핵심 설계가 담겨 있다는 게 재미있습니다.</aside>
+</section>
+
+<!-- 10 7.4 요약 -->
+<section class="slide" data-part="마무리">
+  <h2>&#128203; 7.4 <span class="g">요약</span> &mdash; 언제 무엇을</h2>
+  <table class="t">
+    <tr><th style="width:20%">패턴</th><th>활용 시나리오</th></tr>
+    <tr><td><b>21</b> 툴 호출</td><td>LLM이 필요한 단계를 말하는 데 그치지 않고 <b class="g">그 단계를 실제로 수행하게</b> 하고 싶을 때 &mdash; 실시간 최신 지식, <b>트랜잭션형 엔터프라이즈 시스템</b> 연결, 계산 수행, 최적화 솔버</td></tr>
+    <tr><td><b>22</b> 코드 실행</td><td><b>그래프 만들기 · 이미지에 주석 달기 · 데이터베이스 갱신</b></td></tr>
+    <tr><td><b>23</b> 멀티에이전트</td><td><b>복잡한 추론 · 다단계 문제 해결 · 협업적 콘텐츠 생성 · 적대적 검증 · 전문 도메인 통합 · 자기 개선 시스템</b></td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">이 패턴들은 모델을<br><span class="y">수동적 정보 처리기</span>에서<br><span class="y">능동적 참여자</span>로 바꿔 놓는다</div>
+  <div class="hl" style="margin-top:12px">&#128161; 저자의 표현 &mdash; 이 세 패턴은 <b class="g">AI 능력의 최전선</b>을 대표합니다. 단일 에이전트가 홀로 일해서는 <b>불가능했을 정교한 결과</b>를 낼 수 있게 되는 것입니다.</div>
+  <aside>동시에 이 장은 그 대가를 가장 솔직하게 적은 장이기도 합니다.</aside>
+</section>
+
+<!-- 11 앞 장과의 연결 -->
+<section class="slide" data-part="마무리">
+  <h2>&#128279; 앞 장의 패턴들이 <span class="g">여기서 재료가 된다</span></h2>
+  <table class="t">
+    <tr><th style="width:28%">앞 장 패턴</th><th>7장에서의 쓰임</th></tr>
+    <tr><td><b>2장 패턴 2</b> 문법</td><td>Tool Calling은 <b class="g">Grammar의 확장</b>이다 &mdash; 툴 호출 토큰을 정형으로 내보내는 것</td></tr>
+    <tr><td><b>5장 패턴 13</b> 생각의 사슬</td><td>CoT + Tool Calling = <b class="g">ReAct</b>. 단계를 나열만 하지 않고 <b>실제로 수행</b>하고 결과에 따라 행동을 바꾼다</td></tr>
+    <tr><td><b>6장 패턴 18</b> 리플렉션</td><td>툴 호출 실패나 컴파일 오류를 <b class="g">모델에 돌려보내 고치게</b> 한다</td></tr>
+    <tr><td><b>3장 패턴 6</b> 기본 RAG</td><td>툴은 RAG보다 <b>더 동적</b>이다 &mdash; RAG는 <b>미리 색인해 둘 수 있는</b> 출처만, 툴은 <b class="g">현재 뉴스·날씨·주가</b>까지</td></tr>
+    <tr><td><b>9장 패턴 32</b> 가드레일</td><td>프롬프트 인젝션 방어 &mdash; 이 장에서 <b>여섯 가지 설계 패턴</b>을 본다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; <b>Tool Calling과 Reflection</b>은 보통 GenAI 애플리케이션이 <b class="g">에이전틱 애플리케이션이 되는 문턱 행동</b>으로 여겨집니다 &mdash; 행동하고, 피드백에 반응하고, 행동을 조정하는 능력.</div>
+  <aside>7장은 새 재료를 더하는 장이 아니라 앞의 재료들을 조립하는 장에 가깝습니다.</aside>
+</section>
+
+<!-- 12 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#129302; 말에서 <span class="g">행동으로</span></h1>
+    <div class="big" style="margin-top:24px"><span class="y">값 몇 개를 넘기고</span> (21)<br><span class="y">코드를 넘기고</span> (22)<br><span class="y">일을 나눈다</span> (23)<br><br><small>단 &mdash; <b>사슬이 길수록 성공률은 곱셈으로 깎인다</b></small></div>
+    <p class="sub" style="margin-top:22px">7장 서론 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 21 툴 호출</b></p>
+  </div>
+  <aside>다음 장(8장)은 비용·지연시간·자원입니다. 소규모 언어 모델, 프롬프트 캐싱, 인퍼런스 최적화 등이에요.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>
