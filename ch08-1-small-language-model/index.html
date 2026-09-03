@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>패턴 24 소형 언어 모델 — Small Language Model</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 8 &middot; Pattern 24</div>
+    <h1 style="margin:18px 0">소형 언어 <span class="g">모델</span></h1>
+    <p class="sub">Small Language Model &mdash; <b>품질을 지나치게 희생하지 않고</b> 작은 모델을 쓰는 기법 묶음</p>
+  </div>
+  <aside>패턴 하나가 아니라 세 가지 기법의 묶음이라는 점이 이 절의 특징입니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 8.1</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>8.1.1 문제</b> &mdash; GPU 요구사항과 느림</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>8.1.2 해법</b> &mdash; 증류 &middot; 양자화 &middot; 추측 디코딩</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>8.1.3 예제</b> &mdash; 파이썬 문서화 SLM 만들기</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>8.1.4 고려사항 &middot; 한계 &middot; 대안</b></span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>8.1.5 참고문헌</b></span></div>
+  </div>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell"><small>옵션 1</small><b class="g">증류</b><small>지식 범위 &darr;</small></div>
+    <div class="cell"><small>옵션 2</small><b class="g">양자화</b><small>정밀도 &darr;</small></div>
+    <div class="cell"><small>옵션 3</small><b class="g">추측 디코딩</b><small>지연 시간 &darr;</small></div>
+  </div>
+  <div class="hl">&#128161; <b>셋의 성격이 다릅니다</b> &mdash; 증류는 <b class="r">지식을 버리고</b>, 양자화는 <b class="gold">정밀도를 버리고</b>, 추측 디코딩은 <b class="g">아무것도 버리지 않는 대신 복잡도를 늘립니다.</b></div>
+  <aside>무엇을 대가로 내주는지가 선택의 기준입니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="8.1.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">8.1.1 문제</h2>
+    <div class="who">GPU 요구사항과 느림</div>
+  </div>
+  <aside>설명을 단순하게 하려고 이 절은 로컬에서 직접 돌린다고 가정합니다.</aside>
+</section>
+
+<!-- 4 GPU 요구사항 -->
+<section class="slide" data-part="8.1.1 문제">
+  <h2>&#128176; GPU <span class="r">요구사항</span></h2>
+  <p>프런티어 LLM을 자체 하드웨어에서 돌리려면 <b class="r">최신 GPU와 메모리가 넉넉한 VM</b>이 필요하다. 하이퍼스케일러(AWS &middot; Azure &middot; GCP &middot; OCI) 위에 있다면 이 요구사항은 <b class="r">높은 청구서와 물량 부족</b>으로 돌아온다 &mdash; 집필 시점 기준 하이퍼스케일러는 <b class="r">원하는 하드웨어가 동나는 일이 예사</b>다.</p>
+  <div class="big">Meta Llama 4 Scout &mdash;<br><span class="r">80GB H100 GPU 4장</span><br>단일 인스턴스 <span class="r">시간당 10달러 초과</span><br><small>2025년 6월 기준</small></div>
+  <div class="hl" style="margin-top:16px">&#128161; <b>API로 부르면 해결되나?</b> 기계를 직접 운영할 필요는 없어지지만 <b class="r">비용과 가용성 문제가 사라지지는 않습니다.</b> 메모리와 물량 부족을 <b class="g">내가 관리하느냐 제공자가 관리하느냐</b>가 달라질 뿐입니다.</div>
+  <div class="warn">&#128209; 그래서 이 절의 해법은 <b class="g">완전 관리형 원격 모델만 쓰는 경우에도 그대로 적용</b>됩니다 &mdash; 호스팅되는 SLM 버전으로 갈아타면 됩니다.</div>
+  <aside>자체 호스팅이든 API든 결국 같은 제약에 부딪힙니다.</aside>
+</section>
+
+<!-- 5 그냥 작은 모델 쓰면? -->
+<section class="slide" data-part="8.1.1 문제">
+  <h2>&#10060; 그냥 작은 모델을 쓰면 <span class="r">안 되나</span></h2>
+  <p>작업이 쉽다면 그럴 수도 있다. 그러나 <b class="r">작은 모델은 복잡한 작업에서 자주 무너진다.</b> 파이썬 코드의 문서를 생성해 보자.</p>
+  <pre># 작은 모델에게는 버거울 수 있는 복잡한 프롬프트
+prompt = f"""Below is a Python code snippet. Please generate
+comprehensive documentation for it.
+
+Code:
+{code_example}
+
+Documentation:"""</pre>
+  <div class="grid2" style="margin-top:14px">
+    <div class="box"><b class="g">Gemma 3 27B &mdash; 잘 해낸다</b><br><br><small>코드에 문서를 <b class="g">붙여 준다</b> &mdash; 인자와 반환값까지</small>
+      <pre style="font-size:.72em">@dataclass
+class Task:
+  """
+  Represents a single task.
+  <b class="g">Attributes:</b>
+  id (int): The unique identifier of the task.
+  title (str): The title of the task.
+  completed (bool, optional): Whether the
+    task is completed. Defaults to False.
+  tags (List[str], optional): A list of tags
+    associated with the task.
+  """</pre></div>
+    <div class="box" style="border-color:var(--red)"><b class="r">Gemma 3 1B &mdash; 밋밋한 설명뿐</b><br><br><small>코드 <b class="r">바깥에서 요약만</b> 한다</small><br><br>
+      <i>"이 코드는 <code>Task</code> 객체 컬렉션을 관리하는 <code>TaskManager</code> 클래스를 정의한다. 작업을 추가 &middot; 조회 &middot; 삭제 &middot; 목록화하는 메서드를 제공한다.…<code>add_task</code> 메서드는 <code>tasks</code> 딕셔너리에 새 작업을 추가한다.…"</i></div>
+  </div>
+  <div class="warn" style="margin-top:14px">&#128161; <b>차이의 핵심</b> &mdash; 27B는 <b class="g">코드 안에 들어가는 docstring</b>을 썼고, 1B는 <b class="r">코드에 대한 감상문</b>을 썼습니다. 후자는 붙여 넣을 수가 없습니다.</div>
+  <aside>그냥 작은 모델로 바꾸는 것만으로는 같은 품질을 얻을 수 없습니다.</aside>
+</section>
+
+<!-- 6 느림 -->
+<section class="slide" data-part="8.1.1 문제">
+  <h2>&#128034; 느림 &mdash; <span class="r">파라미터가 많으면 지연이 크다</span></h2>
+  <p>앞의 예에서 큰 LLM은 <b>다음 토큰 하나</b>를 생성할 때마다 10억이 아니라 <b class="r">270억 개의 파라미터를 계산</b>해야 한다.</p>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:50%">모델 <small>(같은 하드웨어 &mdash; A100-40GB GPU 2장)</small></th><th>초당 토큰 수</th></tr>
+    <tr><td>Gemma 3 <b>27B</b></td><td><b class="r">초당 3.26 토큰</b></td></tr>
+    <tr><td>Gemma 3 <b>1B</b></td><td><b class="g">초당 8.82 토큰</b></td></tr>
+  </table>
+  <div class="hl" style="margin-top:16px">&#9989; <b>SLM의 이점은 속도만이 아니다</b><br>
+    &bull; 응답 지연이 <b class="g">낮다</b><br>
+    &bull; <b class="g">더 적은 하드웨어</b>로 충분하므로 비용 효율이 좋다<br>
+    &bull; 크기가 작으니 <b class="g">배포도 쉽고</b> 하드웨어를 <b class="g">구하기도 쉽다</b><br>
+    &bull; 경우에 따라 <b class="g">스마트폰 같은 엣지 디바이스</b>에서도 돌릴 수 있다</div>
+  <div class="big" style="margin-top:16px">응답 품질을 타협하지 않으면서<br><span class="y">SLM을 쓸 방법이 있을까?</span></div>
+  <aside>이것이 패턴 24의 질문입니다.</aside>
+</section>
+
+<!-- 7 PART 2 -->
+<section class="slide" data-part="8.1.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">8.1.2 해법</h2>
+    <div class="who">세 가지 선택지</div>
+  </div>
+  <aside>보통은 프런티어 모델로 프로토타입을 만든 뒤 작은 것으로 바꾸려 시도하게 됩니다.</aside>
+</section>
+
+<!-- 8 세 선택지 -->
+<section class="slide" data-part="8.1.2 해법">
+  <h2>&#9989; 세 가지 <span class="g">선택지</span></h2>
+  <table class="t">
+    <tr><th style="width:20%">옵션</th><th style="width:38%">무엇을 하나</th><th>대가</th></tr>
+    <tr><td><b class="g">1. 증류</b><br><small>distillation</small></td><td>모델의 <b>지식 범위를 좁혀</b> 크기를 줄인다. 작은 모델은 <b class="g">내 애플리케이션에 필요한 작업만</b> 한다</td><td><b class="r">일반성을 잃는다</b></td></tr>
+    <tr><td><b class="g">2. 양자화</b><br><small>quantization</small></td><td>모델 파라미터의 <b>정밀도를 낮춰</b> 메모리를 덜 쓰게 한다</td><td><b class="gold">정확도를 아주 조금</b> 양보</td></tr>
+    <tr><td><b class="g">3. 추측 디코딩</b><br><small>speculative decoding</small></td><td>작은 모델과 큰 모델을 <b>한 쌍으로</b> 쓴다. <b class="g">정확도 손해 없이</b> 지연 시간을 줄인다</td><td><b class="gold">복잡도가 늘어난다</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:16px">&#10060; <b>다루지 않는 대안 &mdash; 모델 프루닝</b>(model pruning)<br>지연 시간을 줄이는 또 다른 방법이지만, <b class="r">여기 세 선택지보다 결과 품질이 떨어지는 편</b>이라 이 장에서는 다루지 않는다. 다른 대안들과 달리 프루닝은 <b class="r">LLM 성능에 상당한 타격</b>을 준다.</div>
+  <div class="hl">&#128161; 저자가 <b>왜 안 쓰는지까지 적어 둔</b> 대안입니다. 이런 명시적 배제는 드물어서 기억해 둘 만합니다.</div>
+  <aside>세 선택지는 단독으로도, 조합해서도 씁니다.</aside>
+</section>
+
+<!-- 9 증류 개념 -->
+<section class="slide" data-part="8.1.2 해법">
+  <h2>&#127891; 옵션 1 &mdash; <span class="g">증류</span>의 발상</h2>
+  <div class="hl">&#128188; 비즈니스 애플리케이션의 LLM 사용 사례 대부분은 <b class="g">지식 범위가 좁다</b> &mdash; 비정형 데이터에서 정보 추출, 아주 한정된 주제의 질의응답. <b class="r">LLM이 학습한 세계 지식 전체가 필요한 경우는 보통 없다.</b></div>
+  <div class="big" style="margin-top:16px">필요 없는 작업들을<br><span class="y">전부 잊게 놔둔다면</span><br>한정된 파라미터를 <span class="y">내가 신경 쓰는 작업</span>에<br>집중시킬 수 있다</div>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell" style="border-color:var(--gold)"><small>큰 모델</small><b class="gold">교사<br>teacher</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>행동 &middot; 출력 &middot;<br>의사결정 패턴</small><b>흉내 내게<br>유도</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>작은 모델</small><b class="g">학생<br>student</b></div>
+  </div>
+  <div class="warn" style="margin-top:16px">&#128218; <b>출처</b> &mdash; 제프리 힌턴 &middot; 오리올 비니알스 &middot; 제프 딘, <i>"Distilling the Knowledge in a Neural Network"</i> (<b class="g">2015</b>). 오늘날 ML에서 널리 쓰이는 기법의 <b>토대</b>가 됐다.</div>
+  <div class="hl">&#128161; <b>핵심 장치</b> &mdash; 고정된 정답을 주는 대신 <b class="g">교사 모델이 생성한 토큰을 작은 모델의 기대 출력으로 삼는다.</b> 학습 중에는 큰 모델의 <code>temperature</code>로 확률 분포를 제어할 수 있다.</div>
+  <aside>그림 8-1이 이 교사-학생 워크플로를 그린 것입니다.</aside>
+</section>
+
+<!-- 10 왜 확률분포를 베끼나 -->
+<section class="slide" data-part="8.1.2 해법">
+  <h2>&#128161; 왜 "정답"이 아니라 <span class="g">"교사의 확률분포"</span>를 베끼나</h2>
+  <div class="hl">&#128221; <b>비유</b> &mdash; 수학 선생님이 <b>정답만 알려 주는 경우</b>와 <b class="g">"나는 이 문제 답이 3번일 확률 60%, 1번 20%, 4번 10%로 본다"</b>고 사고 과정을 알려 주는 경우. 후자가 훨씬 많은 정보를 전달합니다. <b class="g">오답 중에서도 어떤 게 더 그럴듯한지까지</b> 배우니까요.</div>
+  <div class="big" style="margin-top:16px">이것이 <span class="y">"암흑 지식"</span><br><small>dark knowledge</small></div>
+  <p style="margin-top:16px">큰 모델은 다음 토큰으로 무엇이 올지 <b class="g">모든 후보에 확률을 매긴다.</b> 정답 하나만 베끼면 이 풍부한 정보가 버려진다. 그래서 증류는 <b class="g">확률 분포 전체를 베끼게</b> 한다.</p>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:26%">장치</th><th>역할</th></tr>
+    <tr><td><b class="g">온도</b><br><small>temperature</small></td><td>큰 모델이 <b class="r">"3번 99.9%"</b>처럼 너무 확신하면 나머지 정보가 사실상 0이 된다. 온도로 나누면 분포가 <b class="g">납작해져</b> "3번 60%, 1번 20%…"처럼 <b class="g">차이가 드러난다</b> &mdash; 배울 게 생긴다</td></tr>
+    <tr><td><b class="g">KL 발산</b><br><small>KL divergence</small></td><td><b>두 확률 분포가 얼마나 다른지</b>를 재는 자. 학생의 분포가 교사와 같아질수록 <b class="g">0에 가까워진다</b>. 학습은 이 값을 최소화하는 방향</td></tr>
+  </table>
+  <ul class="pts">
+    <li><b class="g">로짓</b>(logit) &mdash; softmax를 거치기 전, 모델이 각 토큰에 매긴 <b>원점수</b></li>
+    <li><b class="g">softmax</b> &mdash; 로짓을 <b>합이 1인 확률</b>로 바꾸는 함수</li>
+    <li><b class="g">alpha</b> &mdash; "교사 흉내"와 "정답 맞히기" 중 어디에 무게를 둘지 정하는 손잡이</li>
+  </ul>
+  <div class="big" style="margin-top:14px">증류는 정답을 베끼는 게 아니라<br><span class="y">교사의 망설임까지 통째로</span> 베끼는 것</div>
+  <aside>이 한 줄이 증류의 전부라고 해도 됩니다.</aside>
+</section>
+
+<!-- 11 학습 과정 코드 -->
+<section class="slide" data-part="8.1.2 해법">
+  <h2>&#9881;&#65039; 증류 <span class="g">학습 과정</span></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b class="g">교사 응답 생성</b> &mdash; <code>torch.no_grad()</code>로 <b>순전파에만 집중</b>. 큰 모델은 기울기를 계산 &middot; 갱신할 필요가 없어 자원을 아끼고 추론이 빨라진다</span></div>
+  </div>
+  <pre>with <b class="g">torch.no_grad()</b>:
+    teacher_outputs = self.teacher_model(**inputs)
+    teacher_logits = teacher_outputs.logits</pre>
+  <div class="steps" style="margin-top:10px">
+    <div class="st"><span class="n">2</span><span class="t"><b class="g">학생 응답 생성</b> + 표준 언어 모델링 손실 확보</span></div>
+  </div>
+  <pre>student_outputs = model(**inputs)
+student_logits = student_outputs.logits
+<b class="g">task_loss = student_outputs.loss</b></pre>
+  <div class="steps" style="margin-top:10px">
+    <div class="st"><span class="n">3</span><span class="t"><b class="g">온도 스케일링</b> &mdash; 두 분포를 더 비교 가능하게. 온도가 낮으면 확신이 높은 쪽으로 몰리고, 높으면 평평해진다. <b class="gold">급격한 갱신 요동</b>을 막아 준다</span></div>
+  </div>
+  <pre>student_logits = student_logits <b class="g">/ self.temperature</b>
+teacher_logits = teacher_logits <b class="g">/ self.temperature</b></pre>
+  <aside>여기까지가 준비 단계입니다. 다음 슬라이드에서 손실을 계산합니다.</aside>
+</section>
+
+<!-- 12 KL 발산 + 누락 -->
+<section class="slide" data-part="8.1.2 해법">
+  <h2>&#128207; 유사도 측정 &mdash; <span class="g">KL 발산</span></h2>
+  <div class="warn">&#128204; <b>원본 수식 이미지 누락</b><br>원서 이 자리에 <b>KL 발산의 정의 수식</b>이 그림으로 들어가 있었으나 원본 파일 반출 과정에서 떨어져 나갔습니다. <b class="r">임의로 수식을 지어내지 않고</b> 원문이 이어서 설명하는 <b class="g">항의 구성</b>만 옮깁니다.<br><br>
+    &bull; <b class="g">첫 번째 항(엔트로피)</b> &mdash; <b>P의 로그 확률</b>로 계산된다<br>
+    &bull; <b class="g">두 번째 항(교차 엔트로피)</b> &mdash; <b>Q의 확률</b>을 사용한다</div>
+  <p style="margin-top:14px">여기서 <code>log_softmax</code> 항이 <b class="g">P(학생의 분포)의 로그 확률</b>을 제공하며, 덕분에 계산이 효율적으로 이뤄진다.</p>
+  <pre>distillation_loss = torch.nn.functional.kl_div(
+    <b class="g">torch.log_softmax(student_logits, dim=-1)</b>,   # 학생
+    <b class="gold">torch.softmax(teacher_logits, dim=-1)</b>,        # 교사
+    reduction=<b class="g">'batchmean'</b>
+) * <b class="g">(self.temperature ** 2)</b></pre>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:30%">요소</th><th>이유</th></tr>
+    <tr><td><b class="g">학생 = log_softmax<br>교사 = softmax</b></td><td>PyTorch <code>kl_div()</code> 구현 방식과 얽힌 <b>수학적 이유</b>. 교사에 <code>softmax</code>를 쓰는 것은 그것이 <b class="g">유효한 확률 분포(합이 1)</b>임을 보장하기 위함 &mdash; KL 발산의 수학적 정의와도 맞아떨어진다</td></tr>
+    <tr><td><code>'batchmean'</code></td><td>학습 중 <b>배치 전체에 걸쳐 손실을 평균</b></td></tr>
+    <tr><td><b class="g">온도의 제곱</b>을 곱함</td><td>온도 스케일링은 분포를 부드럽게 만들어 <b class="r">지나친 확신을 막는다.</b> 어떤 토큰을 1에 가깝게 예측하던 것을 <b class="g">0.6 &middot; 0.2 &middot; 0.1</b> 식으로 눌러 주면, 교사가 가진 <b class="g">대안 토큰들에 대한 "암흑 지식"이 보존</b>되어 학습 신호가 풍부해진다</td></tr>
+  </table>
+  <aside>온도의 제곱을 곱하는 이유를 원문이 명시적으로 설명하는 드문 대목입니다.</aside>
+</section>
+
+<!-- 13 두 손실 합치기 + 메타루프 -->
+<section class="slide" data-part="8.1.2 해법">
+  <h2>&#9878;&#65039; 두 손실 <span class="g">합치기</span></h2>
+  <pre>loss = <b class="gold">(1 - self.alpha) * task_loss</b> + <b class="g">self.alpha * distillation_loss</b></pre>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:22%">alpha</th><th>의미</th></tr>
+    <tr><td><b class="g">alpha = 1</b></td><td><b>증류 손실만</b> 쓴다 &mdash; 학생이 <b class="g">교사에게서 배운다</b></td></tr>
+    <tr><td><b class="gold">alpha = 0</b></td><td><b>작업 손실만</b> 쓴다 &mdash; 학생이 <b class="gold">데이터에서 배운다</b></td></tr>
+  </table>
+  <p style="margin-top:14px">합쳐진 손실로 학생 모델을 갱신하고, 학습이 원하는 손실 최솟값에 도달할 때까지 다음 배치를 처리한다.</p>
+  <div class="hl" style="margin-top:16px">&#128260; <b>메타 증류 루프</b> &mdash; 증류는 <b class="g">반복 과정</b>으로 적용할 수 있다. 큰 모델에서 <b>훨씬 작은 버전</b>으로 가려면, 성능을 유지하면서 크기를 점진적으로 줄이기 위해 <b class="g">여러 라운드의 증류</b>가 필요할 수 있다.</div>
+  <div class="warn" style="margin-top:14px">&#128101; <b>앙상블 증류</b>(ensemble distillation) &mdash; Zeyuan Allen-Zhu &middot; Yuanzhi Li (2020). <b class="g">여러 교사의 지식을 하나의 학생에게</b> 증류할 수 있음을 보였다.<br><br>
+    쓰는 이유 셋 &mdash; ① 교사마다 답의 <b>서로 다른 측면</b>을 조금씩 보여 줄 때 ② 작업 자체에 <b>불확실성이 클</b> 때 ③ <b class="g">여러 전문 모델을 하나의 범용 모델로 압축</b>해 프로덕션 구성을 단순화할 때</div>
+  <div class="hl">&#128161; <b>실무 흐름</b> &mdash; 첫 버전을 <b>프런티어 모델로 프로토타입 배포</b> &rarr; 들어오는 <b class="g">프롬프트를 로깅</b> &rarr; 그 유형의 프롬프트에서 잘 동작하는 <b class="g">증류 모델을 만든다.</b></div>
+  <aside>"프롬프트의 구체적 유형을 식별할 수 있는 한" 증류가 효과적이라는 단서가 붙습니다.</aside>
+</section>
+
+<!-- 14 양자화 개념 -->
+<section class="slide" data-part="8.1.2 해법">
+  <h2>&#128290; 옵션 2 &mdash; <span class="g">양자화</span></h2>
+  <div class="big">700억 파라미터 모델을 FP32로 두면<br>가중치 저장만으로 <span class="r">약 280GB</span></div>
+  <p style="margin-top:16px">이 정밀도 수준은 <b>학습 중에는 수학적으로 편리</b>하지만 <b class="r">추론에는 대개 불필요</b>하며, 배포 선택지를 좁히는 상당한 메모리 부담을 만든다.</p>
+  <div class="hl" style="margin-top:14px">&#128161; <b>증류와의 결정적 차이</b> &mdash; 증류가 <b class="r">모델의 지식 폭 일부를 효율과 맞바꾸는</b> 반면, 양자화는 <b class="g">원본 모델의 지식과 능력을 거의 전부 유지하면서</b> 하드웨어 제약을 해결한다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:34%">형식</th><th>가중치 하나당</th></tr>
+    <tr><td><b>FP32</b> (32비트 부동소수점)</td><td><b class="r">4바이트</b></td></tr>
+    <tr><td><b class="g">INT8</b> (8비트 정수)</td><td><b class="g">1바이트</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#9878;&#65039; <b>트레이드오프</b> &mdash; 정밀도가 낮아지면 <b class="g">메모리는 줄고 계산은 빨라지지만</b> <b class="r">정확도가 떨어질 수 있다.</b> 그래도 저하가 극적이지는 않은 편 &mdash; <b>BLEU 점수 같은 지표가 조금 낮아지는 정도</b>라, <b class="gold">능력이 살짝 떨어지는 모델을 쓰는 것</b>과 비슷하다.</div>
+  <aside>그림 8-2가 파라미터 양자화의 예시를 보여 줍니다.</aside>
+</section>
+
+<!-- 15 양자화 시점 -->
+<section class="slide" data-part="8.1.2 해법">
+  <h2>&#128197; 양자화를 <span class="g">언제 하나</span> &mdash; 세 시점</h2>
+  <table class="t">
+    <tr><th style="width:20%">시점</th><th style="width:24%">방식</th><th>내용</th></tr>
+    <tr><td rowspan="2"><b class="g">학습 전</b><br><small>사전학습 최적화</small></td><td><b>저정밀도 변환</b></td><td>학습 시작 전 낮은 정밀도로 변환 &rarr; <b class="g">학습 단계 메모리 &darr;, 학습 비용 절감.</b> 다만 <b class="r">GPU가 저정밀도 연산을 지원해야</b> 효과를 온전히 누린다</td></tr>
+    <tr><td><b class="g">QAT</b><br><small>양자화 인식 학습</small></td><td>순전파에 <b class="g">가짜 양자화 연산</b>을 끼워 넣는다. 모델이 학습 중에 양자화 효과를 직접 겪으며 <b class="g">그에 강건해지도록 "배운다"</b>. 양자화 오차를 최소화하도록 파라미터를 적응시킬 수 있어 <b class="g">학습 후 양자화보다 결과가 좋은 경우가 많다.</b> 여러 해 동안 프로덕션에서 쓰여 왔고, <b>구글 딥마인드</b>의 최근 연구가 놀라운 결과를 보였다</td></tr>
+    <tr><td rowspan="2"><b class="g">학습 중</b></td><td><b>혼합 정밀도 학습</b></td><td>연산별로 다른 정밀도 &mdash; 계산은 효율을 위해 <b>FP16</b>, 가중치 갱신은 안정성을 위해 <b>FP32</b>로 누적. 지원 프레임워크: <b>DeepSpeed</b>(MS), <b>Megatron-LM</b>(NVIDIA)</td></tr>
+    <tr><td><b>동적 양자화</b></td><td>활성값 통계를 바탕으로 학습 중에 양자화 파라미터를 조정 &rarr; <b class="g">매우 중요한 활성값은 덜 압축하고, 덜 중요한 것은 더 강하게</b>. PyTorch가 여러 해 동안 훌륭히 지원</td></tr>
+    <tr><td><b class="g">학습 후</b><br><small>PTQ</small></td><td colspan="2">다음 슬라이드에서 <b class="g">세 방식</b>을 따로 다룹니다</td></tr>
+  </table>
+  <aside>QAT는 "쓸 수 있다면 매력적인 대안"으로 8.1.4에서 다시 언급됩니다.</aside>
+</section>
+
+<!-- 16 학습 후 양자화 -->
+<section class="slide" data-part="8.1.2 해법">
+  <h2>&#128295; 학습 후 양자화 &mdash; <span class="g">세 방식</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">방식</th><th>내용</th></tr>
+    <tr><td><b class="g">가중치 전용 양자화</b><br><small>weight-only</small></td><td><b class="g">모델 가중치만</b> 양자화하고 <b>활성값은 높은 정밀도로</b> 둔다. 학습 가능한 파라미터는 낮은 정밀도로 저장하되, 네트워크를 흐르는 계산값은 FP32 같은 높은 정밀도로 계산.<br>&rarr; 표준 기법: <b class="g">GPTQ</b>(GPT quantization), <b class="g">AWQ</b>(activation-aware weight quantization)</td></tr>
+    <tr><td><b class="g">전체 모델 양자화</b><br><small>full-model</small></td><td><b>가중치와 활성값을 모두</b> 양자화. <b class="g">효율 이득이 가장 크지만</b> <b class="r">품질 저하도 더 클 수</b> 있다.<br>&rarr; <b>정적</b>(보정 데이터셋으로 파라미터 결정) 또는 <b>동적</b>(추론 중 즉석에서 계산)</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128300; <b>더 고급인 학습 후 기법</b></div>
+  <ul class="pts">
+    <li><b class="g">QLoRA</b>(quantized low-rank adaptation) &mdash; 원본 베이스 모델과 함께 동작하는 어댑터를 파인튜닝하는 <b>LoRA 개념 위에</b> 얹은 것. <b class="g">이미 양자화된 모델을 효율적으로 파인튜닝</b>하는 데 쓸 수 있다</li>
+    <li><b class="g">SpQR</b>(sparse-quantized representation) &mdash; <b>양자화와 가중치 희소화를 결합</b>한다</li>
+    <li><b class="g">BitNet</b> &mdash; 양자화를 <b class="g">이진 또는 삼진 표현</b>까지 밀어붙인 극단적 저비트 접근. 마이크로소프트는 <b class="g">모델의 1비트 양자화</b>를 발표했다</li>
+  </ul>
+  <div class="warn">&#128209; <b>패턴 15 어댑터 튜닝</b>(5장)이 QLoRA의 바탕입니다. 5장을 봤다면 LoRA는 이미 아는 개념일 겁니다.</div>
+  <aside>세 고급 기법은 이름만 알아 둬도 충분합니다.</aside>
+</section>
+
+<!-- 17 BitsAndBytes -->
+<section class="slide" data-part="8.1.2 해법">
+  <h2>&#128187; 방법 &mdash; <span class="g">BitsAndBytesConfig</span></h2>
+  <pre>quantization_config = BitsAndBytesConfig(
+    <b class="g">load_in_4bit=True</b>,
+    <b class="g">bnb_4bit_compute_dtype=torch.float16</b>,
+    <b class="g">bnb_4bit_quant_type="nf4"</b>,
+    <b class="g">bnb_4bit_use_double_quant=True</b>,
+)</pre>
+  <table class="t" style="margin-top:12px">
+    <tr><th style="width:34%">파라미터</th><th>역할</th></tr>
+    <tr><td><code>load_in_4bit=True</code></td><td>가중치를 표준 32비트나 16비트에서 <b class="g">단 4비트로 압축</b> &rarr; 메모리 요구량 <b class="g">약 8배 감소</b></td></tr>
+    <tr><td><code>compute_dtype=float16</code></td><td>계산은 <b>16비트 부동소수점</b>으로 &mdash; <b class="g">정확도와 속도의 균형</b></td></tr>
+    <tr><td><code>quant_type="nf4"</code></td><td><b>Normal Float 4</b> &mdash; 언어 모델에 특화되어 <b class="g">가중치의 통계적 성질을 더 잘 보존</b>하도록 최적화된 형식</td></tr>
+    <tr><td><code>use_double_quant=True</code></td><td><b class="g">양자화 상수 자체를 다시 양자화</b> &mdash; 성능에 큰 영향 없이 메모리를 추가로 줄인다</td></tr>
+  </table>
+  <pre style="margin-top:12px">quantized_model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    <b class="g">quantization_config=quantization_config</b>,
+    device_map="auto", torch_dtype=torch.float16, token=hf_token
+)</pre>
+  <div class="hl">&#9989; 이후에는 <b class="g">다른 허깅페이스 모델과 똑같이</b> 씁니다 &mdash; <code>quantized_model.generate(...)</code>로 로컬 추론하거나, 저장해서 배포하면 됩니다.</div>
+  <div class="warn">&#128161; <b>실무 권고</b> &mdash; 모델을 직접 호스팅하기로 했다면 <b class="g">그 모델의 4비트 버전이 정확도를 얼마나 잃는지 확인해 볼 가치가 있다.</b> 손해가 크지 않다면 비용과 지연 시간을 상당히 아낄 수 있다.</div>
+  <aside>측정해 보라는 것이 요점입니다. 대개 손해가 생각보다 작습니다.</aside>
+</section>
+
+<!-- 18 추측 디코딩 -->
+<section class="slide" data-part="8.1.2 해법">
+  <h2>&#127939; 옵션 3 &mdash; <span class="g">추측 디코딩</span></h2>
+  <div class="hl">&#127919; <b>언제 쓰나</b> &mdash; 목표가 <b class="g">지연 시간을 낮추는 것</b>인데 <b class="r">모델 정확도는 희생하고 싶지 않을 때.</b> <b class="g">재학습이나 아키텍처 변경 없이</b> LLM을 가속할 수 있다.</div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="box" style="border-color:var(--gold)"><b class="gold">교사 모델</b><br><br>매우 정확한 출력을 내지만 <b class="r">계산 비용이 크고 상대적으로 느린</b> 정교한 LLM.<br><br><b class="g">토큰 생성의 기준(ground truth)</b> 역할</div>
+    <div class="box"><b class="g">학생 모델</b><br><br>더 작고 효율적이며 <b class="g">빠르지만 덜 정확할 수 있는</b> SLM.<br><br><b>교사 모델의 행동을 모방하도록 특별히 학습</b>된다 &mdash; 예: 30억 파라미터가 <b class="g">4,050억 파라미터</b>를 흉내 내도록</div>
+  </div>
+  <div class="steps" style="margin-top:14px">
+    <div class="st"><span class="n">1</span><span class="t"><b class="g">학생이 먼저</b> 토큰 시퀀스를 빠르게 제안한다</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b class="gold">교사가 학생의 제안을 병렬로 평가</b>해, 자신이라면 같은 시퀀스를 생성했을지 검증한다</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b class="g">동의하면</b> 시퀀스를 받아들여 곧바로 출력</span></div>
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">4</span><span class="t"><b class="r">동의하지 않으면</b> 정확도를 확보하기 위해 <b>표준적인 토큰 단위 생성 방식으로 되돌아간다</b></span></div>
+  </div>
+  <aside>이 검증 결과가 다음 단계를 결정합니다.</aside>
+</section>
+
+<!-- 19 왜 통하나 -->
+<section class="slide" data-part="8.1.2 해법">
+  <h2>&#129504; 추측 디코딩이 <span class="g">왜 통하나</span></h2>
+  <div class="big">모든 토큰이<br><span class="y">큰 모델의 계산력을 필요로 하지는 않는다</span></div>
+  <p style="margin-top:16px"><b>토큰의 난이도는 편차가 크다</b> &mdash; 흔한 단어나 뻔한 마무리처럼 <b class="g">단순하고 예측 가능한 토큰</b>은 작은 학생 모델도 안정적으로 만들어 내는 반면, <b class="r">복잡하거나 맥락 의존적인 토큰</b>은 교사의 고급 능력이 필요하다.</p>
+  <pre>Step 1:
+Student: "The [talented] [chef]"
+Teacher: <b class="g">&#10003; Accepts</b> (common phrase)
+
+Step 2:
+Student: "cooked [a] [delicious]"
+Teacher: <b class="g">&#10003; Accepts</b> (common food context)
+
+Step 3:
+Student: "[soup]"
+Teacher: <b class="r">&#10007; Rejects</b>
+Teacher generates: <b class="gold">"bouillabaisse"</b> (rare, specific word)
+
+Step 4:
+Student: "[for] [dinner]"
+Teacher: <b class="g">&#10003; Accepts</b> (common ending)</pre>
+  <div class="hl" style="margin-top:12px">&#9889; <b>속도가 빨라지는 두 이유</b> &mdash; ① 제안 토큰을 <b class="g">작은 LLM으로</b> 생성하고, 게다가 <b class="g">여러 토큰을 한 번에</b> 생성할 수 있다(검증해 줄 모델이 있으니 그럴 여유가 있다) ② <b class="g">예측 검증도 빠르며</b>, 작은 모델이 틀린 토큰만 고치면 된다</div>
+  <aside>그림 8-3이 이 한 번의 순전파를 그린 것입니다.</aside>
+</section>
+
+<!-- 20 vLLM 코드 + 비유 -->
+<section class="slide" data-part="8.1.2 해법">
+  <h2>&#128295; 방법 &mdash; <span class="g">vLLM</span></h2>
+  <pre>from vllm import LLM, SamplingParams
+prompts = ["The future of AI is"]
+sampling_params = SamplingParams(temperature=0.8, top_p=0.95)
+
+llm = LLM(
+    model=<b class="gold">"google/gemma-2-9b-it"</b>,        # 검증 &middot; 교정
+    tensor_parallel_size=1,
+    <b class="g">speculative_model="google/gemma-2-2b-it"</b>,  # 다음 토큰 예측
+    <b class="g">num_speculative_tokens=5</b>,
+)
+outputs = llm.generate(prompts, sampling_params)</pre>
+  <div class="hl" style="margin-top:12px">&#9989; 토큰 샘플링 &middot; 큰 모델로 검사 &middot; 교정은 <b class="g">모두 서빙 프레임워크(vLLM)가 내부적으로 처리</b>합니다. 많은 LLM 배포 프레임워크가 어떤 형태로든 추측 디코딩을 지원합니다.</div>
+  <div class="warn" style="margin-top:14px">&#127760; <b>비유</b> &mdash; 번역 회사에서 <b>신입이 초벌 번역</b>을 빠르게 해 놓으면 <b class="g">베테랑이 읽으면서 확인</b>합니다. <b class="g">읽고 확인하는 건 처음부터 번역하는 것보다 훨씬 빠릅니다.</b> 틀린 문장만 베테랑이 다시 씁니다. 결과물의 품질은 <b class="g">베테랑이 전부 번역한 것과 똑같습니다</b> &mdash; 시간만 줄어든 거죠.</div>
+  <table class="t" style="margin-top:12px">
+    <tr><th style="width:30%">질문</th><th>답</th></tr>
+    <tr><td><b>왜 품질이 안 떨어지나</b></td><td>최종 출력은 <b class="g">항상 큰 모델이 승인한 토큰</b>뿐. 작은 모델이 틀리면 큰 모델이 자기 답으로 갈아 끼운다 &rarr; <b class="g">정확도는 큰 모델과 동일</b></td></tr>
+    <tr><td><b class="r">주의점</b></td><td>작은 모델이 자주 틀리면 <b class="r">버리는 계산이 늘어 오히려 느려질 수</b> 있다. <code>num_speculative_tokens</code>를 잘 맞춰야 한다</td></tr>
+  </table>
+  <div class="warn">&#128209; 추측 디코딩은 <b class="g">패턴 26(추론 최적화)</b>에서도 다룹니다 &mdash; 거기서는 "학생-교사"가 아니라 <b class="g">"초안-대상"</b>이라 부르는 이유까지 설명합니다.</div>
+  <aside>정확도를 큰 모델에 맡기고 속도만 작은 모델에서 빌려 오는 것입니다.</aside>
+</section>
+
+<!-- 21 PART 3 -->
+<section class="slide" data-part="8.1.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">8.1.3 예제</h2>
+    <div class="who">파이썬 문서화 SLM</div>
+  </div>
+  <aside>증류와 양자화를 두 단계로 이어 붙이는 예제입니다.</aside>
+</section>
+
+<!-- 22 두 단계 -->
+<section class="slide" data-part="8.1.3 예제">
+  <h2>&#128736;&#65039; 두 단계로 <span class="g">만든다</span></h2>
+  <div class="chain">
+    <div class="cell"><small>1단계 증류</small><b>120억 &rarr; 10억</b><small>파라미터</small></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>2단계 양자화</small><b class="g">32비트 &rarr; 4비트</b></div>
+  </div>
+  <div class="hl" style="margin-top:16px">&#128221; <b>학습 데이터 만들기</b> &mdash; 보통이라면 <b class="g">프런티어 모델로 배포하고 사용자 프롬프트를 로깅</b>해, SLM이 잘 처리해야 할 다양한 작업 집합을 확보합니다. <b>애플리케이션이 실제로 마주치는 입력</b>을 학습에 쓰는 것이죠.<br><br>다만 여기는 책이므로 지름길 &mdash; <b class="g">Anthropic의 Claude로 입력 프롬프트 1,000개를 생성</b>했습니다.</div>
+  <div class="plabel">생성용 프롬프트</div>
+  <pre>You are a helpful AI assistant that generates high-quality
+Python code examples.
+Generate a <b class="g">nontrivial but not too complex</b> Python code example.
+Focus on common programming patterns and best practices.
+Return only the code, with no documentation or explanation.
+Make sure the code is complete and <b class="g">limited to 500 tokens</b>.</pre>
+  <pre style="margin-top:10px">{
+  "examples": [ """import json\n   import logging\n   ...""", ... ],
+  "metadata": {
+    "num_examples": <b class="g">1000</b>,
+    "generated_at": "2025-05-30 09:58:41",
+    "model_used": "claude-3-7-sonnet-20250219"
+  }
+}</pre>
+  <div class="warn">&#128209; 원한다면 <b class="g">패턴 16 Evol-Instruct</b>(5장)로 지시를 <b>심화하고 더 복잡하게</b> 만들 수도 있습니다.</div>
+  <aside>실무에서는 로깅한 실제 프롬프트를 쓰는 게 정석입니다.</aside>
+</section>
+
+<!-- 23 증류 결과 -->
+<section class="slide" data-part="8.1.3 예제">
+  <h2>&#127891; Gemma <span class="g">증류하기</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">항목</th><th>설정</th></tr>
+    <tr><td><b class="gold">교사</b></td><td><b>Gemma 3 12B</b> &mdash; 이 작업을 꽤 잘한다</td></tr>
+    <tr><td><b class="g">학생</b></td><td><b>Gemma 3 1B</b></td></tr>
+    <tr><td><b class="r">하드웨어</b></td><td><b>NVIDIA A100-80GB GPU</b> &mdash; 효율적인 학습을 위해 <b class="r">교사와 학생을 둘 다 GPU 메모리에 올려야</b> 하므로 메모리가 큰 GPU가 필요</td></tr>
+    <tr><td><b>학습 시간</b></td><td>10에폭이 <b class="g">약 1시간</b></td></tr>
+  </table>
+  <div class="plabel" style="margin-top:14px">증류 후 SLM이 생성한 문서 — 눈에 띄게 좋아졌다</div>
+  <pre>def add_task(self, title: str, description: str,
+             tags: Optional[List[str]] = None) -&gt; Task:
+    """
+    Adds a new task to the task list.
+
+    <b class="g">Args:
+        title: The title of the task.
+        description: A description of the task.
+        tags: Optional[List[str]] of tags for the task.
+              If None, no tags are included.</b>
+    """
+    task = Task(id=self.next_id, title=title, ...)</pre>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; <b>그런데 여전히 느리다</b> &mdash; 모델 크기가 10억 파라미터로 비교적 작은데도 <b class="r">고정밀 가중치 때문에 추론이 느리다.</b> 테스트해 보니 <b class="r">수 분</b>의 추론 지연이 나왔다.</div>
+  <div class="hl">&#128161; <b>이것이 두 기법을 잇는 이유입니다</b> &mdash; 증류로 <b>파라미터 수</b>를 줄여도, <b class="r">가중치 하나하나가 여전히 32비트</b>면 계산이 무겁습니다.</div>
+  <aside>증류만으로는 절반만 해결됩니다.</aside>
+</section>
+
+<!-- 24 양자화 결과 -->
+<section class="slide" data-part="8.1.3 예제">
+  <h2>&#9889; 양자화 &mdash; <span class="g">수 분에서 19초로</span></h2>
+  <p>증류된 Gemma 3 1B를 <b>32비트 부동소수점 가중치</b>에서 <b class="g">4비트 정수 가중치</b>로 양자화했다.</p>
+  <div class="big" style="margin-top:16px">출력은 더 큰 모델과<br><span class="y">사실상 동일</span>했지만<br>추론은 <span class="r">수 분</span> &rarr; <span class="g">단 19초</span></div>
+  <div class="chain" style="margin-top:20px">
+    <div class="cell" style="border-color:var(--red)"><small>기성품</small><b class="r">Gemma 3 1B</b><small>밋밋한 설명</small></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>증류 후</small><b>품질 &#10003;</b><small>수 분</small></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>양자화 후</small><b class="g">품질 &#10003; 속도 &#10003;</b><small>19초</small></div>
+  </div>
+  <div class="hl" style="margin-top:20px">&#128161; <b>이 예제가 보여 주는 것</b> &mdash; 증류와 양자화는 <b class="g">서로 다른 병목을 친다</b>는 점입니다. 증류는 <b>"모델이 못한다"</b>를, 양자화는 <b>"모델이 느리다"</b>를 해결합니다. 둘을 이어 붙이면 <b class="g">120억 파라미터급 품질을 10억 파라미터 4비트 모델로</b> 낼 수 있습니다.</div>
+  <aside>전체 예제는 책의 GitHub 저장소에 있습니다.</aside>
+</section>
+
+<!-- 25 PART 4 한계 -->
+<section class="slide" data-part="8.1.4 고려사항">
+  <h2>&#9888;&#65039; 8.1.4 &mdash; <span class="r">한계</span></h2>
+  <table class="t">
+    <tr><th style="width:22%">기법</th><th>한계</th></tr>
+    <tr><td rowspan="2"><b class="g">증류</b></td><td><b class="r">일반성의 상실</b> &mdash; 학생 모델은 <b><i>학습한 작업에서만</i></b> 뛰어난 경우가 많고 <b class="r">교사의 폭넓은 능력은 희생</b>한다. 도메인 특화 앱이라면 감수할 만하지만, 일반적인 환경에서는 특히 <b class="r">어렵거나 이례적인 예제에서 교사보다 확실히 못한 성능</b>을 보이는 게 보통이다</td></tr>
+    <tr><td><b class="r">편향과 오류를 그대로 물려받는다</b> &mdash; 교사 모델에 있던 것을</td></tr>
+    <tr><td rowspan="3"><b class="g">양자화</b></td><td><b class="r">성능 &harr; 자원 효율의 트레이드오프</b> &mdash; 비트 정밀도가 낮을수록(4비트, 2비트) 메모리 &middot; 계산을 더 아끼지만 <b class="r">정확도 저하가 더 크게</b> 나타나는 것이 보통</td></tr>
+    <tr><td><b class="r">모든 아키텍처가 똑같이 반응하지 않는다</b> &mdash; 트랜스포머는 특히 <b class="r">어텐션 메커니즘</b>과 일부 <b class="r">피드포워드 네트워크 층</b>의 양자화에 민감할 수 있다</td></tr>
+    <tr><td><b class="r">하드웨어 지원이 결정적</b> &mdash; 어떤 형식은 최적화된 커널이 없어 <b class="r">메모리를 덜 쓰고도 추론이 오히려 느려질 수</b> 있다. 어떤 GPU는 <b>int8 전용 텐서 코어</b>를, 다른 GPU는 <b>int4</b>를 최적 지원한다</td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#128204; <b>원문 각주의 오기</b> &mdash; 원문은 "정밀도가 <b class="r">높은</b> 형식(<b class="r">1비트 정수</b> 같은)에 비해"라고 적었지만, <b class="g">1비트는 4비트 &middot; 2비트보다 정밀도가 낮습니다.</b> 문맥상 <b class="g">8비트 &middot; 16비트 같은 더 높은 정밀도 형식</b>을 뜻하는 것으로 읽어야 합니다.</div>
+  <aside>하드웨어 지원 문제는 실무에서 가장 자주 발목을 잡는 항목입니다.</aside>
+</section>
+
+<!-- 26 대안 -->
+<section class="slide" data-part="8.1.4 고려사항">
+  <h2>&#128260; <span class="g">대안</span> &mdash; 다른 손잡이들</h2>
+  <div class="hl">&#128161; 증류 &middot; 양자화 &middot; 추측 디코딩은 <b class="g">단독으로도, 조합해서도</b> 쓸 수 있습니다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:24%">대안</th><th>언제 &middot; 무엇</th></tr>
+    <tr><td><b class="g">모델 샤딩</b><br><small>sharding</small></td><td><b class="gold">비용은 상관없고 지연 시간만</b> 중요할 때. 모델을 여러 장치에 나누어 배치 &rarr; 계산 부하가 분산되어 <b class="g">정확도를 잃지 않으면서</b> 지연 시간을 낮춘다</td></tr>
+    <tr><td><b class="g">병렬화</b><br><small>parallelization</small></td><td>여러 요청을 순차가 아니라 <b class="g">동시에</b> 처리 &rarr; 여러 요청에 걸친 실효 지연 시간이 크게 줄어든다. <b>개별 요청이 컨텍스트 길이의 일부만 쓰는 고트래픽</b>에서 특히. <b class="r">한계</b>: 모델의 최대 컨텍스트 길이와 가용 GPU 메모리에 묶임<br>&rarr; <b class="gold">배포 지연 시간을 최적화할 때 가장 먼저 고려하라</b></td></tr>
+    <tr><td><b class="g">연속 배칭</b><br><small>패턴 26</small></td><td>병렬화를 한 걸음 더 &mdash; 고정 배치 대신 <b class="g">자리가 나는 즉시 큐에서 동적으로 끌어온다.</b> GPU 활용률을 일정하게 유지해 <b class="g">표준 병렬화보다도 낮은 지연 시간</b>. <b class="r">전용 배포 인프라 필요</b></td></tr>
+    <tr><td><b class="g">프롬프트 캐싱</b><br><small>패턴 25</small></td><td>반복적 요청이 많은 앱에서 <b class="g">거의 즉각적인 응답</b>. 새 요청은 여전히 느리지만 자주 접근되는 응답은 번개처럼. <b class="gold">효과는 워크로드의 반복성에 정비례</b></td></tr>
+    <tr><td><b class="g">QAT 적용 모델</b></td><td>구글 <b>Gemma 3 QAT</b>로 대표됨. <b class="g">추론 속도 개선 &middot; 메모리 감소 &middot; 전력 소비 감소</b>가 두드러져, <b class="gold">쓸 수 있다면 매력적인 대안</b></td></tr>
+    <tr><td><b class="g">어댑터 튜닝</b><br><small>패턴 15 (5장)</small></td><td>애플리케이션이 <b>도메인 특화</b>라면. 메모리 &middot; 지연 시간이 줄지만 <b class="r">추가적인 파인튜닝 복잡도</b>가 따라온다</td></tr>
+  </table>
+  <aside>"병렬화를 가장 먼저 고려하라"가 이 절에서 가장 실용적인 문장입니다.</aside>
+</section>
+
+<!-- 27 참고문헌 -->
+<section class="slide" data-part="8.1.5 참고문헌">
+  <h2>&#128218; 8.1.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:30%">출처</th><th>기여</th></tr>
+    <tr><td><b>힌턴 &middot; 비니알스 &middot; 딘<br>(2015)</b></td><td><i>"Distilling the Knowledge in a Neural Network"</i> &mdash; 지식 증류를 소개한 <b class="g">정전급 논문</b></td></tr>
+    <tr><td><b class="g">GPTQ</b></td><td>정확한 <b>학습 후 양자화</b></td></tr>
+    <tr><td><b class="g">AWQ</b></td><td><b>활성값 인식</b> 가중치 양자화</td></tr>
+    <tr><td><b class="g">QLoRA</b></td><td><b>양자화와 파라미터 효율적 파인튜닝</b>을 결합하는 법</td></tr>
+    <tr><td><b class="g">BitNet</b> <small>(MS)</small></td><td>양자화를 극한까지 &mdash; <b class="g">1비트 &middot; 1.58비트 트랜스포머</b>가 계산 요구량을 극적으로 줄이면서도 <b>경쟁력 있는 성능</b>을 유지할 수 있음을 보였다</td></tr>
+    <tr><td><b>Leviathan &middot; Kalman &middot;<br>Matias (2022)</b></td><td><b class="g">추측 디코딩</b> 소개 &mdash; <b>재학습이나 아키텍처 변경 없이</b> 기성 모델을 가속할 수 있음을 보였다</td></tr>
+    <tr><td><b>Xia 외 (2024)</b></td><td><i>"Unlocking Efficiency in Large Language Model Inference"</i> &mdash; 추론 최적화 전반의 <b class="g">종합 서베이</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#127973; <b>실무 사례 &mdash; 아마존 파머시</b><br>파인튜닝된 SLM으로 <b class="g">약어휘 정규화</b>를 수행한다 &mdash; <b>약품명과 용량 정보 표준화</b>. 세계 지식이 전혀 필요 없는, <b class="g">증류의 교과서적 사용 사례</b>입니다.</div>
+  <aside>Xia 외(2024) 서베이는 패턴 26 참고문헌에도 다시 나옵니다.</aside>
+</section>
+
+<!-- 28 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#129521; 무엇을 <span class="g">내줄 것인가</span></h1>
+    <div class="big" style="margin-top:24px">증류는 <span class="y">지식의 폭</span>을<br>양자화는 <span class="y">정밀도</span>를<br>추측 디코딩은 <span class="y">복잡도</span>를 대가로 낸다<br><br><small>그리고 <b>지연 시간만</b> 급하다면<br><b class="g">병렬화를 가장 먼저</b> 보라</small></div>
+    <p class="sub" style="margin-top:22px">패턴 24 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 25 프롬프트 캐싱</b></p>
+  </div>
+  <aside>모델 자체를 줄이는 이야기는 여기까지입니다. 다음은 계산을 아예 건너뛰는 이야기예요.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

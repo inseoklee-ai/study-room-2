@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>패턴 26 추론 최적화 — Inference Optimization</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 8 &middot; Pattern 26</div>
+    <h1 style="margin:18px 0">추론 <span class="g">최적화</span></h1>
+    <p class="sub">Inference Optimization &mdash; LLM을 <b>직접 호스팅할 때</b> 추론 효율을 끌어올린다</p>
+  </div>
+  <aside>이 패턴만 유일하게 "자체 호스팅"이 전제로 붙습니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 8.3</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>8.3.1 문제</b> &mdash; 왜 직접 호스팅하며, 무엇이 어려운가</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>8.3.2 해법</b> &mdash; 연속 배칭 &middot; 추측 디코딩 &middot; 프롬프트 압축</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>8.3.3 예제</b> &mdash; 실측 비교</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>8.3.4 참고문헌</b></span></div>
+  </div>
+  <div class="warn">&#9888;&#65039; <b>이 패턴에는 「고려사항과 대안」 절이 없습니다.</b> 책의 실제 구조가 <b class="g">문제 &rarr; 해법 &rarr; 예제 &rarr; 참고문헌</b>의 <b class="g">4절</b>입니다 &mdash; 없는 절을 지어내지 않았습니다.</div>
+  <div class="hl" style="margin-top:14px">&#128209; <b>전제</b> &mdash; 이 절은 <b class="g">자체 추론 서버를 운영해 본 경험이 있다고 가정</b>합니다. 모델 호스팅의 기초는 이 책의 범위를 넘어섭니다. 처음이라면 <b class="g">vLLM이나 SGLang</b>의 예제 구성부터 보라고 저자가 안내합니다.</div>
+  <aside>패턴 27도 같은 4절 구조입니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="8.3.1 문제">
+  <h2>&#128274; 8.3.1 &mdash; 왜 <span class="g">직접 호스팅</span>하나</h2>
+  <p>민감하고 규제가 심한 <b class="g">의료 &middot; 금융 &middot; 법률</b> 정보를 다루는 비즈니스 애플리케이션이라면 LLM을 직접 호스팅하는 편이 유리할 수 있다.</p>
+  <ul class="pts" style="margin-top:14px">
+    <li>기밀 &middot; 독점 데이터나 사용자 데이터가 <b class="g">자기 서버 안에 머문다</b></li>
+    <li><b class="g">제3자가 공유하거나 유출할 수 없다</b></li>
+    <li><b class="g">경쟁사도 쓸 수 있는 차기 모델의 학습에 재사용되지 않는다</b></li>
+  </ul>
+  <div class="big" style="margin-top:18px">그러나 LLM 호스팅에는<br><span class="r">고유한 난제</span>가 따른다</div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:30%">난제</th><th>내용</th></tr>
+    <tr><td><b class="r">사용자 기대치</b></td><td>챗봇이나 대화형 인터페이스 같은 <b class="g">실시간 애플리케이션</b>에서, 700억 파라미터 이상의 큰 LLM이 필요한 복잡한 작업이더라도 사용자는 여전히 <b class="r">작은 모델이나 ChatGPT에 준하는 응답 시간</b>을 기대한다</td></tr>
+    <tr><td><b class="r">하드웨어 제약</b></td><td>GPU의 <b class="r">수량과 메모리 양쪽</b>에서 가용성 제약을 받는 경우가 많아, <b class="g">가진 하드웨어를 최대한 최적으로 활용</b>해야 한다</td></tr>
+  </table>
+  <div class="hl">&#128161; 요컨대 <b class="g">"큰 모델을 써야 하는데, 하드웨어는 부족하고, 사용자는 안 기다린다"</b>는 삼중 압박입니다.</div>
+  <aside>이 압박이 세 가지 해법의 동기입니다.</aside>
+</section>
+
+<!-- 4 PART 2 -->
+<section class="slide" data-part="8.3.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">8.3.2 해법</h2>
+    <div class="who">세 가지 옵션</div>
+  </div>
+  <aside>배칭, 디코딩, 압축 — 세 층위가 다릅니다.</aside>
+</section>
+
+<!-- 5 전통적 배칭의 실패 -->
+<section class="slide" data-part="8.3.2 해법">
+  <h2>&#10060; 전통적 배칭은 <span class="r">왜 LLM에서 실패하나</span></h2>
+  <div class="hl">&#128202; <b>전통적 ML에서는 잘 통했다</b> &mdash; ML 모델은 <b class="g">문제 특화</b>라 요청마다 같은 입력 특징(표 형태 데이터든 임베딩 벡터든)을 준다. <b class="g">요청 크기가 모두 같으니</b> 바탕 행렬 계산을 <b class="g">벡터화</b>할 수 있었다.</div>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; <b>LLM에서는 요청 패턴이 바뀌었다</b> &mdash; 입력 프롬프트 길이가 <b class="r">천차만별</b>이다. 전통적 방식으로 배칭하려 하면 프롬프트가 <b class="r">같은 길이로 패딩</b>된다.</div>
+  <div class="big" style="margin-top:16px">배치 전체가<br><span class="r">마지막 프롬프트 요청이 끝날 때까지</span> 묶여 있다<br><small>GPU는 놀고, 짧은 프롬프트를 넣은 사용자는 기다린다</small></div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:30%">증상</th><th>결과</th></tr>
+    <tr><td>요청이 <b>일찍 끝나면</b></td><td><b class="r">GPU 활용률이 떨어진다</b></td></tr>
+    <tr><td><b>짧은 요청</b>이 배치 전체를 기다림</td><td><b class="r">지연 시간도 나빠진다</b></td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#127974; <b>비유</b> &mdash; 은행 창구가 4개 있습니다. 전통적 배칭은 <b class="r">4명을 한 조로 묶어 들여보내고, 4명이 다 끝나야 다음 조를 들여보내는</b> 방식입니다. <b class="r">통장 정리 1분짜리 손님이 대출 상담 30분짜리 손님을 30분간 기다렸다가 같이 나가야</b> 합니다.</div>
+  <div class="warn">&#128161; <b>패딩이 뭐가 문제인가</b> &mdash; 길이를 맞추려고 짧은 프롬프트 뒤에 <b class="r">의미 없는 채움 토큰</b>을 붙입니다. GPU는 그 빈칸도 성실하게 계산합니다. 즉 <b class="r">돈을 내고 아무것도 아닌 것을 계산</b>하는 겁니다.</div>
+  <aside>그림 8-7이 이 낭비를 그린 것입니다.</aside>
+</section>
+
+<!-- 6 연속 배칭 -->
+<section class="slide" data-part="8.3.2 해법">
+  <h2>&#9989; 옵션 1 &mdash; <span class="g">연속 배칭</span></h2>
+  <div class="big">요청을 배치로 묶어 함께 처리하는 대신<br><span class="y">GPU 코어가 비는 즉시</span><br>큐에서 요청을 꺼내 밀어 넣는다</div>
+  <div class="hl" style="margin-top:16px">&#127974; <b>비유의 결말</b> &mdash; 연속 배칭은 <b class="g">창구가 비는 즉시 다음 손님을 부르는</b> 평범한 은행입니다.</div>
+  <div class="steps" style="margin-top:14px">
+    <div class="st"><span class="n">1</span><span class="t">배치 전체가 끝나기를 기다리는 대신 <b class="g">개별 순전파(이터레이션) 단위</b>로 요청이 배치에 들어오고 나간다</span></div>
+    <div class="st"><span class="n">2</span><span class="t">각 순전파에서 GPU는 모든 시퀀스를 처리하고, 이터레이션이 끝날 때마다 <b class="g">정지 토큰(stop token)을 만들어 낸 시퀀스가 있는지</b> 확인한다</span></div>
+    <div class="st"><span class="n">3</span><span class="t">있다면 <b class="g">그 시퀀스를 배치에서 빼고</b>, 빈자리를 <b class="g">요청 큐의 다음 시퀀스로 채운다</b></span></div>
+    <div class="st"><span class="n">4</span><span class="t">다음 배치 이터레이션에는 <b class="g">새로 들어온 시퀀스가 포함</b>된다</span></div>
+  </div>
+  <div class="warn" style="margin-top:14px">&#9881;&#65039; 내부적으로 LLM 커널이 시퀀스가 들어오고 나갈 때 <b class="g">어텐션 행렬의 동적 리사이징</b>을 처리하고, 기존 시퀀스의 <b class="g">KV 캐시도 정리</b>합니다.</div>
+  <aside>그림 8-8이 네 개의 병렬 계산 트랙에 요청이 분배되는 모습을 보여 줍니다.</aside>
+</section>
+
+<!-- 7 바꿔야 할 것 -->
+<section class="slide" data-part="8.3.2 해법">
+  <h2>&#128295; 내가 바꿔야 할 것은 <span class="g">딱 한 줄</span></h2>
+  <div class="hl">&#9989; vLLM이나 SGLang 같은 추론 서버는 연속 배칭을 <b class="g">기본으로 제공</b>하므로 구현 세부를 신경 쓸 필요가 없습니다. 바꿔야 할 주된 것은 <b class="g">요청을 제출하는 방식</b>입니다.</div>
+  <div class="plabel" style="margin-top:16px">&#10060; 이렇게 하지 말 것 — 개별 요청을 하나씩</div>
+  <pre><b class="r">for prompt in prompts:</b>
+    _ = model.generate(<b class="r">prompt</b>, sampling_params)</pre>
+  <div class="plabel" style="margin-top:14px">&#9989; 이렇게 — 모든 요청을 한꺼번에</div>
+  <pre>_ = model.generate(<b class="g">prompts</b>, sampling_params)</pre>
+  <div class="big" style="margin-top:18px">그러면 추론 서버가<br><span class="y">GPU 코어가 나는 대로</span><br>프롬프트를 밀어 넣는 일을<br>알아서 처리한다</div>
+  <div class="warn" style="margin-top:16px">&#128161; <b>이 한 글자(<code>prompt</code> &rarr; <code>prompts</code>)가 실측에서 처리량 20배 차이</b>를 만듭니다. 8.3.3 예제에서 확인합니다. 서버가 최적화하게 <b class="g">맡기라</b>는 것이 요점입니다.</div>
+  <aside>직접 루프를 도는 순간 서버의 스케줄러를 무력화하는 셈입니다.</aside>
+</section>
+
+<!-- 8 추측 디코딩 -->
+<section class="slide" data-part="8.3.2 해법">
+  <h2>&#127939; 옵션 2 &mdash; <span class="g">추측 디코딩</span></h2>
+  <p>두 개의 서로 다른 언어 모델을 활용해 출력 품질을 유지하면서 생성 속도를 높인다. 여기서는 <b class="g">초안-대상(draft-target)</b> 구조라 부른다.</p>
+  <div class="grid2" style="margin-top:14px">
+    <div class="box"><b class="g">초안 모델 draft model</b><br><br>더 작고 효율적이며 <b class="g">빠르지만 덜 정확할 수</b> 있는 언어 모델</div>
+    <div class="box" style="border-color:var(--gold)"><b class="gold">대상 모델 target model</b><br><br>매우 정확하지만 <b class="r">계산 비용이 크고 느린</b> 크고 정교한 LLM. <b class="g">토큰 생성의 기준</b> 역할</div>
+  </div>
+  <p style="margin-top:14px">초안 모델은 대상 모델의 행동을 모방하도록 특별히 학습된다 &mdash; 예컨대 <b class="g">10억 파라미터가 270억 파라미터</b>를 흉내 내도록.</p>
+  <div class="warn" style="margin-top:14px">&#10067; <b>왜 "학생-교사"가 아니라 "초안-대상"이라 부르나</b><br><br>
+    &bull; <b class="r">초안 모델이 교사로부터, 혹은 교사에 의해 학습되는 것은 아니다.</b> 두 모델 모두 <b class="g">같은 데이터로 처음부터 각각 학습</b>됐을 수 있다<br><br>
+    &bull; <b class="g">두 모델 모두 실제로 사용되기 때문</b> &mdash; 목표는 대상 모델의 응답을 재현하는 것이되, <b class="g">먼저 초안 응답을 생성하고 대상 모델과 다른 부분만 교정</b>하는 방식으로 그렇게 한다</div>
+  <div class="hl">&#128209; <b>패턴 24와의 관계</b> &mdash; 8.1에서는 <b>증류의 맥락</b>이라 "학생-교사"로 불렀고, 여기서는 <b>추론 구조</b>라 "초안-대상"입니다. <b class="g">같은 기법을 다른 각도에서</b> 부르는 것이며, 저자가 그 차이를 명시적으로 설명합니다.</div>
+  <aside>추측 디코딩의 자세한 내용은 패턴 24 덱에서 다뤘습니다.</aside>
+</section>
+
+<!-- 9 프롬프트 압축 문제 -->
+<section class="slide" data-part="8.3.2 해법">
+  <h2>&#128190; 옵션 3 &mdash; <span class="g">프롬프트 압축</span>의 동기</h2>
+  <div class="big">모델 메모리 소비의<br>가장 큰 동인 중 하나는<br><span class="y">요청의 컨텍스트 윈도 크기</span></div>
+  <ul class="pts" style="margin-top:16px">
+    <li>컨텍스트 윈도가 커지면 어텐션 메커니즘이 쓰는 <b class="r">KV 캐시가 커지고 메모리를 훨씬 많이</b> 잡아먹는다</li>
+    <li>비즈니스 애플리케이션은 <b class="r">메모리가 빠듯한 배포의 컨텍스트 윈도를 쉽게 넘겨 버리는 긴 프롬프트</b>를 만들어 낸다</li>
+  </ul>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:34%">어디서 길어지나</th><th>이유</th></tr>
+    <tr><td><b class="r">에이전트 애플리케이션</b><br><small>7장 패턴 21~23</small></td><td>에이전트가 <b class="r">이전에 한 작업의 전체 맥락</b>을 넣어야 할 수 있다</td></tr>
+    <tr><td><b class="r">문서 기반 워크플로</b></td><td><b class="r">문서 전체</b>를 넣어야 할 수 있다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:16px">&#128161; <b>배칭이 "자리를 잘 쓰는 법"이라면, 압축은 "짐을 줄이는 법"</b>입니다. 사람이 읽을 수 있게 줄이면 <b class="g">하드 압축</b>, 벡터 덩어리로 바꿔 버리면 <b class="g">소프트 압축</b>입니다. &mdash; Li 외(2024)의 분류</div>
+  <aside>7장을 본 사람이라면 에이전트 프롬프트가 어떻게 부풀어 오르는지 짐작될 겁니다.</aside>
+</section>
+
+<!-- 10 하드 압축 -->
+<section class="slide" data-part="8.3.2 해법">
+  <h2>&#9986; 하드 프롬프트 압축</h2>
+  <p>프롬프트의 길이를 줄이되 의미를 <b class="g">사람이 읽을 수 있는 형태로</b> 유지하고 싶을 때.</p>
+  <div class="chain" style="margin-top:14px">
+    <div class="cell"><small>방법 1</small><b>중복 내용<br>제거</b></div>
+    <div class="cell"><small>방법 2</small><b>약어 적용</b></div>
+    <div class="cell"><small>방법 3</small><b>의미를<br>키워드로</b></div>
+  </div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:30%">처리 방법</th><th>내용</th></tr>
+    <tr><td><b class="g">정규 표현식</b></td><td>규칙 기반으로 결정론적</td></tr>
+    <tr><td><b class="g">LLM에게 요청</b></td><td>"이 프롬프트를 압축해 줘"</td></tr>
+  </table>
+  <div class="hl" style="margin-top:16px">&#128269; <b>손실 확인법</b> &mdash; 같은 LLM으로 <b class="g">압축된 프롬프트에서 원본 프롬프트를 복원해 보게</b> 해서 큰 정보 손실이 없었는지 확인할 수 있다.</div>
+  <div class="warn" style="margin-top:14px">&#9989; LLM은 대개 압축된 프롬프트에 대해서도 <b class="g">원본과 같은 응답</b>을 내놓는다.<br>&#9888;&#65039; <b>다만</b> &mdash; <b class="r">정보 손실 확인과 응답 비교를 평가 스위트에 반드시 추가하라.</b></div>
+  <div class="hl">&#128209; <b>6장 패턴 17 심판자 LLM</b>이 자연스럽게 들어갈 자리입니다 &mdash; "압축 전후 응답이 같은가"를 채점할 심사위원이 필요하니까요.</div>
+  <aside>그림 8-9가 하드 압축의 예를 보여 줍니다.</aside>
+</section>
+
+<!-- 11 소프트 압축 -->
+<section class="slide" data-part="8.3.2 해법">
+  <h2>&#129513; 소프트 프롬프트 압축</h2>
+  <p>프롬프트를 인코더로 <b class="g">연속적인 벡터 표현</b>으로 변환한 뒤, <b class="g">원래 내용 대신 그 벡터를 프롬프트에 주입</b>한다.</p>
+  <div class="plabel" style="margin-top:12px">원본 프롬프트 (발췌)</div>
+  <pre style="font-size:.74em">Context:
+Johann Sebastian Bach (1685-1750) stands as one of the most
+influential composers in Western classical music history. Born
+in Eisenach into a musical family, Bach received his early
+musical education from his father and later his older brother
+Johann Christoph. ...
+Mozart studied and arranged several Bach works, Beethoven called
+him the "original father of harmony," ...
+
+Question: Analyze Bach's compositional techniques in his keyboard
+works, focusing on counterpoint, harmonic innovation, and
+structural organization. ...</pre>
+  <div class="plabel" style="margin-top:12px">압축된 프롬프트</div>
+  <pre><b class="g">&lt;bach_1&gt; &lt;bach_2&gt; &lt;bach_3&gt; ... &lt;bach_n&gt;</b>
+
+Question: Analyze Bach's compositional techniques in his keyboard
+works, focusing on counterpoint, harmonic innovation, and
+structural organization. ...</pre>
+  <div class="hl" style="margin-top:12px">&#128200; 전기적 서술 문단의 <b class="g">토큰 약 70개</b>를 제출하는 대신, 이제 프롬프트에는 정보가 인코딩된 <b class="g">하나의 조밀한 벡터 <code>&lt;bach_1&gt;</code></b>이 들어간다. 컨텍스트의 <b>각 문단</b>이 <code>&lt;bach_1&gt;</code>부터 <code>&lt;bach_n&gt;</code>까지의 벡터로 인코딩된다.</div>
+  <div class="warn" style="margin-top:12px">&#128161; <b>임베딩 대신 KV 값으로</b> 제공될 수도 있습니다 &mdash; <b class="g">500xCompressor</b>가 그렇게 합니다. 연구에 따르면 압축률이 극적으로 개선됐습니다.<br><br>
+  &#9888;&#65039; <b class="r">소프트 압축은 모델 특화</b>입니다 &mdash; Llama 4로 학습된 인코더로 만든 압축 프롬프트를 <b class="r">GPT-4 엔드포인트에 제출할 수 없습니다.</b></div>
+  <aside>질문 부분은 그대로 두고 컨텍스트만 벡터로 바꿨다는 점을 보세요.</aside>
+</section>
+
+<!-- 12 PART 3 -->
+<section class="slide" data-part="8.3.3 예제">
+  <h2>&#128202; 8.3.3 예제 &mdash; <span class="g">실측</span></h2>
+  <div class="plabel">연속 배칭 비교 스크립트 결과</div>
+  <pre>Number of samples: 100
+
+<b class="r">Individual processing time: 106.11 seconds
+Individual throughput: 0.94 samples/second</b>
+
+<b class="g">Batch processing time: 4.60 seconds
+Batch throughput: 21.74 samples/second</b>
+
+<b class="gold">Speedup factor: 23.07x</b></pre>
+  <div class="big" style="margin-top:16px">처리량 <span class="y">약 20배</span> 개선<br><small>코드 변경은 <b>prompt &rarr; prompts</b> 한 글자</small></div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:40%">기법</th><th>개선</th></tr>
+    <tr><td><b class="g">연속 배칭</b></td><td>처리량 <b class="g">약 20배</b> (가속 계수 <b class="g">23.07배</b>)</td></tr>
+    <tr><td><b class="g">추측 디코딩</b></td><td>대략 <b class="gold">14.2%</b> 더 빠름</td></tr>
+  </table>
+  <div class="warn" style="margin-top:16px">&#9888;&#65039; <b>NOTE &mdash; 저자의 경고</b><br>개선 폭은 <b class="r">작은 모델이 올바른 토큰을 예측하는 능력에 크게 좌우</b>된다. <code>num_speculative_tokens</code>가 너무 길면 <b class="r">큰 모델이 토큰을 다시 계산해야 할 가능성이 커진다.</b> 그런 경우 처리량이 <b class="r">큰 모델만 쓸 때보다 오히려 느려질 수</b> 있으므로 이 파라미터를 <b class="g">신중하게 조정</b>하는 것이 중요하다.</div>
+  <div class="hl">&#128161; <b>두 기법의 격차에 주목</b> &mdash; 연속 배칭은 <b class="g">20배</b>, 추측 디코딩은 <b class="gold">14.2%</b>. 게다가 연속 배칭은 <b class="g">부작용 위험이 없고</b> 추측 디코딩은 <b class="r">잘못 맞추면 역효과</b>입니다. <b class="g">순서는 명백합니다.</b></div>
+  <aside>그림 8-10이 추측 디코딩 유무의 지연 시간을 비교합니다.</aside>
+</section>
+
+<!-- 13 참고문헌 -->
+<section class="slide" data-part="8.3.4 참고문헌">
+  <h2>&#128218; 8.3.4 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:30%">출처</th><th>기여</th></tr>
+    <tr><td><b>Yu 외 (2022)</b></td><td><b class="g">연속 배칭</b>을 소개</td></tr>
+    <tr><td><b>Daniel 외 (2023)</b><br><small><i>Anyscale</i> 블로그</small></td><td>연속 배칭을 <b class="g">잘 설명하고</b> 있다</td></tr>
+    <tr><td><b>Li 외 (2024)</b></td><td><b class="g">프롬프트 압축 기법 서베이</b> &mdash; 하드/소프트 분류의 출처</td></tr>
+    <tr><td><b>Leviathan &middot; Kalman &middot;<br>Matias (2022)</b></td><td><b class="g">추측 디코딩</b> 소개 &mdash; 재학습이나 아키텍처 변경 없이 기성 모델을 가속</td></tr>
+    <tr><td><b class="g">500xCompressor</b></td><td>실제 구현 &mdash; <b>상당한 압축률</b></td></tr>
+    <tr><td><b>Xia 외 (2024)</b></td><td>LLM <b class="g">효율 개선 전반</b>에 대한 서베이</td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#127970; <b>실무 사례</b><br><br>
+    &bull; <b class="g">AWS Inferentia2</b> &mdash; Llama-2-70B/7B로 <b>추측 디코딩</b>을 시연. 자사 커스텀 AI 칩에서 <b class="g">정확도를 유지하면서</b> 작은 초안 모델로 추론을 가속<br><br>
+    &bull; <b class="g">NVIDIA TensorRT-LLM</b> &mdash; <b>연속 배칭 &middot; 추측 추론 &middot; 어텐션 최적화 &middot; 모델 압축</b> 등 엔터프라이즈 배포를 위한 종합적 추론 최적화<br><br>
+    &bull; <b class="g">Anthropic Claude</b> &mdash; <b>동적 배칭</b>으로 지능적인 배치 크기 관리 &rarr; 처리량 <b class="g">37% 증가</b>, 지연 시간 <b class="g">28% 감소</b>, 하루 <b class="g">120만 건</b>의 추가 질의 처리</div>
+  <div class="hl">&#128209; <b>Xia 외(2024)</b>는 <b>패턴 24 참고문헌</b>에도 나옵니다 &mdash; 8장 전반을 관통하는 서베이입니다.</div>
+  <aside>세 실무 사례 모두 연속 배칭 계열이 중심입니다.</aside>
+</section>
+
+<!-- 14 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#9889; 한순간도 <span class="g">놀리지 않기</span></h1>
+    <div class="big" style="margin-top:24px">연속 배칭은<br><span class="y">GPU를 한순간도 놀리지 않는 것</span><br>프롬프트 압축은<br><span class="y">애초에 계산할 양을 줄이는 것</span><br><br><small>먼저 <b class="g">prompts로 한꺼번에 보내는 것</b>부터<br><small>&mdash; 한 글자 바꿔 20배</small></small></div>
+    <p class="sub" style="margin-top:22px">패턴 26 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 27 성능 저하 테스트</b></p>
+  </div>
+  <aside>여기까지가 빠르게 만드는 이야기. 다음은 어디가 느린지 재는 이야기입니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

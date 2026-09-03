@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>패턴 28 장기 기억 — Long-Term Memory</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 8 &middot; Pattern 28</div>
+    <h1 style="margin:18px 0">장기 <span class="g">기억</span></h1>
+    <p class="sub">Long-Term Memory &mdash; <b>오랜 기간에 걸친 상호작용 사이</b>에 정보를 유지하는 능력</p>
+  </div>
+  <aside>8장의 마지막 패턴이자, 유일하게 성능이 아닌 능력에 관한 패턴입니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 8.5</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>8.5.1 문제</b> &mdash; LLM은 상태가 없다</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>8.5.2 해법</b> &mdash; 네 가지 기억</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>8.5.3 예제</b> &mdash; Mem0로 여행 어시스턴트</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>8.5.4 고려사항</b> &mdash; 어느 기억을 언제 쓰나</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>8.5.5 참고문헌</b></span></div>
+  </div>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell"><small>지금 세션</small><b class="g">작업</b></div>
+    <div class="cell"><small>과거 메시지</small><b class="g">일화</b></div>
+    <div class="cell"><small>지시문 &middot; 프로필</small><b class="g">절차</b></div>
+    <div class="cell"><small>추출한 사실</small><b class="g">의미</b></div>
+  </div>
+  <div class="hl">&#128161; <b>이 덱의 결론을 미리</b> &mdash; 저자의 권고는 <b class="g">"일화 기억보다 의미 기억을 쓰라"</b>입니다. 왜 그런지가 8.5.4의 핵심입니다.</div>
+  <aside>네 가지를 다 쓰는 게 아니라 골라 쓰는 것이 요점입니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="8.5.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">8.5.1 문제</h2>
+    <div class="who">LLM은 상태가 없다</div>
+  </div>
+  <aside>LLM은 각 프롬프트를 고립된 채로 처리합니다.</aside>
+</section>
+
+<!-- 4 왜 기억이 필요한가 -->
+<section class="slide" data-part="8.5.1 문제">
+  <h2>&#129504; 기억이 <span class="g">필요한 자리들</span></h2>
+  <p>LLM은 각 프롬프트를 <b class="r">고립된 채로</b> 처리하며, 상호작용을 넘나들며 이전 맥락 정보를 유지하는 능력이 없다. 그러나 온갖 종류의 애플리케이션에서 <b class="g">이전 호출의 정보를 기억하는 것</b>은 중요하다.</p>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:28%">애플리케이션</th><th>무엇을 기억해야 하나</th></tr>
+    <tr><td><b class="g">챗봇 &middot; 가상 비서</b></td><td><b>사용자의 선호</b>를 기억해야 하고, 세션을 넘어 <b>대화 이력과 맥락 상태</b>를 유지해야 할 수도 있다 &mdash; <b class="r">사용자가 매번 같은 말을 반복해야 한다면 짜증스러우니까</b></td></tr>
+    <tr><td><b class="g">코딩 어시스턴트</b></td><td>여러 파일과 세션에 걸쳐 <b class="g">프로젝트 구조 &middot; 의존성 &middot; 코딩 패턴</b>을 인지하고 있어야 한다</td></tr>
+    <tr><td><b class="g">워크플로 에이전트</b><br><small>7장 패턴 23</small></td><td><b class="g">워크플로 단계 사이에 맥락이 유지</b>되어야 하는 경우가 많다</td></tr>
+    <tr><td><b class="g">큰 문서 처리</b></td><td>컨텍스트 윈도보다 큰 문서를 다룰 때, <b class="g">앞서 읽은 핵심 정보를 기억</b>해야 핵심 절들을 식별하고 종합할 수 있다</td></tr>
+    <tr><td><b class="g">모든 AI 앱</b></td><td><b class="g">사용자 행동 &middot; 선호 &middot; 과거 상호작용</b>에 따라 응답을 조정해야 할 수 있다</td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">LLM 호출은 하나하나가<br><span class="r">상태 없이(stateless)</span><br>이전 호출과 독립적이다</div>
+  <aside>이 다섯 가지가 모두 같은 한계에 부딪힙니다.</aside>
+</section>
+
+<!-- 5 흉내 내는 방식 -->
+<section class="slide" data-part="8.5.1 문제">
+  <h2>&#127917; 지금은 <span class="gold">흉내</span>로 해결한다</h2>
+  <p>챗봇 같은 대화형 애플리케이션은 이전 대화 턴을 <b class="g">프롬프트 앞에 덧붙이는 방식</b>으로 상태 유지를 흉내 낸다.</p>
+  <div class="plabel">PydanticAI — 이전 메시지를 명시적으로 전달</div>
+  <pre>result1 = agent.run_sync(...)
+result2 = agent.run_sync(..., <b class="g">message_history=result1.new_messages()</b>)</pre>
+  <p style="margin-top:14px">워크플로 에이전트는 <b class="g">현재 상태를 입력으로 받고 확장된 상태를 출력으로 돌려주는</b> 방식으로 맥락을 유지한다.</p>
+  <div class="plabel">LangGraph — 각 노드의 시그니처</div>
+  <pre>def some_node(<b class="g">current_state: CurrentState</b>) -&gt; <b class="g">NextState</b>:
+    next_state = current_state.copy()
+    ...
+    next_state['confirmed_amount'] = 3450
+    <b class="g">return next_state</b></pre>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; <b>두 접근 모두의 문제</b> &mdash; 본질적으로 <b class="r">대화 이력 전체를 프롬프트에 넣는다.</b> 오늘날 컨텍스트 윈도가 크긴 하지만(집필 시점 <b>Gemini는 100만 토큰</b>), 사용자의 <b class="r">상호작용 이력 전체를 매 프롬프트마다 앞에 붙이는 것은 비용 면에서 불가능하다.</b></div>
+  <div class="big" style="margin-top:14px">트랜스포머는 시퀀스 길이에 대해<br><span class="r">2차(quadratic)로 확장</span>된다<br><small>대화가 2배 길어지면 비용은 4배<br>그래서 <b>"다 넣기"는 어느 순간 반드시 무너진다</b></small></div>
+  <div class="hl" style="margin-top:14px">&#10067; <b class="g">컨텍스트 윈도를 넘치게 하거나 감당 못 할 비용을 치르지 않으면서</b> 과거 상호작용의 기억을 관리하려면 어떻게 해야 할까?</div>
+  <aside>컨텍스트 윈도가 커진다고 해결되는 문제가 아니라는 점이 핵심입니다.</aside>
+</section>
+
+<!-- 6 PART 2 -->
+<section class="slide" data-part="8.5.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">8.5.2 해법</h2>
+    <div class="who">네 가지 기억</div>
+  </div>
+  <aside>사람의 기억 분류를 그대로 가져온 것입니다.</aside>
+</section>
+
+<!-- 7 네 기억 개요 -->
+<section class="slide" data-part="8.5.2 해법">
+  <h2>&#127775; 네 가지 기억을 <span class="g">사람의 기억에 빗대면</span></h2>
+  <div class="hl">&#9749; <b>비유</b> &mdash; 단골 카페 사장님을 떠올려 보세요.<br>
+    &#9312; 지금 주문 중인 <b class="g">"아까 말한 그거"를 기억</b>하고 &mdash; <b>작업 기억</b><br>
+    &#9313; <b class="g">"지난주에 오셨을 때 산미 있는 게 별로라 하셨죠"</b>를 떠올리고 &mdash; <b>일화 기억</b><br>
+    &#9314; <b class="g">"이 손님은 항상 얼음 적게"</b>라는 카드를 갖고 있고 &mdash; <b>절차 기억</b><br>
+    &#9315; <b class="g">"이 손님이 아이슬란드 여행 간다고 했지"</b>라는 사실 자체를 알고 있습니다 &mdash; <b>의미 기억</b></div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:22%">기억</th><th style="width:38%">무엇을 저장</th><th>검색 기준</th></tr>
+    <tr><td><b class="g">작업 기억</b><br><small>Working</small></td><td>지금 세션의 <b>메시지 목록</b></td><td>최근 N토큰</td></tr>
+    <tr><td><b class="g">일화 기억</b><br><small>Episodic</small></td><td>과거 세션의 <b class="gold">메시지 원본</b></td><td>주로 <b class="gold">최신성</b></td></tr>
+    <tr><td><b class="g">절차 기억</b><br><small>Procedural</small></td><td>지시문과 <b>사용자 프로필</b></td><td>이 사용자인가</td></tr>
+    <tr><td><b class="g">의미 기억</b><br><small>Semantic</small></td><td>추출한 <b class="g">사실</b></td><td>주로 <b class="g">내용 유사도</b></td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">장기 기억은<br><span class="y">현재 세션의 즉각적인 대화 맥락을 넘어서는</span><br>정보를 저장하고 검색하는 능력</div>
+  <aside>헷갈리는 것은 일화와 의미 두 쌍입니다. 저장 대상과 검색 기준이 다릅니다.</aside>
+</section>
+
+<!-- 8 작업 기억 -->
+<section class="slide" data-part="8.5.2 해법">
+  <h2>&#128221; 작업 기억 &mdash; <span class="g">"그거"가 무엇인가</span></h2>
+  <div class="hl">&#128172; 사용자가 <b class="g">"그거 라지로 바꿔 줘"</b>라고 말한다면 <b class="g">"그거"는 무엇을 가리키는가?</b> 알아내려면 <b class="g">현재 사용자 세션의 이전 메시지들</b>에 접근해야 한다.</div>
+  <p style="margin-top:14px">구현은 단순하다 &mdash; 메시지를 받거나 생성할 때마다 <b class="g">리스트에 저장</b>하면 된다. 다만 당연한 단서가 붙는다.</p>
+  <div class="steps" style="margin-top:14px">
+    <div class="st"><span class="n">1</span><span class="t"><b class="r">무한할 수 없다</b> &mdash; 리스트를 <b class="g">쳐내야</b> 감당 못 할 정도로 커지지 않는다</span></div>
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">2</span><span class="t"><b class="r">최근 N개 메시지만 남기는 단순한 방식은 실패한다</b> &mdash; <b class="r">메시지 하나가 너무 크면</b></span></div>
+    <div class="st"><span class="n">3</span><span class="t">단순하고 믿을 만한 구현은 <b class="g">일정한 토큰 한도 안으로</b> 잘라 내는 것</span></div>
+  </div>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; <b>유효한 상태로 남도록</b> 쳐내야 한다<br>&bull; 메시지가 잘려 <b class="r">반쪽만 남아서는</b> 안 된다<br>&bull; <b class="r">그 AI 메시지를 만들어 낸 사용자 프롬프트와 떨어진 AI 메시지</b>가 있어서는 안 된다<br>&bull; 역할과 어조 같은 일관성을 위해 <b class="g">모든 턴에 걸쳐 유지되는 시스템 프롬프트</b>를 쓴다</div>
+  <div class="plabel" style="margin-top:12px">LangChain — 메시지 이력을 1,000 토큰으로 제한</div>
+  <pre>from langchain_core.messages import trim_messages
+trim_messages(
+    messages,
+    strategy="last",
+    token_counter=ChatOpenAI(MODEL_ID),
+    <b class="g">max_tokens=1000</b>,
+    <b class="g">start_on="human"</b>,
+    <b class="g">end_on=("human", "tool")</b>,
+    <b class="g">include_system=True</b>,
+)</pre>
+  <div class="hl"><code>start_on</code> &middot; <code>end_on</code>을 지정하는 이유는 <b class="g">대부분의 채팅 모델이 대화 이력이 사람 메시지로 시작하기를 기대</b>하기 때문입니다. <code>include_system=True</code>는 <b class="g">호출 사이에 시스템 지시문을 유지</b>하도록 지정합니다.</div>
+  <aside>그림 8-17이 이 제약들을 합친 모습을 보여 줍니다.</aside>
+</section>
+
+<!-- 9 일화 기억 -->
+<section class="slide" data-part="8.5.2 해법">
+  <h2>&#128218; 일화 기억 &mdash; <span class="g">이전 세션과의 연속성</span></h2>
+  <div class="hl">&#127965;&#65039; <b>상황</b> &mdash; 사용자가 <b class="g">"아이슬란드에서 뭘 할 수 있을까?"</b>라고 묻는다. 어쩌면 이 사용자는 <b class="g">이틀 전에 같은 질문</b>을 했고, AI가 <b>온천을 추천</b>했는데 <b class="r">사용자가 그 아이디어를 물렸을</b> 수도 있다. 그렇다면 <b class="g">그 추천을 되풀이하지 않는 게 좋을 것</b>이다.</div>
+  <div class="big" style="margin-top:16px">작업 기억은 <span class="y">현재</span> 세션의 메시지<br>그렇다면 <span class="y">이전</span> 대화에서<br>관련 메시지를 어떻게 가져올까?</div>
+  <div class="steps" style="margin-top:16px">
+    <div class="st"><span class="n">1</span><span class="t">모든 메시지를 <b class="g">데이터베이스 같은 영속 저장소</b>에 저장해 둔다</span></div>
+    <div class="st"><span class="n">2</span><span class="t">현재 질의나 대화와 <b class="g">관련 있는 메시지를 그 데이터베이스에서 검색</b>한다</span></div>
+    <div class="st"><span class="n">3</span><span class="t">찾아낸 관련 메시지들이 <b class="g">일화 기억을 채우는 데</b> 쓰인다</span></div>
+  </div>
+  <div class="warn" style="margin-top:14px">&#128269; <b>내용뿐 아니라 메타데이터도 함께 검색</b>해야 한다. 예컨대 이 사용 사례에서는 메시지가 &mdash;<br>&bull; <b class="g">이 사용자의 것</b>이고<br>&bull; <b class="g">최근(지난 한 주쯤)</b>이며<br>&bull; <b class="g">여행에 관한 것</b>이기를 원할 수 있다</div>
+  <div class="hl">&#128209; <b>패턴 6 기본 RAG</b>(3장)와 마찬가지로, 관련 메시지는 <b class="g">코사인 유사도 &middot; 키워드 &middot; 또는 둘의 혼합</b>으로 검색할 수 있습니다. <b class="g">일화 기억은 사실상 대화 이력에 대한 RAG</b>입니다.</div>
+  <aside>그림 8-18이 일화 기억의 구성을 그린 것입니다.</aside>
+</section>
+
+<!-- 10 절차 기억 -->
+<section class="slide" data-part="8.5.2 해법">
+  <h2>&#128203; 절차 기억 &mdash; <span class="g">지시문과 프로필</span></h2>
+  <p><b class="g">시스템 지시문</b>과, 지시문을 만드는 데 쓰이는 <b class="g">사용자 프로필 같은 속성들</b>을 저장하고 검색하는 능력.</p>
+  <div class="hl" style="margin-top:14px">&#9881;&#65039; <b>사용자가 시스템 프롬프트를 직접 지정</b>할 수 있게 해 주면, 애플리케이션에서 받는 <b class="g">모든 응답을 개인화</b>할 수 있다. LLM 어시스턴트 <b class="g">Bench.io</b>가 그런 화면을 제공한다.</div>
+  <div class="big" style="margin-top:16px">다만 사용자가<br>시스템 프롬프트로 자기 얘기를 해 주기를<br><span class="y">기다릴 필요는 없다</span></div>
+  <div class="steps" style="margin-top:16px">
+    <div class="st"><span class="n">1</span><span class="t">각 사용자의 <b class="g">메시지를 관찰</b>한다</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b class="g">관련 사실을 프로필로 추출</b>한다 &mdash; 예: 사용자가 <b class="g">견과류 알레르기</b>가 있다고 언급하면</span></div>
+    <div class="st"><span class="n">3</span><span class="t">그 사용자의 <b class="g">시스템 프롬프트를 구성하는 데 쓰이는 프로필 정보</b>에 추가한다</span></div>
+  </div>
+  <div class="warn" style="margin-top:14px">&#128161; <b>두 가지 배치 선택</b> &mdash; 프로필 정보를 <b class="g">시스템 프롬프트</b>에 넣을 수도, <b class="g">프롬프트의 컨텍스트</b>에 넣을 수도 있다. 즉 <b class="g">사용자별 시스템 프롬프트</b>를 구성해 <b class="g">프로필의 어떤 부분을 포함할지 제어</b>할 수 있다.</div>
+  <div class="hl">&#128209; <b>6장 패턴 20 프롬프트 최적화</b>가 <b>기계가 프롬프트를 쓰게</b> 하는 것이었다면, 절차 기억은 <b class="g">사용자가 프롬프트를 쓰게</b> 하는 쪽입니다. 둘 다 <b class="g">프롬프트를 코드 밖으로 빼내는</b> 발상입니다.</div>
+  <aside>그림 8-19와 8-20이 이 두 방식을 각각 보여 줍니다.</aside>
+</section>
+
+<!-- 11 의미 기억 -->
+<section class="slide" data-part="8.5.2 해법">
+  <h2>&#128161; 의미 기억 &mdash; <span class="g">사실 자체를 남긴다</span></h2>
+  <p>이전 메시지에서 뽑아내는 핵심 사실이 <b class="r">사용자 프로필 정보에만 국한될 필요는 없다.</b></p>
+  <div class="hl" style="margin-top:14px">&#9992;&#65039; 사용자가 <b class="g">"아이슬란드에 도착하는 날 뭘 할 수 있을까?"</b>라고 묻는다면, 그가 말해 준 <b class="g">가장 최근 여행 정보</b>를 가져오는 것이 도움이 될 것이다.</div>
+  <div class="big" style="margin-top:16px">주로 <span class="y">내용을 기준으로</span><br>정보를 저장하고 검색하는 능력<br><small>주로 <b>최신성</b>을 기준으로 하는 <b>일화 기억</b>과는 다르다</small></div>
+  <div class="plabel" style="margin-top:16px">LangGraph — 기억 저장</div>
+  <pre>store = PostgresStore(
+    connection_string="postgresql://.../dbname",
+)
+<b class="g">trip_memories_ns = (user_id, "trip_memories")</b>   # 네임스페이스
+memory = {"trip": {"from": "SEA", "to": "KEF", "depart_time": ...}}
+memory_id = hash(json.dumps(memory, sort_keys=True))
+<b class="g">store.put(trip_memories_ns, memory_id, memory)</b></pre>
+  <div class="plabel" style="margin-top:12px">검색 — 가장 최근 여행</div>
+  <pre>most_recent_trip = in_memory_store.search(trip_memories_ns)<b class="g">[-1]</b></pre>
+  <div class="warn" style="margin-top:12px">&#128161; 대신 <b>특정 기간 내의 모든 최근 여행</b>을 살펴보거나, <b>아이슬란드와 관련된 것들만</b> 볼 수도 있습니다. <b class="g">무엇이 관련 있는지의 논리는 만드는 사람의 몫</b>입니다.</div>
+  <ul class="pts">
+    <li><b class="g">네임스페이스</b>(namespace) &mdash; 기억을 <b>사용자 &middot; 주제별로 나눠 담는 칸</b></li>
+    <li><b class="g">2차 확장</b>(quadratic scaling) &mdash; 입력 길이가 n배면 비용이 n&sup2;배가 되는 것</li>
+  </ul>
+  <aside>저자가 마지막 문장을 명시적으로 남긴 점이 중요합니다 — 프레임워크가 대신 정해 주지 않습니다.</aside>
+</section>
+
+<!-- 12 PART 3 -->
+<section class="slide" data-part="8.5.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">8.5.3 예제</h2>
+    <div class="who">Mem0로 여행 어시스턴트</div>
+  </div>
+  <aside>좌석 선호, 선호 항공사나 호텔 체인, 이미 다녀온 목적지 같은 맥락을 기억합니다.</aside>
+</section>
+
+<!-- 13 Mem0 설정 -->
+<section class="slide" data-part="8.5.3 예제">
+  <h2>&#128736;&#65039; <span class="g">Mem0</span> 설정</h2>
+  <div class="hl">&#128218; <b>Mem0</b> &mdash; Chhikara 외가 2025년 논문 <i>"Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory"</i>에서 소개한 <b class="g">저지연 기억 관리</b> 접근의 구현. 진행 중인 대화에서 관련 정보를 <b class="g">동적으로 추출 &middot; 통합 &middot; 검색</b>해 <b class="g">그래프 기반 기억 표현</b>으로 만든다. <b class="g">앞의 네 가지 기억을 모두 표현</b>할 수 있다.</div>
+  <pre style="margin-top:14px">config = {
+    "vector_store": {
+        "provider": <b class="g">"chroma"</b>,        # 의미 기반 검색용
+        "config": {
+            "collection_name": "mem0_basic_example",
+            "path": "/tmp/chroma_db",   # 기억을 저장할 위치
+        }
+    },
+    "llm": {
+        "provider": "openai",
+        "config": {"model": "gpt-4o-mini", "temperature": 0.1}
+    },
+    "embedder": {
+        "provider": "openai",           # 텍스트를 벡터로 변환
+        "config": {"model": "text-embedding-3-small"}
+    }
+    "history_db_path": os.path.join(temp_dir, "history.db")
+}
+
+memory = Memory.from_config(config)</pre>
+  <div class="warn" style="margin-top:12px">&#128209; 네 조각이 <b class="g">각각 다른 기억을 떠받칩니다</b> &mdash; <b>벡터 스토어</b>는 의미 기억, <b>LLM</b>은 사실 추출, <b>임베더</b>는 검색, <b>history DB</b>는 감사 추적. 다음 슬라이드들에서 하나씩 봅니다.</div>
+  <aside>설정만 봐도 이 프레임워크가 무엇을 합치는지 보입니다.</aside>
+</section>
+
+<!-- 14 add / search -->
+<section class="slide" data-part="8.5.3 예제">
+  <h2>&#9989; 쓰는 법은 <span class="g">두 줄</span></h2>
+  <div class="plabel">대화를 기억에 추가</div>
+  <pre>conversation = [
+    {"role": "user", "content": """I'm looking to travel from
+Seattle to Reykjavik. What's the best way to do this?"""},
+    {"role": "assistant", "content": """The best way to travel from
+Seattle to Reykjavik is to fly. The flight is about 10 hours long."""}
+]
+
+<b class="g">memory.add(conversation, user_id="megan")</b></pre>
+  <div class="plabel" style="margin-top:12px">나중에 검색</div>
+  <pre>query = "What are my options to travel to Reykjavik?"
+relevant_memories = <b class="g">memory.search(query=query, user_id="megan", limit=3)</b>
+
+# 반환: <b class="g">["Interested in travel from Seattle to Reykjavik"]</b></pre>
+  <p style="margin-top:14px">이제 검색으로 돌아온 기억들을 <b class="g">LLM 요청의 요청 컨텍스트에 한 번 주입</b>하면 된다.</p>
+  <div class="big" style="margin-top:16px">이게 전부다<br><small>Mem0 같은 프레임워크는 <b>기억이 정확히 어떻게<br>검색되고 순위가 매겨지는지의 세부를 추상화</b>해 준다</small></div>
+  <div class="hl" style="margin-top:14px">&#128161; 저장한 것은 <b>대화 두 턴</b>인데 돌아온 것은 <b class="g">"Interested in travel from Seattle to Reykjavik"</b>이라는 <b class="g">한 문장의 사실</b>입니다. <b class="g">메시지가 아니라 사실이 저장된 것</b> &mdash; 이것이 의미 기억입니다.</div>
+  <aside>이제 그 뒤에서 무슨 일이 벌어지는지 봅니다.</aside>
+</section>
+
+<!-- 15 add 내부 -->
+<section class="slide" data-part="8.5.3 예제">
+  <h2>&#128269; <span class="g">기억 추가</span>는 어떻게 동작하나</h2>
+  <table class="t">
+    <tr><th style="width:24%">식별자</th><th>효과</th></tr>
+    <tr><td><code>user_id="megan"</code></td><td>장기 기억이 <b class="g">이 사용자와 연결되어 세션을 넘어 지속</b>된다</td></tr>
+    <tr><td><code>metadata={...}</code></td><td>다른 종류의 메타데이터도 지정 &mdash; <code>{"food": "vegan"}</code></td></tr>
+    <tr><td><code>run_id="..."</code></td><td>메시지를 <b class="g">단일 세션 동안만</b> 유지 &mdash; <b class="g">이것이 단기 기억을 구현하는 방법</b></td></tr>
+  </table>
+  <pre style="margin-top:12px">client.add(messages, user_id="megan", <b class="g">metadata={"food": "vegan"}</b>)
+client.add(messages, user_id="megan", <b class="g">run_id="iceland-trip-planning"</b>)</pre>
+  <div class="warn" style="margin-top:12px">&#129302; <code>user_id</code>가 <b class="r">사람 사용자만을 위한 것일 필요는 없다</b> &mdash; <b class="g">AI 어시스턴트에게도 사용자 ID를 부여</b>해, 서로 다른 사용자에게 <b class="g">일관된 응답</b>을 주고 세션을 넘어 세부를 기억하게 할 수 있다.</div>
+  <div class="hl" style="margin-top:14px">&#9881;&#65039; <b><code>memory.add</code>가 내부에서 하는 일</b> &mdash; 설정된 LLM으로 대화에서 <b class="g">관련 정보를 추출</b>하고, <b class="g">중요한 개체와 관계를 식별</b>하고, <b class="g">새 정보를 기존 데이터와 비교</b>하고, <b class="g">모순을 식별 &middot; 해소</b>한다.</div>
+  <pre style="margin-top:12px"># 내부적으로 분석용 프롬프트로 변환된다
+analysis_prompt = """
+Analyze this conversation and extract important facts about the user:
+{messages}
+<b class="g">Extract only memorable, personal information.
+Ignore general knowledge.</b>
+"""
+# LLM 반환: <b class="g">User wants to travel from Seattle to Reykjavik.</b></pre>
+  <aside>모순 해소까지 한다는 점이 단순 저장과의 차이입니다.</aside>
+</section>
+
+<!-- 16 무엇을 남기고 무엇을 버리나 -->
+<section class="slide" data-part="8.5.3 예제">
+  <h2>&#128465;&#65039; 무엇을 남기고 <span class="r">무엇을 버리나</span></h2>
+  <div class="grid2">
+    <div class="box"><b class="g">&#9989; 남기는 것</b><br><br>
+      &bull; <b class="g">개인적 사실</b> &mdash; "나는 레이캬비크로 여행 가는 걸 좋아해"<br>
+      &bull; <b class="g">선호</b> &mdash; "피자 좋아해"<br>
+      &bull; <b class="g">계획</b> &mdash; "아이슬란드로 여행 갈 거야"<br>
+      &bull; <b class="g">관계</b> &mdash; "메건은 고객이다"</div>
+    <div class="box" style="border-color:var(--red)"><b class="r">&#10060; 무시하는 것</b><br><br>
+      &bull; <b class="r">잡담</b> &mdash; "오늘 날씨 좋네요"<br>
+      &bull; <b class="r">흔한 인사</b> &mdash; "안녕하세요, 잘 지내세요?"<br>
+      &bull; <b class="r">일반 지식</b> &mdash; "파리는 프랑스의 수도다"<br>
+      &bull; <b class="r">쉽게 재구성할 수 있는 정보</b> &mdash; "2 + 2는?"</div>
+  </div>
+  <div class="hl" style="margin-top:16px">&#128161; <b>버리는 기준이 명확합니다</b> &mdash; <b class="g">"모델이 이미 알거나 다시 만들어 낼 수 있는 것은 기억하지 않는다."</b> 장기 기억은 <b class="g">모델이 알 수 없는 것만</b> 담는 자리입니다.</div>
+  <div class="plabel" style="margin-top:14px">남긴 정보를 임베딩한다</div>
+  <pre>embedding_response = openai_embeddings.create(
+    model="text-embedding-3-small",
+    input="User wants to travel from Seattle to Reykjavik"
+)
+# 1536차원 벡터: [0.023, -0.891, 0.445, ..., 0.123]</pre>
+  <pre style="margin-top:10px">chroma_client.add(
+    embeddings=[embedding_vector],
+    documents=["User wants to travel from Seattle to Reykjavik"],
+    <b class="g">metadatas=[{
+        "user_id": "megan",
+        "created_at": "2025-07-15T10:30:00Z",
+        "memory_id": "uuid-12345",
+        "category": "customer_info"
+    }]</b>,
+    ids=["memory_uuid_12345"]
+)</pre>
+  <aside>벡터 스토어는 비슷한 벡터를 빠르게 찾도록 최적화되어 있습니다.</aside>
+</section>
+
+<!-- 17 여러 DB 조합 -->
+<section class="slide" data-part="8.5.3 예제">
+  <h2>&#128451;&#65039; 여러 데이터베이스를 <span class="g">겹쳐 쓴다</span></h2>
+  <p>기억을 다루는 도구들은 데이터를 <b class="g">그래프나 관계형 데이터베이스</b>로 조직하는 경우가 많다. 이 방식은 사용자 선호와 연결 관계 같은 <b class="g">절차 기억 요소</b>를 관리하는 데 도움이 된다.</p>
+  <div class="hl" style="margin-top:14px">&#128279; <b class="g">의미 기억과 절차 기억을 결합</b>하거나, <b class="g">그래프 데이터베이스와 벡터 데이터베이스를 결합</b>하면 좋은 결과가 나온다. 이 조합이 <b class="g">적절한 맥락을 제공해 연관된 사용자 콘텐츠의 검색</b>을 돕는다.</div>
+  <pre style="margin-top:14px">history_db.execute("""
+    INSERT INTO memory_history
+    (memory_id, user_id, action, content, timestamp)
+    VALUES (?, ?, <b class="g">'ADD'</b>, ?, ?)
+""", ["uuid-12345", "megan", memory_text, timestamp])
+
+# 빠른 조회를 위한 키-값 스토어도 가능
+<b class="g">kv_store["user:megan:destination"] = "Reykjavik"
+kv_store["user:megan:origin"] = "Seattle"</b></pre>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:26%">저장소</th><th>맡는 역할</th></tr>
+    <tr><td><b class="g">벡터 DB</b> <small>(Chroma)</small></td><td><b>의미 기억</b> &mdash; 내용 유사도 검색</td></tr>
+    <tr><td><b class="g">KV DB</b> <small>(Redis)</small></td><td><b>절차 기억</b> &mdash; 빠른 정확 조회</td></tr>
+    <tr><td><b class="g">그래프 DB</b> <small>(Neo4j)</small></td><td><b>절차 기억</b> &mdash; 관계 질의</td></tr>
+    <tr><td><b class="g">관계형 DB</b> <small>(Postgres &middot; SQLite)</small></td><td><b class="gold">감사 추적</b> &mdash; 기억이 시간에 따라 어떻게 변해 왔는지</td></tr>
+  </table>
+  <aside>네 가지 기억이 네 가지 저장소로 흩어지는 것이 이 프레임워크의 실제 모습입니다.</aside>
+</section>
+
+<!-- 18 search 내부 -->
+<section class="slide" data-part="8.5.3 예제">
+  <h2>&#128270; <span class="g">기억 검색</span>은 어떻게 동작하나</h2>
+  <div class="hl"><code>memory.search</code>는 입력 질의와 <b class="g">비슷한 최근 메시지</b>를 벡터 DB에서 찾아 기억을 가져온다. Mem0는 <b class="g">참조된 개체도 식별</b>해 데이터베이스에서 <b class="g">관련 메시지와 사용자 선호를 함께</b> 검색한다.</div>
+  <div class="big" style="margin-top:14px"><span class="y">한 번의 호출</span>로<br>일화 &middot; 의미 &middot; 절차 기억을 <span class="y">모두</span> 가져온다</div>
+  <pre style="margin-top:16px">query_embedding = openai_embeddings.create(
+    model="text-embedding-3-small",
+    input="Where does Megan like to travel to?"
+)   # [0.156, -0.234, 0.789, ..., 0.445]</pre>
+  <pre style="margin-top:10px"># ChromaDB 가 코사인 유사도 검색을 수행
+search_results = chroma_client.query(
+    query_embeddings=[query_vector],
+    <b class="g">where={"user_id": "megan"}</b>,   # 이 사용자로만 한정
+    n_results=3,
+    include=["documents", "metadatas", "distances"]
+)
+# [ {"document": "wants to travel to Reykjavik", <b class="g">"distance": 0.15</b>},
+#   {"document": "Iceland",                      "distance": 0.23},
+#   {"document": "Blue Lagoon",                  "distance": 0.31} ]</pre>
+  <pre style="margin-top:10px"># KV: 빠른 정확 조회
+kv_store["user:megan:destination"] &rarr; "Reykjavik"
+# 그래프: 관계 질의
+graph_db.query("MATCH (megan:Person)-[:WORKS_AT]-&gt;(c:Company) RETURN c")
+# 관계형: 감사 추적
+history_db.query("SELECT * FROM memory_history WHERE user_id='megan'
+                  ORDER BY timestamp")</pre>
+  <div class="warn" style="margin-top:12px">&#128209; <code>where={"user_id": "megan"}</code>가 <b class="g">멀티테넌트 격리</b>를 담당합니다 &mdash; 패턴 25의 캐시 격리와 같은 문제입니다.</div>
+  <aside>결과는 질의와의 관련성에 따라 순위가 매겨집니다.</aside>
+</section>
+
+<!-- 19 필터 -->
+<section class="slide" data-part="8.5.3 예제">
+  <h2>&#127860; <span class="g">필터</span>로 무엇을 가져올지 고른다</h2>
+  <p>돌려받을 기억은 <b class="g">필터(filters)</b>로 제어할 수 있다 &mdash; 기억에 거는 추가 조건이다.</p>
+  <div class="hl" style="margin-top:14px">&#9992;&#65039; <b>예</b> &mdash; 사용자의 <b class="g">항공편을 예약할 때마다</b> <b class="g">음식 선호와 관련된 기억</b>을 추출하도록 필터를 걸 수 있다.</div>
+  <pre style="margin-top:14px">query = "Book a flight from SEA to KEF on June 6"
+filters = {
+    <b class="g">"AND"</b>: [
+        {
+            "categories": {
+                <b class="g">"contains": "food_preferences"</b>
+            }
+        }
+    ]
+}
+client.search(query, user_id="megan", <b class="g">filters=filters</b>)</pre>
+  <div class="big" style="margin-top:18px">Mem0는 질의 처리와 저장 연산의<br>상당 부분을 추상화한<br><span class="y">단순한 인터페이스로</span><br>네 가지 기억을 모두 지원한다</div>
+  <div class="warn" style="margin-top:16px">&#128161; <b>이 필터가 하는 일을 곱씹어 보세요</b> &mdash; 질의는 <b>"항공편 예약"</b>인데 가져오는 것은 <b class="g">"음식 선호"</b>입니다. <b class="g">의미 유사도만으로는 절대 연결되지 않을</b> 두 가지를, <b class="g">사람이 아는 도메인 규칙</b>으로 이어 붙인 것이죠.</div>
+  <aside>앞에서 "무엇이 관련 있는지의 논리는 만드는 사람의 몫"이라 한 말이 여기서 코드가 됩니다.</aside>
+</section>
+
+<!-- 20 PART 4 -->
+<section class="slide" data-part="8.5.4 고려사항">
+  <h2>&#9888;&#65039; 8.5.4 &mdash; <span class="g">고려사항</span></h2>
+  <div class="warn">&#127970; <b>프로덕션이라면 마이크로서비스로</b><br>Mem0 같은 프레임워크는 <b class="g">벡터 DB &middot; 관계형 DB &middot; 여러 LLM 구성</b> 등 여러 인프라 조각을 결합한다. 프로덕션 사용 사례라면 <b class="r">파이썬 모듈을 직접 쓰는 대신</b> <b class="g">마이크로서비스로 배포할 것을 강력히 권한다.</b> <b>Mem0 서버</b>가 출발점이 될 수 있다.</div>
+  <div class="hl" style="margin-top:14px">&#9201;&#65039; <b>백그라운드 스레드</b> &mdash; 사용자 경험이 느려지지 않도록, <b class="g">메시지와 기억을 이력에 쓰는 작업은 백그라운드 스레드</b>에서 수행할 수 있다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:22%">기억</th><th style="width:40%">언제 중요한가</th><th>어떤 앱에</th></tr>
+    <tr><td><b class="g">작업 기억</b></td><td><b>현재 대화 맥락 유지</b></td><td><b class="g">챗봇</b></td></tr>
+    <tr><td><b class="g">일화 기억</b></td><td><b>특정 상호작용에 대한 메시지</b>를 찾을 때</td><td><b class="g">다단계 워크플로</b>가 포함된 앱과 작업</td></tr>
+    <tr><td><b class="g">절차 기억</b></td><td><b>사용자 패턴과 선호를 학습</b></td><td><b class="g">개인화</b></td></tr>
+    <tr><td><b class="g">의미 기억</b></td><td>이전 대화에서 <b>추출한 사실과 지식</b> 관리</td><td><b class="g">큰 문서 처리</b></td></tr>
+  </table>
+  <div class="hl">&#128161; 만드는 애플리케이션에 따라 <b class="g">네 가지 중 하나 이상</b>을 관리해야 할 수 있습니다. 전부 다 쓰는 것이 기본값이 아닙니다.</div>
+  <aside>다음 슬라이드가 이 절에서 가장 중요한 권고입니다.</aside>
+</section>
+
+<!-- 21 의미 기억 권고 -->
+<section class="slide" data-part="8.5.4 고려사항">
+  <h2>&#11088; 저자의 권고 &mdash; <span class="g">일화보다 의미</span></h2>
+  <div class="big">일반적으로는<br><span class="y">일화 기억보다 의미 기억</span>을<br>쓰는 편이 좋다</div>
+  <table class="t" style="margin-top:18px">
+    <tr><th style="width:26%">일화 기억의 문제</th><th>내용</th></tr>
+    <tr><td><b class="r">검색 지연</b></td><td><b>모든 메시지를 있는 그대로 저장</b>하고 런타임에 관련 메시지를 찾아내는 데 의존한다. <b class="g">저장은 저렴하지만</b> <b class="r">관련 메시지를 검색하는 데 상당한 지연</b>이 붙을 수 있다</td></tr>
+    <tr><td><b class="r">디버깅 난이도</b></td><td><b class="r">캐시 미스로 인한 기억 오류는 원인을 추적하기도 꽤 어렵다</b></td></tr>
+  </table>
+  <div class="hl" style="margin-top:16px">&#9989; <b>그래서</b> &mdash; 메시지를 있는 그대로 저장하는 대신, 메시지에서 <b class="g">기억할 만한 정보를 추출해 그것만 저장</b>하는 편이 나은 경우가 많다. 그러면 <b class="g">양이 적고 더 결정론적으로 검색</b>할 수 있다.</div>
+  <div class="warn" style="margin-top:16px">&#128209; <b>7장의 메아리</b> &mdash; 패턴 23에서 저자들은 <b class="g">"단일 에이전트로 되면 그냥 그렇게 하라"</b>고 했습니다. 여기서도 같은 태도입니다 &mdash; <b class="g">더 많이 저장하는 것이 더 좋은 것이 아니다.</b> 검색이 결정론적일수록 디버깅이 쉽습니다.</div>
+  <div class="big" style="margin-top:16px">장기 기억은<br><span class="y">대화를 다 기억하는 것이 아니라</span><br>기억할 만한 것만 골라 남기는 기술</div>
+  <aside>8장에서 가장 자주 인용될 문장일 겁니다.</aside>
+</section>
+
+<!-- 22 참고문헌 -->
+<section class="slide" data-part="8.5.5 참고문헌">
+  <h2>&#128218; 8.5.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:28%">출처</th><th>기여</th></tr>
+    <tr><td><b>Sumers 외 (2023)</b></td><td><b class="g">기억의 유형</b>을 소개 &mdash; 작업 &middot; 일화 &middot; 절차 &middot; 의미</td></tr>
+    <tr><td><b>Wang 외 (2023)</b></td><td>LLM에 장기 기억을 증강하는 <b class="g">잠재 공간(latent-space) 접근</b>. 원본 LLM은 그대로 두고 <b class="g">적응형 잔차 사이드 네트워크</b>를 기억 공동 검색기로 사용</td></tr>
+    <tr><td><b class="g">Chhikara 외 (2025)</b></td><td>집필 시점 기준 <b class="g">기억 관리의 최전선</b> &mdash; 확장 가능한 <b class="g">Mem0</b> 접근. <b>라벨이 붙은 그래프에서 정보를 동적으로 추출하고 갱신</b>한다</td></tr>
+  </table>
+  <div class="warn" style="margin-top:16px">&#127891; <b>실무 사례 &mdash; RevisionDojo</b><br>개인화된 <b class="g">튜터링 제품</b>에서 Mem0를 사용해 &mdash;<br>&bull; <b class="g">이전 학습 내용을 참조</b>하고<br>&bull; <b class="g">설명을 맞춤화</b>하며<br>&bull; <b class="g">난이도를 동적으로 조정</b>한다</div>
+  <div class="hl" style="margin-top:16px">&#128161; <b>네 가지 기억이 한 제품에</b> &mdash; 이전 학습 내용(<b>일화 &middot; 의미</b>), 설명 맞춤화(<b>절차</b>), 진행 중인 세션(<b>작업</b>). 교육 제품이 <b class="g">장기 기억의 교과서적 사용 사례</b>인 이유입니다.</div>
+  <aside>Wang 외(2023)의 접근은 프레임워크가 아니라 모델 쪽 해법이라는 점이 다릅니다.</aside>
+</section>
+
+<!-- 23 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#129504; 골라서 <span class="g">남기는 기술</span></h1>
+    <div class="big" style="margin-top:24px">지금 세션은 <span class="y">작업</span><br>과거 메시지는 <span class="y">일화</span><br>지시문과 프로필은 <span class="y">절차</span><br>추출한 사실은 <span class="y">의미</span><br><br><small>그리고 <b class="g">되도록 일화보다 의미로</b></small></div>
+    <p class="sub" style="margin-top:22px">8장 &mdash; 여기까지 &nbsp;&middot;&nbsp; 패턴 24 &middot; 25 &middot; 26 &middot; 27 &middot; 28 완료</p>
+  </div>
+  <aside>8장이 끝났습니다. 9장은 본문을 주시면 이어서 만듭니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

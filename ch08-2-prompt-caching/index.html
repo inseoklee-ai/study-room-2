@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>패턴 25 프롬프트 캐싱 — Prompt Caching</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 8 &middot; Pattern 25</div>
+    <h1 style="margin:18px 0">프롬프트 <span class="g">캐싱</span></h1>
+    <p class="sub">Prompt Caching &mdash; 같거나 비슷한 프롬프트에 <b>이전 응답</b>이나 <b>모델 내부 상태</b>를 재사용한다</p>
+  </div>
+  <aside>주된 목적은 비용 절감이고, 경우에 따라 지연 시간도 함께 줄어듭니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 8.2</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>8.2.1 문제</b> &mdash; 요청의 상당 부분은 같은 질문의 반복</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>8.2.2 해법</b> &mdash; 어디에 캐시할 것인가</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>8.2.3 예제</b> &mdash; 디스크 기반 캐시 만들기</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>8.2.4 고려사항</b> &mdash; 멀티테넌트 &middot; 무효화 &middot; 어디에 둘까</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>8.2.5 참고문헌</b></span></div>
+  </div>
+  <div class="hl">&#128161; <b>이 덱의 핵심 갈림길</b> &mdash; <b class="g">클라이언트 측</b>이냐 <b class="g">서버 측</b>이냐. 둘은 <b class="r">아끼는 것이 다릅니다.</b> 클라이언트 측은 <b>응답 전체</b>를, 서버 측은 <b>준비 과정</b>만 재사용합니다.</div>
+  <aside>이 구분을 놓치면 "캐싱했는데 왜 안 빨라지지?"가 됩니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="8.2.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">8.2.1 문제</h2>
+    <div class="who">낭비되는 재계산</div>
+  </div>
+  <aside>배포하고 나면 자주 발견하게 되는 사실에서 출발합니다.</aside>
+</section>
+
+<!-- 4 반복 통계 -->
+<section class="slide" data-part="8.2.1 문제">
+  <h2>&#128202; 사용자 요청의 상당 부분은 <span class="g">같은 질문의 반복</span></h2>
+  <table class="t">
+    <tr><th style="width:56%">어디에 전화하는가</th><th>같은 용건인 비율</th></tr>
+    <tr><td>케이블 회사 &mdash; <b>장애 신고</b></td><td><b class="gold">31%</b></td></tr>
+    <tr><td>은행 &mdash; <b>로그인 문제</b></td><td><b class="gold">30%</b></td></tr>
+    <tr><td>오프라인 매장 &mdash; <b>영업시간 문의</b></td><td><b class="gold">40%</b></td></tr>
+  </table>
+  <div class="big" style="margin-top:18px">모델이 이미 응답을 계산해 둔<br>이런 반복 요청에 대해<br>응답을 다시 계산하는 것은<br><span class="r">여러 면에서 낭비</span></div>
+  <div class="hl" style="margin-top:16px">&#128161; 이 숫자들이 중요한 이유 &mdash; 캐싱의 <b class="g">효과가 워크로드의 반복성에 정비례</b>하기 때문입니다. 반복률 30~40%라면 <b class="g">그만큼이 곧 절감 상한</b>입니다.</div>
+  <aside>내 서비스의 반복률을 먼저 재 보는 것이 순서입니다.</aside>
+</section>
+
+<!-- 5 세 가지 낭비 -->
+<section class="slide" data-part="8.2.1 문제">
+  <h2>&#128465;&#65039; 낭비는 <span class="r">세 갈래</span>로 나타난다</h2>
+  <table class="t">
+    <tr><th style="width:24%">낭비</th><th>내용</th></tr>
+    <tr><td><b class="r">하드웨어 활용</b><br><small>hardware utilization</small></td><td>같은 요청을 반복 재계산하면 <b class="r">새로운 요청을 처리해야 할 GPU가 묶인다.</b> 새 요청들은 반복 요청 뒤에 <b class="r">줄을 서게</b> 된다.<br>&rarr; <b>사용량이 급증하는데 하드웨어 조달이 못 따라오는 스타트업</b>에서 특히 문제. 성숙한 기업도 <b>피크 시간</b>에는 영향을 받는다</td></tr>
+    <tr><td><b class="r">사용자 시간</b><br><small>user time</small></td><td>이전 응답을 재사용해 생성 과정을 건너뛰면 <b class="g">UX가 좋아진다.</b> 평균 대기 시간이 줄어드는데, <b>빠른 응답을 기대하는 인터랙티브 애플리케이션</b>에서 가치가 크다.<br>&rarr; 여러 번 오가는 세션에서는 <b class="g">일부 응답이 더 빨리 돌아오는 것만으로 문제 해결까지의 총 시간</b>이 줄어든다</td></tr>
+    <tr><td><b class="r">하드웨어 비용</b><br><small>hardware costs</small></td><td>계속 재계산하고 있다면, 애플리케이션이 <b class="r">실제로 필요로 하는 것보다 더 많은 GPU/TPU를 조달</b>하고 있는 것일 수 있다</td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">낭비되는 재계산을<br><span class="y">피할 방법이 있을까?</span></div>
+  <aside>세 갈래가 서로 얽혀 있습니다 — GPU가 묶이면 대기가 길어지고, 그래서 GPU를 더 사게 됩니다.</aside>
+</section>
+
+<!-- 6 PART 2 -->
+<section class="slide" data-part="8.2.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">8.2.2 해법</h2>
+    <div class="who">어디에 캐시할 것인가</div>
+  </div>
+  <aside>요청 전체가 반복될 필요도 없습니다. 일부만 반복돼도 동작합니다.</aside>
+</section>
+
+<!-- 7 클라이언트 vs 서버 -->
+<section class="slide" data-part="8.2.2 해법">
+  <h2>&#128225; 가장 큰 구분 &mdash; <span class="g">클라이언트 측</span> vs <span class="g">서버 측</span></h2>
+  <div class="grid2">
+    <div class="box"><b class="g">&#128187; 클라이언트 측</b><br><br>
+      &bull; <b class="g">지연 시간 감소 폭이 가장 크다</b><br>
+      &bull; <b class="r">캐시 운영 책임을 내가 진다</b><br>
+      &bull; <b class="r">같은 클라이언트에서 반복되는 요청</b>에만 통한다</div>
+    <div class="box"><b class="g">&#9729;&#65039; 서버 측</b><br><br>
+      &bull; <b class="g">분산된 클라이언트가 많을 때</b>(원격 LLM에 직접 접근하는 모바일 앱 등)<br>
+      &bull; <b class="g">Anthropic &middot; OpenAI &middot; 구글</b> 같은 모델 제공자를 쓴다면 좋은 선택지</div>
+  </div>
+  <div class="hl" style="margin-top:16px">&#127859; <b>비유</b> &mdash; 식당에 손님이 옵니다. 세 가지 방식이 있어요.<br>
+    &#9312; <b class="g">완성된 요리를 냉장고에서 꺼내 준다</b>(응답 캐시)<br>
+    &#9313; <b class="g">메뉴 이름이 조금 달라도 같은 요리로 친다</b>(시맨틱 캐시)<br>
+    &#9314; <b class="g">육수는 미리 우려 놓고, 주문 들어오면 그 육수로 요리를 새로 한다</b>(프리픽스 캐시)</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:22%"></th><th style="width:26%">무엇을 재사용</th><th style="width:26%">속도</th><th>창의성</th></tr>
+    <tr><td><b class="g">응답 캐시</b><br><small>클라이언트</small></td><td>완성된 응답</td><td><b class="g">가장 빠름</b> (LLM 호출 0)</td><td><b class="r">매번 똑같은 답</b></td></tr>
+    <tr><td><b class="g">시맨틱 캐시</b><br><small>클라이언트</small></td><td>비슷한 질문의 응답</td><td><b class="g">매우 빠름</b></td><td><b class="r">뉘앙스 손실 가능</b></td></tr>
+    <tr><td><b class="g">프리픽스 캐시</b><br><small>서버</small></td><td>모델의 초기 내부 상태</td><td><b class="gold">TTFT만 개선</b></td><td><b class="g">그대로 유지</b></td></tr>
+  </table>
+  <aside>그림 8-4가 이 선택지들을 한 장에 그린 것입니다.</aside>
+</section>
+
+<!-- 8 메모이제이션 -->
+<section class="slide" data-part="8.2.2 해법">
+  <h2>&#128190; 클라이언트 측 &mdash; <span class="g">메모이제이션</span></h2>
+  <p>생성된 모든 응답은 <b class="g">응답 캐시(response cache)</b>라 부르는 <b>키-값(KV) 캐시</b>에 저장된다 &mdash; <b class="g">키는 프롬프트, 값은 응답</b>.</p>
+  <div class="chain" style="margin-top:14px">
+    <div class="cell"><small>요청</small><b>프롬프트</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gold)"><small>확인</small><b class="gold">캐시에<br>있나?</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>있으면</small><b class="g">LLM 호출<br>건너뛰기</b></div>
+  </div>
+  <div class="hl" style="margin-top:16px">&#9989; <b>캐시 적중 시</b> &mdash; <b class="g">네트워크 호출이 아예 없으니</b> 생성 지연 시간이 줄고, LLM을 호출하지 않으니 <b class="g">LLM 비용도 절약</b>됩니다.</div>
+  <div class="plabel" style="margin-top:12px">LangChain — 캐시를 고르고 set_llm_cache 를 호출</div>
+  <pre>from langchain_core.caches import InMemoryCache
+from langchain_core.globals import set_llm_cache
+
+<b class="g">set_llm_cache(InMemoryCache())</b>
+
+prompt_template = PromptTemplate.from_template("""
+    What are the steps to put a freeze on my credit card account?
+    """)
+chain = prompt_template | model | parser</pre>
+  <div class="warn">&#128161; 인메모리 외에 <b class="g">Redis &middot; Cassandra</b> 등도 지원합니다. 어떤 저장소를 고르든 <b class="g">설정 방식은 같습니다</b> &mdash; 캐시를 고르고 <code>set_llm_cache</code>를 부르면, 이후 LLM 호출마다 LangChain이 <b>요청을 쏘기 전에 캐시를 먼저 확인</b>합니다.</div>
+  <div class="plabel" style="margin-top:12px">모델 제공자의 클라이언트 측 캐싱 — OpenAI</div>
+  <pre><b class="g">os.environ["OPENAI_CACHE_DIR"] = "./oai_cache"</b>
+response = openai.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[{"role": "user", "content": """What is the capital of
+Monaco? Provide a detailed answer."""}],
+)</pre>
+  <aside>환경변수 하나로 클라이언트가 응답을 그 디렉터리에 캐시합니다.</aside>
+</section>
+
+<!-- 9 시맨틱 캐싱 -->
+<section class="slide" data-part="8.2.2 해법">
+  <h2>&#129504; <span class="g">시맨틱 캐싱</span> &mdash; 정확히 일치하지 않아도</h2>
+  <div class="warn">&#10060; <b>응답 캐싱의 단점</b> &mdash; <b class="r">텍스트가 정확히 일치해야 한다.</b> 한 글자만 달라도 미스입니다.</div>
+  <p style="margin-top:14px">이를 피하려면 <b class="g">시맨틱 캐시</b>를 쓴다 &mdash; 완전히 같은 질의뿐 아니라 <b class="g">비슷한</b> 질의도 캐시에서 찾는다. 구현 방법은 셋이다.</p>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:26%">방법</th><th>내용</th></tr>
+    <tr><td><b class="g">키의 정규형 사용</b><br><small>canonical form</small></td><td>요청의 <b class="g">정규 표현</b>을 키로 쓴다 &mdash; <b>동의어를 치환</b>하고, <b>의미를 바꾸지 않는 구절을 제거</b>. 어간 추출(stemming)이나 텍스트 정규화 같은 <b>NLP 연산</b>으로 만든다</td></tr>
+    <tr><td><b class="g">같은 응답에<br>여러 키 사용</b></td><td>최초 요청에 대해 <b class="g">의미적으로 비슷한 요청들을 생성</b>하고, <b class="g">그 모든 유사 키에 같은 응답을 저장</b>한다 &rarr; 이후 비슷한 질의에서 <b class="g">적중 확률이 올라간다</b><br><small>&rarr; 이 덱의 「예제」에서 이 방식을 만들어 봅니다</small></td></tr>
+    <tr><td><b class="g">임베딩 기반<br>유사도 검색</b></td><td>KV 스토어 대신 <b class="g">벡터 스토어</b>를 써서, 주어진 질의와 <b class="g">충분히 가까운</b> 캐시 요청을 찾는다. 오픈소스 <b class="g">GPTCache</b>가 이 방식</td></tr>
+  </table>
+  <pre style="margin-top:12px">data_manager = get_data_manager(CacheBase("sqlite"),
+                                <b class="g">VectorBase("faiss", ...)</b>)
+cache.init(
+    embedding_func=onnx.to_embeddings,
+    data_manager=data_manager,
+    <b class="g">similarity_evaluation=SearchDistanceEvaluation()</b>,
+)
+cache.set_openai_key()</pre>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; <b>임베딩 방식의 문제</b> &mdash; <b class="r">유사도 임계값</b>을 찾아야 한다. 캐시 적중 시의 <b class="r">거짓 양성</b>과 미스 시의 <b class="r">거짓 음성</b> 사이에서 균형점을 잡아야 한다.<br><br>
+  &#9888;&#65039; <b>시맨틱 캐싱 전반의 단점</b> &mdash; <b class="r">살짝 다른 질의에 같은 응답</b>이 돌아갈 수 있고, 그 과정에서 <b class="r">뉘앙스가 사라진다.</b> 시스템이 계속 같은 응답을 내놓으면 <b class="r">덜 "똑똑해" 보일</b> 수도 있다.</div>
+  <aside>정확도를 조금 내주고 적중률을 사는 거래입니다.</aside>
+</section>
+
+<!-- 10 서버 측 프리픽스 -->
+<section class="slide" data-part="8.2.2 해법">
+  <h2>&#9729;&#65039; 서버 측 &mdash; <span class="g">프리픽스 캐싱</span></h2>
+  <p>요청 전체를 캐시하는 대신, LLM 제공자가 <b class="g">프롬프트의 공통 부분</b>(대개 길다란 시스템 프롬프트나 예시들)에 대해 이전에 계산한 <b class="g">모델 내부 상태</b>를 재사용한다. 같은 프리픽스를 쓰는 이후 프롬프트들은 <b class="g">중복된 초기 계산을 건너뛴다.</b></p>
+  <div class="hl" style="margin-top:14px">&#10067; <b>"초기 상태"가 뭔가요</b> &mdash; LLM은 긴 시스템 프롬프트를 읽으면서 <b class="g">내부에 어떤 계산 결과(KV 캐시)를 쌓습니다.</b> 시스템 프롬프트가 매번 같다면 이 계산도 매번 같습니다. 그러니 <b class="g">한 번 계산해서 저장해 두고 불러 쓰자</b>는 것이죠.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:34%">이점</th><th>내용</th></tr>
+    <tr><td><b class="g">창의성에 영향을 주지 않는다</b></td><td><b class="g">생성은 매번 LLM이 수행</b>하며, 재사용되는 것은 초기 상태뿐. 클라이언트 측과 달리 <b class="g">미리 계산된 응답이 쓰이지 않는다</b></td></tr>
+    <tr><td><b class="gold">TTFT를 크게 줄인다</b></td><td>전체 지연 시간에는 <b class="r">큰 영향을 주지 않지만</b>, 초기 상태를 불러오므로 <b class="g">첫 토큰까지의 시간(TTFT)은 크게 준다.</b> <b>응답 스트림이 시작되기를 기다리는 채팅</b> 같은 스트리밍 앱에서 특히 유익 &mdash; Anthropic의 연구가 훌륭한 결과를 보였다</td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#128290; <b>최소 토큰 수 조건</b> &mdash; OpenAI &middot; Anthropic &middot; 구글은 요즘 프롬프트를 <b class="g">암묵적으로</b> 캐시하지만, 캐시되려면 프롬프트가 <b class="r">최소 토큰 수를 넘겨야</b> 합니다. 제공자 &middot; 모델마다 다르지만 대체로 <b class="g">1,024 토큰</b>을 넘어야 합니다. 캐시된 응답의 <b class="g">토큰 비용이 더 저렴</b>하므로 전체 비용이 줄어듭니다.</div>
+  <div class="hl">&#128295; <b>독점 모델만의 것이 아니다</b> &mdash; <b class="g">vLLM</b> 같은 오픈소스 추론 서버도 지원하며, 사실 <b class="g">자동 프리픽스 캐싱을 처음 지원한 것이 vLLM</b>입니다.</div>
+  <div class="warn">&#127916; <b>컨텍스트 캐싱</b>(context caching) &mdash; 서버 측의 또 다른 선택지. 사용자가 프롬프트와 함께 주는 <b class="g">비디오 &middot; 문서 &middot; 이미지</b> 같은 추가 컨텍스트를 캐시한다. <b>Gemini</b>가 멀티미디어 콘텐츠를 캐시해 이후 요청에서 재사용하는 방법을 제공합니다.</div>
+  <aside>답을 통째로 재사용하면 빠르지만 뻣뻣해지고, 준비 과정만 재사용하면 유연하지만 절약 폭이 작습니다.</aside>
+</section>
+
+<!-- 11 PART 3 -->
+<section class="slide" data-part="8.2.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">8.2.3 예제</h2>
+    <div class="who">디스크 기반 캐시</div>
+  </div>
+  <aside>서버 측은 제공자가 암묵적으로 해 주므로 클라이언트 측 구현에 집중합니다.</aside>
+</section>
+
+<!-- 12 기본 캐시 -->
+<section class="slide" data-part="8.2.3 예제">
+  <h2>&#128193; 프롬프트를 <span class="g">해싱해 파일명으로</span></h2>
+  <p>Redis 같은 KV 데이터베이스를 쓰는 대신, 프롬프트를 해싱해 그 해시를 <b class="g">JSON 데이터 구조의 파일명</b>으로 쓴다.</p>
+  <pre>class PromptCache:
+    def __init__(self, cache_dir: str = ".prompt_cache"):
+        self.cache_dir = Path(cache_dir)
+        self.cache_dir.mkdir(exist_ok=True)
+        self.client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+    def _get_cache_key(self, prompt: str) -&gt; str:
+        """Generate a unique cache key for the prompt."""
+        return <b class="g">hashlib.md5(prompt.encode()).hexdigest()</b>
+
+    def _get_cache_path(self, cache_key: str) -&gt; Path:
+        return self.cache_dir / f"{cache_key}.json"</pre>
+  <pre style="margin-top:10px">def get_cached_response(self, prompt: str) -&gt; Optional[Dict]:
+    cache_key = self._get_cache_key(prompt)
+    cache_path = self._get_cache_path(cache_key)
+
+    if cache_path.exists():
+        with open(cache_path, 'r') as f:
+            <b class="g">return json.load(f)</b>
+    <b class="gold">return None</b></pre>
+  <pre style="margin-top:10px">cached_response = self.get_cached_response(prompt)
+if cached_response:
+    <b class="g">return cached_response["content"]</b>   # LLM 생성을 건너뛴다</pre>
+  <aside>반환값이 None이 아니면 곧바로 이전 응답을 돌려줍니다.</aside>
+</section>
+
+<!-- 13 저장 -->
+<section class="slide" data-part="8.2.3 예제">
+  <h2>&#128229; 새 요청이면 <span class="g">생성하고 저장</span></h2>
+  <pre>response = self.client.messages.create(
+    model="claude-3-7-sonnet-20250219",
+    max_tokens=1000,
+    messages=[{"role": "user", "content": prompt}]
+)
+
+# 응답을 캐시에 저장
+response_dict = {
+    "content": response.content[0].text,
+    "model": response.model,
+    <b class="g">"usage": response.usage.dict()</b>
+}
+<b class="g">self.cache_response(prompt, response_dict)</b></pre>
+  <div class="hl" style="margin-top:14px">&#128161; <code>usage</code>까지 함께 저장하는 점을 보세요 &mdash; <b class="g">캐시로 얼마나 아꼈는지</b>를 나중에 집계할 수 있습니다.</div>
+  <div class="big" style="margin-top:16px">이건 <span class="y">뼈대만 있는</span> 구현이지만<br>그것만으로도 생성 비용을 아끼고<br>모델 지연 시간을 줄여 준다</div>
+  <div class="warn" style="margin-top:16px">&#128209; 이 예제는 Anthropic의 Claude를 쓰지만 <b class="g">구현은 어떤 LLM에서도 동작</b>합니다 &mdash; 캐시는 모델 바깥의 계층이니까요.</div>
+  <aside>50줄이 안 되는 코드로 시작할 수 있습니다.</aside>
+</section>
+
+<!-- 14 시맨틱 확장 -->
+<section class="slide" data-part="8.2.3 예제">
+  <h2>&#128260; 시맨틱 캐시로 <span class="g">확장하기</span></h2>
+  <p>LLM으로 <b class="g">비슷한 요청들을 생성</b>한 다음, 원래 요청의 응답과 함께 저장하면 된다.</p>
+  <pre>def _get_semantic_requests(self, prompt: str) -&gt; List[str]:
+  claude_prompt = f"""
+  You are a helpful assistant that generates
+  {self.num_semantic_requests} <b class="g">semantic alternative requests</b>
+  for a given prompt.
+  The requests should be <b class="g">different from the original prompt
+  but still related to the same topic</b>.
+  The requests should be in the same language as the prompt.
+
+  Here is the prompt:
+  {prompt}
+
+  Return a JSON array of {self.num_semantic_requests} requests.
+  """
+  response = self.client.messages.create(...)
+  try:
+      return json.loads(response.content[0].text)
+  except json.JSONDecodeError:
+      return []</pre>
+  <pre style="margin-top:10px">semantic_requests = self._get_semantic_requests(prompt)
+<b class="g">all_requests = [prompt] + semantic_requests</b>
+
+for request in all_requests:
+    <b class="g">self.cache_response(request, response_dict)</b>   # 전부 같은 응답</pre>
+  <div class="warn">&#128209; <b>2장 패턴 2 Grammar</b>가 아쉬운 자리입니다 &mdash; <code>json.loads</code>가 실패하면 <b class="r">조용히 빈 리스트</b>를 돌려주고 시맨틱 확장이 통째로 사라집니다. 실무라면 <b class="g">구조화 출력으로 강제</b>하는 편이 낫습니다.</div>
+  <aside>저자가 예제를 단순하게 두려고 try/except로 처리한 부분입니다.</aside>
+</section>
+
+<!-- 15 실제 예 -->
+<section class="slide" data-part="8.2.3 예제">
+  <h2>&#127919; 실제로 <span class="g">어떻게 퍼지나</span></h2>
+  <div class="plabel">원래 프롬프트</div>
+  <pre>Explain the concept of prompt caching in AI systems.
+100 words max.</pre>
+  <div class="box" style="margin-top:12px"><b>응답 (요약)</b><br><br><small>프롬프트 캐싱은 이전에 처리한 프롬프트와 응답을 저장해 <b class="g">계산 부하와 응답 시간을 줄인다.</b> …이 최적화 기법은 효율을 높이고, 자원을 아끼며, <b>동일한 입력에 대해 일관된 출력을 유지</b>한다. …어려운 점은 <b class="gold">성능 이득과 응답의 최신성 사이에서 균형을 잡을 캐시 만료 정책과 유사도 임계값</b>을 결정하는 데 있다.</small></div>
+  <div class="plabel" style="margin-top:12px">생성된 의미적 변형 10개 — 이 전부에 같은 응답이 저장된다</div>
+  <pre style="font-size:.74em">1. What is prompt caching in AI and why is it important?
+   Keep it brief (under 100 words).
+2. Can you provide a concise explanation of how prompt caching
+   works in artificial intelligence (100 words or less)?
+3. In less than 100 words, describe what prompt caching means
+   for AI performance.
+4. Give a quick overview of prompt caching technology in modern
+   AI systems (max 100 words).
+5. How does prompt caching help optimize AI responses?
+   ...
+10. Provide a short technical explanation of prompt caching
+    implementation in AI (no more than 100 words).</pre>
+  <div class="hl" style="margin-top:12px">&#128176; <b>산수</b> &mdash; LLM 호출 <b>2회</b>(원 응답 + 변형 생성)로 <b class="g">캐시 키 11개</b>를 만듭니다. 이후 이 11개 중 무엇이 들어와도 <b class="g">호출 0회</b>.</div>
+  <aside>선불로 한 번 더 호출하고 이후를 공짜로 만드는 거래입니다.</aside>
+</section>
+
+<!-- 16 확장 권고 -->
+<section class="slide" data-part="8.2.3 예제">
+  <h2>&#128295; 더 확장성 있게 하려면</h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b class="g">여러 클라이언트가 같은 캐시를 공유</b>하도록 <b>KV 데이터베이스</b>를 쓰라 &mdash; 디스크 파일은 그 클라이언트 하나에만 통한다</span></div>
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">2</span><span class="t"><b class="r">캐시를 사용자별로</b> 만드는 것도 고려하라 &mdash; <b class="r">한 사용자의 정보가 다른 사용자에게 새지 않도록</b></span></div>
+  </div>
+  <div class="warn" style="margin-top:16px">&#9888;&#65039; 2번은 <b class="r">단순한 성능 조언이 아니라 보안 요구사항</b>입니다. 8.2.4 「고려사항」에서 <b class="g">멀티테넌트</b> 항목으로 다시 나옵니다.</div>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell"><small>시작</small><b>디스크 파일</b><small>한 클라이언트</small></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>확장</small><b>KV DB</b><small>공유 캐시</small></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>안전</small><b class="g">사용자별 캐시</b><small>격리</small></div>
+  </div>
+  <aside>예제의 전체 구현은 GitHub 저장소에 있습니다.</aside>
+</section>
+
+<!-- 17 PART 4 -->
+<section class="slide" data-part="8.2.4 고려사항">
+  <h2>&#9888;&#65039; 8.2.4 &mdash; 신중하게 <span class="r">따져야 할 것</span></h2>
+  <div class="hl">&#128209; <b>먼저, 뜻밖의 연결</b> &mdash; 서버 측 Prompt Caching과 <b class="g">큰 컨텍스트 윈도</b>를 함께 지원하는 파운데이션 모델은 <b class="g">RAG의 매력적인 대안</b>이 된다. (3장 패턴 6의 사이드바 "RAG 대 큰 컨텍스트 윈도" 참조)</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:24%">고려사항</th><th>내용</th></tr>
+    <tr><td><b class="r">멀티테넌트 사용</b><br><small>multitenant use</small></td><td>여러 테넌트가 함께 쓴다면 캐싱은 <b class="r">한 사용자의 정보가 다른 사용자에게 새어 나갈 위험</b>을 만든다.<br>&rarr; 직접 구현한다면 <b class="g">사용자 식별자를 캐시 키의 일부로</b><br>&rarr; 제공자의 암묵적 캐싱을 쓴다면 <b class="g">시스템 프롬프트에 사용자 식별자를 넣어</b> 사용자별로 만든다<br>&rarr; 더 정교하게는 <b>연합 학습</b>(federated learning) 접목 &mdash; Gill 외(2024)</td></tr>
+    <tr><td><b class="r">캐시 무효화</b><br><small>invalidation</small></td><td>구성할 때 <b class="g">각 항목을 언제 무효화할지</b> 정해 두라. 제공자들은 <b class="g">TTL을 5분</b>으로 잡지만 더 길게 설정할 수 있는 경우가 많다.<br>&rarr; <b class="r">모델 버전이 바뀌면 캐시 전체를 무효화하라.</b> 결과가 크게 달라지기 때문</td></tr>
+    <tr><td><b class="r">클라이언트 측 대<br>서버 측</b></td><td>제공자의 암묵적 서버 측 캐싱은 비용을 아껴 주지만 <b class="r">지연 시간 개선은 TTFT에 한정</b>된다 &mdash; 캐시로 초기 상태를 불러올 뿐 <b class="r">여전히 응답 전체를 생성</b>하니까.<br>&rarr; 자주 오는 요청의 <b class="g">전체 지연 시간</b>을 줄이는 게 목표라면 <b class="g">클라이언트 측</b>을 택하라</td></tr>
+  </table>
+  <div class="big" style="margin-top:14px">비용을 아끼려면 <span class="y">서버 측으로 충분</span><br>전체 지연 시간을 줄이려면 <span class="y">클라이언트 측</span></div>
+  <aside>세 항목 중 멀티테넌트가 사고로 이어질 수 있는 유일한 항목입니다.</aside>
+</section>
+
+<!-- 18 참고문헌 -->
+<section class="slide" data-part="8.2.5 참고문헌">
+  <h2>&#128218; 8.2.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:28%">출처</th><th>기여</th></tr>
+    <tr><td><b class="g">GPTCache</b></td><td><b>임베딩 기반 유사도</b>를 활용한 클라이언트 측 <b class="g">시맨틱 캐시</b> 구현</td></tr>
+    <tr><td><b>Gill 외 (2024)</b></td><td>사용자 <b class="g">프라이버시를 지키기 위해 연합 학습</b>을 사용하는 <b>사용자 중심 시맨틱 캐시</b> 구축법</td></tr>
+    <tr><td><b>Jha &middot; Wang (2023)</b></td><td><b class="g">자동 프리픽스 캐싱</b> &mdash; <b>수업 프로젝트</b>에서 소개되어 <b class="g">vLLM에 구현</b>됐다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; 마지막 항목이 재미있습니다 &mdash; 오늘날 모든 주요 제공자가 쓰는 기법이 <b class="g">수업 프로젝트에서 출발</b>했습니다.</div>
+  <div class="warn" style="margin-top:14px">&#127970; <b>실무 사례와 실측치</b><br><br>
+    &bull; <b class="g">Notion</b> &mdash; Claude와 함께 프롬프트 캐싱을 사용해 <b>최고 수준의 품질을 유지하면서</b> Notion AI를 더 빠르고 저렴하게 만들었다<br><br>
+    &bull; <b class="g">Anthropic</b> &mdash; 긴 프롬프트에 대해 최대 <b class="g">90% 비용 절감 &middot; 85% 지연 시간 개선</b><br><br>
+    &bull; <b class="g">OpenAI</b> &mdash; <b>1,024 토큰이 넘는</b> 프롬프트에 자동 캐싱. <b>코딩 어시스턴트 &middot; 고객 지원 챗봇</b>에서 최대 <b class="g">80% 지연 시간 감소 &middot; 50% 비용 절감</b></div>
+  <aside>두 제공자의 수치 모두 "긴 프롬프트"라는 조건이 붙어 있다는 점을 기억하세요.</aside>
+</section>
+
+<!-- 19 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#127859; 요리를 꺼낼까, <span class="g">육수를 쓸까</span></h1>
+    <div class="big" style="margin-top:24px">답을 통째로 재사용하면<br><span class="y">빠르지만 뻣뻣해지고</span><br>준비 과정만 재사용하면<br><span class="y">유연하지만 절약 폭이 작다</span><br><br><small>그리고 <b class="r">멀티테넌트라면 반드시 사용자별로</b></small></div>
+    <p class="sub" style="margin-top:22px">패턴 25 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 26 추론 최적화</b></p>
+  </div>
+  <aside>계산을 건너뛰는 이야기는 여기까지. 다음은 계산 자체를 잘하는 이야기입니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>
