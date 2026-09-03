@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>깊은 검색 · 패턴 12 (4장)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 4 &middot; Pattern 12</div>
+    <h1 style="margin:18px 0">깊은 <span class="g">검색</span></h1>
+    <p class="sub">Deep Search &mdash; <b>검색 · 읽기 · 추론의 반복</b>으로 복잡한 질의에 답한다</p>
+  </div>
+  <aside>3·4장의 마지막 패턴이고 가장 복잡한 패턴입니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 4.4의 다섯 절</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>4.4.1 문제</b> &mdash; 단순 RAG가 무너지는 다섯 지점</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>4.4.2 해법</b> &mdash; 사고 단계 · 반복 · 외부 도구 · 평가 지표 · 정보 통합</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>4.4.3 예제</b> &mdash; 위키백과 Deep Search (라이베리아 · 나폴레옹)</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>4.4.4 고려사항</b> &mdash; 아주 느리다</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>4.4.5 참고문헌</b></span></div>
+  </div>
+  <div class="hl">&#128161; <b>한 줄로</b> &mdash; 검색을 <b class="g">한 번의 조회가 아니라 조사(research) 과정</b>으로 바꾼다.</div>
+  <aside>초보는 검색어 하나 넣고 나온 책 세 권으로 리포트를 씁니다. 잘하는 사람은 훑고, 빈틈을 찾고, 새 검색어를 만들어 다시 찾죠.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="4.4.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">4.4.1 문제</h2>
+    <div class="who">단순 RAG가 무너지는 다섯 지점</div>
+  </div>
+  <aside>RAG는 복잡한 정보 검색 작업에서 효과가 떨어집니다. 이유가 다섯 가지예요.</aside>
+</section>
+
+<!-- 4 다섯 문제 -->
+<section class="slide" data-part="4.4.1 문제">
+  <h2>&#10060; <span class="r">다섯 지점</span></h2>
+  <table class="t">
+    <tr><th style="width:24%">문제</th><th>내용과 예</th></tr>
+    <tr><td><b class="r">컨텍스트 윈도 제약</b></td><td><b>한 번의 검색에 담을 토큰 수가 제한</b>돼 불완전한 컨텍스트가 된다 &mdash; <i>"기후변화 완화 전략의 경제적 영향을 개발도상국과 선진국에 걸쳐 비교하라"</i>는 여러 나라·전략·경제 모델·시간 축을 <b class="r">단일 윈도에 담기 어렵다</b></td></tr>
+    <tr><td><b class="r">질의 중의성</b></td><td>초기 발견을 근거로 <b>질의를 다듬을 장치가 없다.</b> 패턴 10은 중의성을 <b>알아차리는 데서 그쳤다</b> &mdash; 조치는 <b>되묻기</b>뿐. 그런데 <b class="g">한쪽이 훨씬 그럴 법하다면?</b></td></tr>
+    <tr><td><b class="r">정보의 낡음과 검증</b></td><td><b>미리 색인된 정보</b>에 의존하는데 그것이 낡을 수 있고, <b class="r">최신성·정확성을 검증할 장치가 없다</b></td></tr>
+    <tr><td><b class="r">추론 깊이의 한계</b></td><td>문서에 <b>명시적으로 존재하는 정보에 국한된 얕은 추론</b> &mdash; <i>"선형 어텐션 트랜스포머를 엣지 디바이스 실시간 영상 처리에 쓴다면?"</i>은 문서를 <b class="r">따로따로 가져오되 개념을 연결하지 못한다</b></td></tr>
+    <tr><td><b class="r">멀티홉 질의</b></td><td>검색과 생성이 <b>단 한 단계</b>뿐 &mdash; <i>"MIT 최신 양자 ML 논문의 알고리즘 구현에 가장 적합한 언어는?"</i>은 <b>논문 식별 &rarr; 알고리즘 이해 &rarr; 언어 판단</b>의 3단을 요구한다</td></tr>
+  </table>
+  <aside>두 번째가 패턴 10과 이어집니다. 뉴캐슬 예제에서 되묻기까지만 갔던 걸 여기서는 추론으로 밀고 갑니다.</aside>
+</section>
+
+<!-- 5 PART 2 -->
+<section class="slide" data-part="4.4.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">4.4.2 해법</h2>
+    <div class="who">검색 → 사고 → 생성, 그리고 루프</div>
+  </div>
+  <aside>충분히 좋은 답을 찾거나 시간·비용 예산이 소진될 때까지 반복합니다.</aside>
+</section>
+
+<!-- 6 세 가지 넘어섬 -->
+<section class="slide" data-part="4.4.2 해법">
+  <h2>&#128260; 전통적 RAG를 <span class="g">세 방식</span>으로 넘어선다</h2>
+  <div class="chain">
+    <div class="cell"><small>기존</small><b>검색 &rarr; 생성</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>Deep Search</small><b class="g">검색 &rarr; <span style="color:var(--gold)">사고</span> &rarr; 생성</b></div>
+    <span class="ar">&#8630;</span>
+    <div class="cell"><small>그리고</small><b>반복</b></div>
+  </div>
+  <div class="steps" style="margin-top:16px">
+    <div class="st"><span class="n">1</span><span class="t">검색과 생성 사이에 <b class="gold">사고(thinking) 단계</b>를 추가해 <b>어떤 정보를 더 모아야 하는지(모을 필요가 있는지)</b> 판단한다</span></div>
+    <div class="st"><span class="n">2</span><span class="t">검색이 한 번이 아니라 <b>여러 단계의 검색과 생성을 반복</b>한다</span></div>
+    <div class="st"><span class="n">3</span><span class="t">기업 지식 베이스에만 의존하지 않고 <b class="g">검색 엔진과 기업 API 같은 도구</b>를 써서 능동적으로 지식을 모은다</span></div>
+  </div>
+  <div class="hl" style="margin-top:14px">&#128161; 대부분의 구현은 매번 원래 질의를 되풀이하는 대신 <b class="g">반복 사이에 상태를 유지</b>합니다. 갱신된 질의로 추가 정보를 묻고, 그 응답이 상태에 덧붙습니다. 최종 응답은 <b>전체 컨텍스트</b>로 종합됩니다.</div>
+  <aside>파란 단계들은 전부 파운데이션 모델에 프롬프트를 넣어 구현할 수 있습니다. 새로운 모델이 필요한 게 아니에요.</aside>
+</section>
+
+<!-- 7 어떻게 푸나 -->
+<section class="slide" data-part="4.4.2 해법">
+  <h2>&#9989; 다섯 문제가 <span class="g">어떻게 풀리나</span></h2>
+  <table class="t">
+    <tr><th style="width:24%">문제</th><th>반복 아키텍처의 답</th></tr>
+    <tr><td>컨텍스트 윈도 제약</td><td><b>여러 컨텍스트 윈도에 걸쳐</b> 처리한다. 상태를 유지해 지식을 <b class="g">점진적으로 축적</b>하고, 핵심 통찰만 남기고 <b>덜 관련된 정보는 버린다</b></td></tr>
+    <tr><td>질의 중의성</td><td><b>질의 분해와 정제</b>로 명확화하는 하위 질의를 만든다. 초기 결과를 해석해 <b class="g">빈틈</b>을 찾는다</td></tr>
+    <tr><td>정보의 낡음·검증</td><td>사고 단계에 <b>사실 확인과 신뢰도 점수</b>를 통합. 실시간 출처를 포함해 <b>교차 확인</b>하고 <b class="r">근거 없는 정보를 삭제</b>할 수 있다</td></tr>
+    <tr><td>추론 깊이</td><td><b>다단계 추론</b>을 수행하고 서로 다른 결과를 연결하며 이후 검색을 이끄는 <b class="g">중간 결론</b>을 생성한다</td></tr>
+    <tr><td>멀티홉 질의</td><td>초기 반복의 발견을 <b>이후 검색을 지시하는 데</b> 쓴다 &rarr; 여러 지식 도메인을 가로질러 <b class="g">점을 잇는다</b></td></tr>
+  </table>
+  <aside>전부 "한 번에 안 되면 나눠서 여러 번"이라는 하나의 아이디어에서 나옵니다.</aside>
+</section>
+
+<!-- 8 deep research -->
+<section class="slide" data-part="4.4.2 해법">
+  <h2>&#128209; Deep Search vs <span class="g">deep research</span></h2>
+  <div class="grid2">
+    <div class="box"><h3>&#128269; Deep Search</h3><p style="margin:0">목표는 원 질문에 대한 <b class="g">간결한 답.</b> 추출된 관련 텍스트로 <b>요약 답변</b>을 종합한다</p></div>
+    <div class="box"><h3>&#128220; deep research</h3><p style="margin:0">목표는 원 질문과 후속 질문에 대한 답을 <b>전체적으로 배열한</b> <b class="g">긴 보고서</b></p></div>
+  </div>
+  <div class="big" style="margin-top:16px">둘은 반복에 걸쳐 출력을<br><span class="y">누적하는 방식만</span> 다르다</div>
+  <div class="hl" style="margin-top:14px">&#128161; 그래서 이 책은 deep research를 Deep Search 패턴의 <b class="g">변형</b>으로 다룹니다. 그리고 <b>「예제」 절에서 보이는 것이 바로 deep research</b>입니다.</div>
+  <div class="warn">&#128200; DeepSeek을 시작으로 이제 <b>모든 프런티어 모델</b>(OpenAI · Gemini · Claude)이 <b>deep research 모드</b>를 제공합니다.</div>
+  <aside>일부 전문가와 기업은 둘을 구분하지만, 구조가 같으니 한 패턴으로 보는 게 저자의 입장입니다.</aside>
+</section>
+
+<!-- 9 반복적 정제 -->
+<section class="slide" data-part="4.4.2 해법">
+  <h2>&#128260; <span class="g">반복적 정제</span> &mdash; 단순하게 시작하라</h2>
+  <pre>def get_next_queries(original_query, sub_queries, synthesis):
+    prompt = f"""Determine whether there is a <b>logical or information
+gap</b> in the answer &hellip; If the current response answers the question
+without any gaps, <b>return an empty list</b>. If there is a gap, provide
+a list of <b>up to 3 search queries</b> to fill in the gap.
+    **Original Query**: {original_query}
+    **Previous Sub Queries**: {sub_queries}
+    **Current answer:** {synthesis}"""
+    agent = Agent(llm, result_type=str[])
+    return agent.run_sync(prompt).data</pre>
+  <div class="grid2" style="margin-top:12px">
+    <div class="box" style="border-color:var(--red)"><h3 class="r">&#10060; 복잡한 질의부터</h3><p style="margin:0"><i>기후변화 완화 전략의 경제적 영향을 <b>개발도상국과 선진국에 걸쳐</b> 단기 비용과 장기 편익을 <b>모두 고려해</b> 비교하라</i></p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 단순한 질의부터</h3><p style="margin:0"><i>기후변화 완화 전략의 <b>경제적 영향</b>은 무엇인가?</i></p><p style="margin:6px 0 0"><small>그다음 반복마다 <b class="g">빈틈을 점진적으로 메워</b> 나간다</small></p></div>
+  </div>
+  <div class="hl">&#128161; <b>아주 단순하게 시작한 뒤 그 답으로 다음 단계를 정하는</b> 것이 더 낫습니다. 처음부터 완벽한 분해를 시도하지 마세요.</div>
+  <aside>빈틈이 없으면 빈 리스트를 반환하게 한 게 중요합니다. 루프를 끊는 조건이 되니까요.</aside>
+</section>
+
+<!-- 10 평가 -->
+<section class="slide" data-part="4.4.2 해법">
+  <h2>&#128202; <span class="g">평가 지표</span> &mdash; 지극히 중요하다</h2>
+  <div class="big">응답의 품질은<br><span class="y">반복을 얼마나 잘 평가해<br>다음 반복을 위한 피드백을 주느냐</span>에 직결된다</div>
+  <div class="warn" style="margin-top:14px">&#128161; 지표를 <b>직접 고안하기보다</b> <b class="g">Ragas</b> 같은 오픈소스 프레임워크를 권합니다 &mdash; 인기 파운데이션 모델과 폭넓은 문서에 대해 <b>충분히 검증</b>돼 있습니다.</div>
+  <p style="margin-top:12px">보통은 지표들의 <b>가중 평균</b>을 만들되, 각 지표가 <b>내 문제에서 얼마나 중요한지</b>를 반영해 가중치를 정한다.</p>
+  <div class="chain">
+    <div class="cell"><small>1</small><b>관련성</b></div>
+    <div class="cell"><small>2</small><b>충실성</b></div>
+    <div class="cell"><small>3</small><b>정확성·<br>사실 부합</b></div>
+    <div class="cell"><small>4</small><b>일관성·<br>논리 흐름</b></div>
+    <div class="cell"><small>5</small><b>인용 품질</b></div>
+    <div class="cell"><small>6</small><b>효율</b></div>
+  </div>
+  <ul class="pts" style="margin-top:14px">
+    <li>SQL DB 같은 <b>특정 외부 도구</b>를 쓴다면 그 목적에 맞춘 지표도 반드시 포함하라</li>
+    <li><b>질문과 기준 답변으로 이루어진 데이터셋</b>을 만들고, 그 점수가 <b class="g">상식적으로 말이 되는지</b> 확인하라</li>
+    <li>평가자 역할을 하도록 <b>특별히 학습된 모델</b>(Patronus AI 등)을 쓸 수도 있다</li>
+  </ul>
+  <aside>2장 패턴 5의 "평가자가 곧 천장이다"와 같은 이야기가 여기서도 나옵니다.</aside>
+</section>
+
+<!-- 11 정보 통합 -->
+<section class="slide" data-part="4.4.2 해법">
+  <h2>&#129513; <span class="g">정보 통합</span> &mdash; 평가 다음으로 중요</h2>
+  <p>여러 출처와 여러 반복에서 온 정보를 <b>하나의 일관된 이해로 종합</b>하고 <b class="r">충돌과 불일치를 해소</b>해야 한다.</p>
+  <ul class="pts">
+    <li><b>문서 간 개체 해소</b>(cross-document entity resolution) &mdash; 서로 다른 출처가 <b>같은 이름으로 같은 개체</b>를 가리키는 때를 알아낸다</li>
+    <li><b>모순 탐지와 해소</b> &mdash; 모순이 <b class="g">서로 다른 관점 때문</b>에 생긴 경우를 식별해 <b>관점을 기준으로 출처를 군집화</b></li>
+    <li><b>출처를 신빙성으로 순위 매기기</b> &mdash; 특히 <b class="r">웹 검색으로 데이터를 모을 때</b> 상충 정보에 적절한 가중치를</li>
+    <li><b>시간적 추론</b> &mdash; 서로 다른 시기의 정보를 조화시키기 위해</li>
+  </ul>
+  <div class="hl" style="margin-top:14px">&#128209; 두 번째는 <b>패턴 9의 HyDE 관점 활용</b>과, 세 번째·네 번째는 <b>3장 패턴 8의 메타데이터</b>와 이어집니다 &mdash; 앞 패턴들이 여기서 한꺼번에 쓰입니다.</div>
+  <aside>Deep Search가 마지막 패턴인 이유가 이겁니다. 앞의 모든 패턴을 재료로 씁니다.</aside>
+</section>
+
+<!-- 12 PART 3 -->
+<section class="slide" data-part="4.4.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">4.4.3 예제</h2>
+    <div class="who">위키백과 Deep Search</div>
+  </div>
+  <aside>단순화 버전이지만 검색·사고·생성의 반복 구조가 그대로 들어 있습니다.</aside>
+</section>
+
+<!-- 13 검색 -->
+<section class="slide" data-part="4.4.3 예제">
+  <h2>&#128269; <span class="g">검색</span> &mdash; 세 단계</h2>
+  <div class="plabel">질의</div>
+  <pre>라이베리아 내전의 원인은 무엇이었는가?</pre>
+  <div class="steps" style="margin-top:12px">
+    <div class="st"><span class="n">1</span><span class="t"><b>위키백과 검색</b> &rarr; <i>First Liberian Civil War · Liberians United for Reconciliation and Democracy · Americo-Liberian people</i> &hellip;</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b class="g">LLM으로 관련성 순위 매기기</b> &rarr; <i>First Liberian Civil War · <b>History of Liberia</b> · Americo-Liberian people</i></span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>관련 텍스트 추출</b> (역시 LLM 호출)</span></div>
+  </div>
+  <div class="box" style="margin-top:12px"><h3>추출된 관련 텍스트</h3><p style="margin:6px 0 0"><i><b>사회경제적 격차</b> &mdash; 해방된 미국 노예의 후손인 <b>아메리코-라이베리아인 엘리트</b>가 정치·경제 생활을 지배하며 토착 인구를 주변화했다 &hellip;<br><b>정치적 배제</b> &mdash; <b>True Whig Party</b>가 한 세기 넘게 권력을 유지하며 사실상 일당 국가를 만들어 &hellip;</i></p></div>
+  <div class="hl">&#9989; 순위 매기기 단계에서 <b>Liberians United for Reconciliation and Democracy가 빠지고 History of Liberia가 올라온</b> 것에 주목하세요 &mdash; <b class="g">"원인"을 묻는 질문에 더 맞는 문서</b>입니다.</div>
+  <aside>패턴 10의 재순위화가 여기서도 쓰입니다. 검색기가 준 순서를 그대로 믿지 않는 거죠.</aside>
+</section>
+
+<!-- 14 사고 -->
+<section class="slide" data-part="4.4.3 예제">
+  <h2>&#129504; <span class="g">사고</span> &mdash; 빈틈을 찾아 후속 질문으로</h2>
+  <div class="plabel">종합된 답 (발췌)</div>
+  <div class="box"><p style="margin:0"><i>제1차 라이베리아 내전의 원인은 복잡하고 다면적이며 <b>역사적 요인, 직접적 도화선, 지역적 불안정</b>에서 비롯한다 &hellip;</i></p></div>
+  <div class="plabel" style="margin-top:12px">사고 단계가 식별한 후속 질문</div>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>사회경제적 격차</b>는 서로 다른 민족 집단의 <b>자원·교육·기회 접근</b>이라는 측면에서 구체적으로 어떻게 나타났는가?</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>시에라리온과 코트디부아르의 분쟁</b> 같은 지역적 불안정이 <b>무기 확산과 전투원 모집</b>이라는 측면에서 어떻게 기여했는가?</span></div>
+    <div class="st"><span class="n">3</span><span class="t">반란에 불을 지핀 <b>새뮤얼 도 정권</b>의 구체적인 <b>인권 유린과 정치적 탄압</b>을 상술할 수 있는가?</span></div>
+  </div>
+  <div class="hl" style="margin-top:14px">&#128161; 세 질문 모두 <b class="g">첫 답에 이미 등장한 단어를 파고듭니다</b> &mdash; "사회경제적 격차", "지역적 불안정". 사고 단계가 <b>자기 답을 읽고 얕은 부분을 짚은</b> 것입니다.</div>
+  <div class="warn">&#128172; 이 기법은 <b>챗봇 설계에서 흔히 쓰입니다.</b> 시각적 인터페이스는 보통 후속 질문을 <b class="g">칩(chips)</b>, 즉 클릭 가능한 버튼으로 제시합니다.</div>
+  <aside>우리가 챗봇에서 흔히 보는 "이런 것도 물어보세요" 버튼이 사실 이 메커니즘입니다.</aside>
+</section>
+
+<!-- 15 오케스트레이션 -->
+<section class="slide" data-part="4.4.3 예제">
+  <h2>&#127925; <span class="g">오케스트레이션</span> &mdash; 재귀로 보고서를</h2>
+  <pre>@dataclass
+class Section:
+  query: str
+  answer: str
+  <b>sections: list['Section']</b>      <span class="g"># 하위 절 — 재귀 구조</span>
+
+def create_section(query):
+  pages = search_wikipedia(query)
+  ranked = rank_pages(query, pages)<b>[:3]</b>
+  for page in ranked: add_relevant_text(query, page)
+  return Section(query, synthesize_answer(query, ranked), [])
+
+def add_subsections(parent):
+  for follow_up in <b>identify_gaps_and_followups</b>(parent.query, parent.answer):
+    parent.sections.append(create_section(follow_up))
+
+def deep_search(query, <b>depth</b>, report=None):
+  if report is None: report = create_section(query)
+  add_subsections(report)
+  if depth &gt; 1:
+    for section in report.sections:
+      <b>deep_search(section.query, depth-1, section)</b>
+  return report</pre>
+  <div class="hl">&#128161; <code>depth</code> 하나로 <b class="g">보고서의 깊이를 통제</b>합니다. 이게 시간·비용 예산의 실질적 손잡이예요.</div>
+  <aside>각 질의와 그 답이 보고서의 한 절이 되고, 후속 질문이 하위 절이 됩니다.</aside>
+</section>
+
+<!-- 16 보고서 -->
+<section class="slide" data-part="4.4.3 예제">
+  <h2>&#128220; 결과 &mdash; <span class="g">나폴레옹 보고서</span></h2>
+  <pre>report = deep_search(
+   query="What were some of the famous victories of Napoleon Bonaparte?",
+   <b>depth=1</b>)</pre>
+  <div class="box" style="margin-top:12px;border-color:var(--gr)">
+    <p style="margin:0"><b>나폴레옹의 유명한 승리에는 어떤 것들이 있는가?</b><br><i>&hellip; 툴롱 공방전(1793) · 방데미에르 13일(1795) &hellip; <b class="g">아우스터리츠 전투(1805)</b> &hellip;</i></p>
+    <p style="margin:10px 0 0;padding-left:14px;border-left:3px solid var(--gr)"><b>&#9492; 아우스터리츠 전투의 의의는 무엇인가?</b><br><i>제3차 대프랑스 동맹을 <b>사실상 붕괴</b>시켰다는 점에서 &hellip;</i></p>
+    <p style="margin:8px 0 0;padding-left:14px;border-left:3px solid var(--gr)"><b>&#9492; 핵심 전략·전술은 무엇이었는가?</b><br><i>적 병력 압도(속도·기만·집중된 화력) · <b>신속한 행군</b>으로 기습과 측면 우회 &hellip;</i></p>
+    <p style="margin:8px 0 0;padding-left:14px;border-left:3px solid var(--gr)"><b>&#9492; 이 승리들은 어떤 결과를 낳았는가?</b><br><i>1802년 <b>종신 제1통령</b>, 1804년 <b>황제</b>가 되게 했다 &hellip;</i></p>
+  </div>
+  <div class="hl" style="margin-top:12px">&#9989; 앞부분은 <b>던져진 질문 자체에 대한 답</b>이고, 하위 절들은 <b class="g">그 답을 근거로 제안된 후속 질문</b>에 대한 답입니다 &mdash; 첫 답에 아우스터리츠가 있었기에 첫 후속 질문이 그 전투를 묻습니다.</div>
+  <aside>반복적으로 검색하며 생성 상태에 덧붙이는 방식의 이점이 여기서 눈으로 확인됩니다.</aside>
+</section>
+
+<!-- 17 PART 4·5 -->
+<section class="slide" data-part="4.4.4 고려사항">
+  <h2>&#9888;&#65039; 4.4.4 고려사항 &mdash; <span class="r">아주 느리다</span></h2>
+  <div class="big">반복마다 <span class="y">파운데이션 모델 추론 + 문서 검색 + 처리</span><br><small>그 연산 비용을 관리해야 한다</small></div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9889; 하위 질의 병렬 처리</h3><p style="margin:0">같은 깊이의 질문들은 <b>동시에</b> 돌릴 수 있다</p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9986; 반복을 일찍 끊기</h3><p style="margin:0">빈틈이 없으면 <b>빈 리스트</b>를 반환하게 한 것이 그 장치</p></div>
+  </div>
+  <div class="hl" style="margin-top:14px">&#128209; 응답에 대한 <b>사람 피드백</b>을 얻는다면, <b class="g">2장 패턴 5 콘텐츠 최적화</b>를 써서 사용자가 선호하는 문체로 응답을 만들 수 있습니다.</div>
+  <h2 style="margin-top:20px">&#128218; 4.4.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">출처</th><th>기여</th></tr>
+    <tr><td><b>스탠퍼드 STORM</b><br><small>2024년 초</small></td><td>위키백과 문서를 <b>처음부터 작성</b>할 수 있는 deep research 모델</td></tr>
+    <tr><td><b>DeepSeek-R1</b><br><small>2025년 초</small></td><td><b>검색을 개선하는 사고 모드</b>를 시연</td></tr>
+    <tr><td><b>node-DeepResearch</b></td><td>집필 시점에 <b>활발히 개발 중</b>인 Deep Search 오픈소스 구현</td></tr>
+  </table>
+  <aside>DeepSeek-R1은 1장에서도 순수 강화학습 돌파구로 나왔습니다. 여기서는 사고 모드로 다시 등장하네요.</aside>
+</section>
+
+<!-- 18 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#128269; 조회가 아니라 <span class="g">조사</span></h1>
+    <div class="big" style="margin-top:24px">한 번 찾고 끝내지 않는다<br><br><span class="y">읽고 &rarr; 생각하고 &rarr; 다시 찾고</span><br><small>충분히 좋은 답을 찾거나 <b>예산이 소진될 때까지</b></small></div>
+    <p class="sub" style="margin-top:22px">패턴 12 &mdash; 4장 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>3·4장 통합 요약</b></p>
+  </div>
+  <aside>3장부터 여기까지 일곱 패턴이 끝났습니다. 이제 한꺼번에 정리할 차례예요.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4장 지식 더하기: 싱코페이션 · 서론과 네 패턴 지도</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Generative AI Design Patterns &middot; Chapter 4</div>
+    <h1 style="margin:18px 0">지식 더하기: <span class="g">싱코페이션</span></h1>
+    <p class="sub">4장 서론 &mdash; 기본기 위에 얹는 <b>엇박</b></p>
+    <p class="sub" style="margin-top:6px"><small>패턴 9 색인을 아는 검색 &middot; 10 노드 후처리 &middot; 11 신뢰할 수 있는 생성 &middot; 12 깊은 검색</small></p>
+  </div>
+  <aside>3장을 먼저 읽어야 하는 장입니다. 모든 RAG 유스케이스의 밑바탕이 되는 기본 개념 위에 쌓아 올린 것이거든요.</aside>
+</section>
+
+<!-- 2 싱코페이션 -->
+<section class="slide" data-part="서론">
+  <h2>&#127926; <span class="g">싱코페이션</span> &mdash; 엇박</h2>
+  <div class="grid2">
+    <div class="box"><h3>&#127925; 3장 &mdash; 베이스</h3><p style="margin:0">곡의 밑바닥을 <b>규칙적으로</b> 받쳐 주는 저음부. 인덱싱 · 검색 · 생성</p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#127926; 4장 &mdash; 싱코페이션</h3><p style="margin:0">그 위에서 <b>박자를 어긋나게 쳐서</b> 음악에 생기를 넣는 기법</p></div>
+  </div>
+  <div class="big" style="margin-top:16px">이 장의 패턴들은 하나같이<br><span class="y">기존 파이프라인의 단계와 단계 사이에<br>새 단계를 끼워 넣는다</span></div>
+  <div class="hl">&#128161; 이름이 정확합니다 &mdash; <b>정박이 아닌 자리에 한 수씩 끼어들어</b> 성능을 끌어올립니다. 새 파이프라인을 짓는 게 아니라 <b class="g">기존 파이프라인에 끼워 넣는</b> 것이에요.</div>
+  <aside>패턴 9는 검색 앞에, 패턴 10은 검색과 생성 사이에, 패턴 11은 전 단계에 걸쳐, 패턴 12는 전체를 루프로 감쌉니다.</aside>
+</section>
+
+<!-- 3 어디에 끼는가 -->
+<section class="slide" data-part="서론">
+  <h2>&#128207; 각 패턴이 <span class="g">어디에</span> 끼어드나</h2>
+  <div class="chain">
+    <div class="cell"><small>질의</small><b>Q</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>패턴 9</small><b class="g">질의를<br>고쳐 쓴다</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>기본</small><b>검색</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>패턴 10</small><b class="g">노드를<br>후처리</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>기본</small><b>생성</b></div>
+  </div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:22%">패턴</th><th>끼어드는 자리</th></tr>
+    <tr><td><b>9. 색인을 아는 검색</b></td><td><b>검색 앞</b> &mdash; 질의를 색인이 알아들을 말로 바꾼다</td></tr>
+    <tr><td><b>10. 노드 후처리</b></td><td><b>검색과 생성 사이</b> &mdash; 가져온 청크를 다시 고른다</td></tr>
+    <tr><td><b>11. 신뢰할 수 있는 생성</b></td><td><b>전 단계에 걸쳐</b> &mdash; 가드레일 · 인용 · 사람 피드백</td></tr>
+    <tr><td><b>12. 깊은 검색</b></td><td><b>전체를 루프로</b> &mdash; 검색·사고·생성을 반복</td></tr>
+  </table>
+  <aside>이 표만 잡고 있으면 네 패턴이 헷갈리지 않습니다. 각자 다른 자리에서 일해요.</aside>
+</section>
+
+<!-- 4 네 패턴 -->
+<section class="slide" data-part="서론">
+  <h2>&#128203; 4장의 <span class="g">네 패턴</span></h2>
+  <table class="t">
+    <tr><th style="width:6%">#</th><th style="width:26%">패턴</th><th>한 줄 요약</th></tr>
+    <tr><td><b>9</b></td><td><b>색인을 아는 검색</b><br><small>Index-Aware Retrieval</small></td><td>질문을 <b>그대로 던지지 말고</b> 색인이 알아들을 말로 바꿔서 던진다</td></tr>
+    <tr><td><b>10</b></td><td><b>노드 후처리</b><br><small>Node Postprocessing</small></td><td><b>"비슷한 것"과 "쓸모 있는 것"</b>의 간극을 검색 뒤 한 단계로 메운다</td></tr>
+    <tr><td><b>11</b></td><td><b>신뢰할 수 있는 생성</b><br><small>Trustworthy Generation</small></td><td>오류를 없앨 수 없으니 <b>오류일 가능성을 사용자가 볼 수 있게</b> 만든다</td></tr>
+    <tr><td><b>12</b></td><td><b>깊은 검색</b><br><small>Deep Search</small></td><td>검색을 <b>한 번의 조회가 아니라 조사(research) 과정</b>으로 바꾼다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; 3장이 <b>인덱싱</b>을 똑똑하게 만들었다면, 4장은 <b class="g">검색과 생성</b>을 똑똑하게 만듭니다.</div>
+  <aside>무엇이 가능한지 이해하고 나면, 자기 유스케이스의 성격에 맞춰 구성 요소를 고를 수 있게 됩니다. 이 장이 다루는 게 바로 그 선택지들이에요.</aside>
+</section>
+
+<!-- 5 패턴9 -->
+<section class="slide" data-part="패턴 요약">
+  <h2><span class="g">패턴 9</span> 색인을 아는 검색 &mdash; 요약</h2>
+  <div class="grid2">
+    <div class="box"><h3 class="r">&#10060; 문제 &mdash; 닭과 달걀</h3><p style="margin:0"><b>답이 무엇인지 모르는 채로 어떻게 답을 매칭하는가?</b> 질문 자체는 지식 베이스에 없고, 용어가 다르고, 세부는 임베딩에 묻히고, 전체적 해석이 필요하다</p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 해법 &mdash; 네 구성 요소</h3><p style="margin:0"><b>HyDE</b>(가설 답변) · <b>질의 확장</b> · <b>하이브리드 검색</b> · <b>GraphRAG</b></p></div>
+  </div>
+  <div class="big" style="margin-top:14px">답을 <span class="y">먼저 지어내고</span>, 그 답으로 검색한다</div>
+  <div class="hl">&#128161; 가설 답변은 <b class="r">틀려도 상관없습니다.</b> 우리가 쓰는 건 내용이 아니라 <b class="g">모양</b>이니까요 &mdash; 질문과 대답은 생긴 게 다릅니다.</div>
+  <p class="sub" style="margin-top:10px;text-align:center"><small>상세 &rarr; <b>패턴 9 덱</b></small></p>
+  <aside>네 구성 요소는 개별적으로 검토해야 합니다. 내가 색인하는 콘텐츠와 답해야 하는 질문의 종류에 비추어서요.</aside>
+</section>
+
+<!-- 6 패턴10 -->
+<section class="slide" data-part="패턴 요약">
+  <h2><span class="g">패턴 10</span> 노드 후처리 &mdash; 요약</h2>
+  <div class="grid2">
+    <div class="box"><h3 class="r">&#10060; 문제</h3><p style="margin:0"><b class="r">유사성은 관련성이 아니다.</b> 관련 없는 내용 · 중의적 개체 · 낡은 정보 · 천편일률적 답</p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 해법 &mdash; 재순위화가 문을 연다</h3><p style="margin:0">LLM으로 <b>쓸모</b>를 기준으로 재정렬. 그 한 번의 호출에 <b>압축 · 중의성 해소 · 필터링</b>을 함께 접어 넣는다</p></div>
+  </div>
+  <div class="warn" style="margin-top:14px">&#128200; <b>실제로 겪은 일</b> &mdash; 지질학 교과서 RAG에서 <b class="r">지질학 용어가 들어 있다는 이유만으로 목차만으로 이루어진 청크</b>가 최상위로 돌아왔습니다.</div>
+  <div class="hl">&#128161; 재순위화 모델이 <b>임베딩보다 정확한 이유</b> &mdash; 임베딩은 청크를 벡터 하나로 <b>눌러 담아야</b> 하지만, 재순위화 모델은 <b class="g">청크를 펴서 읽어 볼 수</b> 있습니다.</div>
+  <p class="sub" style="margin-top:10px;text-align:center"><small>상세 &rarr; <b>패턴 10 덱</b></small></p>
+  <aside>대가는 속도와 비용입니다. 청크마다 LLM을 한 번씩 돌려야 하니까요.</aside>
+</section>
+
+<!-- 7 패턴11 -->
+<section class="slide" data-part="패턴 요약">
+  <h2><span class="g">패턴 11</span> 신뢰할 수 있는 생성 &mdash; 요약</h2>
+  <div class="grid2">
+    <div class="box"><h3 class="r">&#10060; 문제</h3><p style="margin:0"><b>검색 실패 · 컨텍스트 신뢰성 · 추론 오류 · 환각 위험.</b> 현재로서는 <b class="r">완전히 피할 방법이 없다</b></p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 해법</h3><p style="margin:0"><b>도메인 밖 탐지 · 인용 · 가드레일 · 사람 피드백 · CRAG · Self-RAG · UI 설계</b></p></div>
+  </div>
+  <div class="big" style="margin-top:14px">오류를 없앨 수 없으니<br><span class="y">오류일 가능성을 사용자가 볼 수 있게</span> 만든다</div>
+  <div class="hl">&#128209; 1장 토론노트에서 <b>"우리 시스템에 1순위"</b>로 꼽았던 패턴입니다 &mdash; 발주사가 <i>"정확도 90%여도 쓸 수 없고, 있으면 60%여도 유용하다"</i>고 한 그 항목.</div>
+  <p class="sub" style="margin-top:10px;text-align:center"><small>상세 &rarr; <b>패턴 11 덱</b></small></p>
+  <aside>이미 우리가 하고 있는 일(SearchLog, 「신규 없음」 vs 「조회 실패」 구분)에 이름과 체계를 붙여주는 패턴입니다.</aside>
+</section>
+
+<!-- 8 패턴12 -->
+<section class="slide" data-part="패턴 요약">
+  <h2><span class="g">패턴 12</span> 깊은 검색 &mdash; 요약</h2>
+  <div class="grid2">
+    <div class="box"><h3 class="r">&#10060; 문제</h3><p style="margin:0"><b>컨텍스트 윈도 제약 · 질의 중의성 · 정보 검증 · 얕은 추론 · 멀티홉 질의</b></p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 해법</h3><p style="margin:0"><b>검색 · 읽기 · 추론의 반복 루프.</b> 검색과 생성 사이에 <b class="g">사고 단계</b>를 넣는다</p></div>
+  </div>
+  <div class="chain" style="margin-top:14px">
+    <div class="cell"><small>기존</small><b>검색 &rarr; 생성</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>Deep Search</small><b class="g">검색 &rarr; 사고 &rarr; 생성<br><small style="color:var(--soft)">그리고 루프</small></b></div>
+  </div>
+  <div class="hl" style="margin-top:14px">&#128161; 사고 단계가 하는 일은 딱 하나 &mdash; <b class="g">"지금 답에 뭐가 빠졌지?"</b>를 묻고 다음 검색어를 뽑는 것. 이 한 단계가 <b>컨텍스트 한계도 멀티홉도</b> 풉니다.</div>
+  <p class="sub" style="margin-top:10px;text-align:center"><small>상세 &rarr; <b>패턴 12 덱</b></small></p>
+  <aside>대가는 시간입니다. 반복마다 모델 추론과 검색이 일어나니 아주 느려요.</aside>
+</section>
+
+<!-- 9 순서대로 -->
+<section class="slide" data-part="서론">
+  <h2>&#9888;&#65039; 다시 &mdash; <span class="r">순서대로 쌓인다</span></h2>
+  <p>3장 그림 3-1에서 봤듯, 이 패턴들은 <b>서로 위에 쌓이면서</b> 점점 까다로워지는 요구사항을 감당할 능력을 더해 간다.</p>
+  <div class="steps">
+    <div class="st"><span class="n">6</span><span class="t">기본 RAG &mdash; <b>출발점이자 대조군</b></span></div>
+    <div class="st"><span class="n">7</span><span class="t">의미 기반 색인 &mdash; 단어가 아니라 뜻으로</span></div>
+    <div class="st"><span class="n">8</span><span class="t">대규모 색인 운영 &mdash; 메타데이터로 다스리기</span></div>
+    <div class="st" style="border-color:var(--gr)"><span class="n" style="background:var(--gr)">9</span><span class="t"><b class="g">색인을 아는 검색</b> &mdash; 질의를 고쳐 쓰기</span></div>
+    <div class="st" style="border-color:var(--gr)"><span class="n" style="background:var(--gr)">10</span><span class="t"><b class="g">노드 후처리</b> &mdash; 관련 없는 콘텐츠·모호성을 처리해야 하면 9에서 10으로</span></div>
+    <div class="st" style="border-color:var(--gr)"><span class="n" style="background:var(--gr)">11</span><span class="t"><b class="g">신뢰할 수 있는 생성</b></span></div>
+    <div class="st" style="border-color:var(--gr)"><span class="n" style="background:var(--gr)">12</span><span class="t"><b class="g">깊은 검색</b></span></div>
+  </div>
+  <div class="warn">&#9888;&#65039; 다만 <b>먼저 적용해서 복잡도를 더하는 것이 측정 가능한 이득을 주는지</b> 신중히 평가해야 합니다. 전부 써야 시스템이 되는 건 아닙니다.</div>
+  <aside>화살표는 "왜 한 단계 위로 올라가고 싶어지는지"를 나타냅니다. 필요가 생겨야 올라가는 거예요.</aside>
+</section>
+
+<!-- 10 대가 -->
+<section class="slide" data-part="서론">
+  <h2>&#9878;&#65039; 4장 패턴들이 치르는 <span class="r">대가</span></h2>
+  <table class="t">
+    <tr><th style="width:24%">패턴</th><th>얻는 것</th><th style="width:30%">치르는 것</th></tr>
+    <tr><td><b>9</b> 색인을 아는 검색</td><td>못 찾던 청크를 찾는다</td><td>가설 답변에 <b class="r">환각·낡은 정보</b>가 섞일 수 있다</td></tr>
+    <tr><td><b>10</b> 노드 후처리</td><td>쓸모 있는 청크만 남는다</td><td><b class="r">느리고 비싸다</b> &mdash; 청크마다 LLM 호출</td></tr>
+    <tr><td><b>11</b> 신뢰할 수 있는 생성</td><td>사용자가 검증할 수 있다</td><td>파이프라인 복잡도와 <b class="r">실패 지점</b>이 늘어난다</td></tr>
+    <tr><td><b>12</b> 깊은 검색</td><td>복잡한 질의에 답한다</td><td><b class="r">아주 느리다</b> &mdash; 반복마다 추론+검색</td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">공통점 &mdash; <span class="y">전부 지연 시간과 비용을 더한다</span></div>
+  <div class="hl">&#128161; 그래서 이 장의 모든 「고려사항」 절이 같은 말을 합니다 &mdash; <b class="g">더 단순한 대안으로 되는지 먼저 따져 보라.</b></div>
+  <aside>3장 패턴들은 대체로 인덱싱 시점 비용이라 한 번 내면 끝이지만, 4장 패턴들은 질의마다 비용이 붙습니다. 성격이 달라요.</aside>
+</section>
+
+<!-- 11 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#127926; 정박이 아닌 자리에 <span class="g">한 수씩</span></h1>
+    <div class="big" style="margin-top:24px">기존 파이프라인의<br><span class="y">단계와 단계 사이에</span><br>새 단계를 끼워 넣는다</div>
+    <p class="sub" style="margin-top:22px">4장 서론 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 9 색인을 아는 검색</b></p>
+    <p class="sub" style="margin-top:4px"><small>4장 끝에 <b>3·4장 통합 요약</b> 덱이 따로 있습니다</small></p>
+  </div>
+  <aside>저자가 3장 요약을 미뤄 뒀던 이유가 이겁니다. 일곱 패턴을 한꺼번에 봐야 지도가 보이거든요.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>색인을 아는 검색 · 패턴 9 (4장)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 4 &middot; Pattern 9</div>
+    <h1 style="margin:18px 0">색인을 아는 <span class="g">검색</span></h1>
+    <p class="sub">Index-Aware Retrieval &mdash; <b>청크에 무엇이 어떻게 색인됐는지</b>를 활용한다</p>
+  </div>
+  <aside>어떤 구성 요소를 도입할지는 보유한 콘텐츠의 종류에 따라 달라집니다. 네 가지를 개별적으로 판단해야 해요.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 4.1의 다섯 절</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>4.1.1 문제</b> &mdash; 닭이 먼저냐 달걀이 먼저냐</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>4.1.2 해법</b> &mdash; HyDE · 질의 확장 · 하이브리드 검색 · GraphRAG</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>4.1.3 예제</b> &mdash; 알렉산더 대왕 전기</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>4.1.4 고려사항</b> &mdash; 환각 · 낡은 정보 · 의도의 변질</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>4.1.5 참고문헌</b></span></div>
+  </div>
+  <div class="hl">&#128161; <b>한 줄로</b> &mdash; 질문을 그대로 던지지 말고 <b class="g">색인이 알아들을 말로 바꿔서</b> 던져라.</div>
+  <aside>네 구성 요소가 전부 이 하나의 아이디어를 다른 방향으로 푼 것입니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="4.1.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">4.1.1 문제</h2>
+    <div class="who">닭이 먼저냐 달걀이 먼저냐</div>
+  </div>
+  <aside>RAG는 두 가정 위에 섭니다. ① 질문과 비슷한 청크를 검색할 수 있다 ② 그 청크로 답을 그라운딩할 수 있다. 첫 번째가 무너지는 네 상황을 봅니다.</aside>
+</section>
+
+<!-- 4 네 상황 -->
+<section class="slide" data-part="4.1.1 문제">
+  <h2>&#10060; 첫 가정이 <span class="r">무너지는 네 상황</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">상황</th><th>내용</th></tr>
+    <tr><td><b>질문이 지식 베이스에 없다</b></td><td>FAQ·지원 티켓·게시판이 아니라면 <b class="r">질문 그 자체는 지식 베이스에 나타나지 않는다</b></td></tr>
+    <tr><td><b>용어가 다르다</b></td><td>사용자는 <b>"무슬림 궁전"</b>을 묻는데 청크는 알람브라를 <b>"나스르 왕조의 요새"</b>라 부른다 &mdash; 동의어가 아니라 <b class="r">의미 매칭도 안 된다</b></td></tr>
+    <tr><td><b>세부가 임베딩에 묻힌다</b></td><td>청크 전체가 <b>단 하나의 임베딩</b>. 나스르 궁전 건축을 다룬 긴 문단 한복판의 <b>무카르나스</b>(볼트 천장 조각 장식) 서술은 <b class="r">임베딩에 반영되지 않는다</b></td></tr>
+    <tr><td><b>전체적 해석이 필요하다</b></td><td>논리의 <b>단계 하나하나에 대응하는 청크</b>를 검색해 와 짜맞춰야 한다</td></tr>
+  </table>
+  <div class="warn">&#128161; 세 번째는 <b>더 작은 청크로 색인해서</b> 어느 정도 풀 수 있습니다. 그런데 청크가 작아지면 <b class="r">네 번째 문제가 훨씬 심각해집니다.</b></div>
+  <aside>작게 자르면 세부는 살지만 맥락이 죽고, 크게 자르면 맥락은 살지만 세부가 죽습니다. 이 딜레마가 GraphRAG로 이어집니다.</aside>
+</section>
+
+<!-- 5 구체적 예 -->
+<section class="slide" data-part="4.1.1 문제">
+  <h2>&#128269; 구체적으로 &mdash; <span class="r">왜 못 찾는가</span></h2>
+  <div class="plabel">질의</div>
+  <pre>마드리드에서 <b>기차로 2시간 이내</b>에 갈 수 있는 <b>역사 명소</b>는?</pre>
+  <div class="grid2" style="margin-top:10px">
+    <div class="box"><h3>&#128220; 청크 A</h3><p style="margin:0"><i><b>톨레도</b>는 이베리아반도 중부, 타호강이 굽이도는 자리에 &hellip; <b>"세 문화의 도시"</b>로 불린다.</i></p></div>
+    <div class="box"><h3>&#128220; 청크 B</h3><p style="margin:0"><i>마드리드로 이어지는 <b>고속철도 연결</b> 공사가 시작됐고, 2005년 11월 15일 개통했다.</i></p></div>
+  </div>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; Basic RAG도, Semantic Indexing도 이 청크들을 <b class="r">검색해 오지 못합니다.</b> 질문과 <b>키워드도 의미도 공유하지 않기</b> 때문입니다.</div>
+  <div class="big" style="margin-top:14px">알람브라는 왜 몰락했는가?<br><small><b class="r">누에바 플란타 칙령</b> 관련 청크를 검색해야 한다는 것을<br>어떻게 <b>미리</b> 알 수 있겠는가?</small></div>
+  <div class="hl">&#128161; <b>전부 닭·달걀 문제입니다.</b> 답을 모르는 채로 어떻게 답을 매칭하는가? 나스르 왕조가 무슬림 왕조라는 걸 어떻게 알아차리는가?</div>
+  <aside>도서관에서 "우리 동네 가장 오래된 건물"이라는 질문지를 들고 책장을 뒤지는 것과 같습니다. 책에는 그런 문장이 없고 대답 문장만 있어요.</aside>
+</section>
+
+<!-- 6 PART 2 -->
+<section class="slide" data-part="4.1.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">4.1.2 해법</h2>
+    <div class="who">네 가지 아이디어의 묶음</div>
+  </div>
+  <aside>Semantic Indexing에 이것들을 덧붙여 닭·달걀 문제를 다룹니다. 반드시 개별적으로 검토하세요.</aside>
+</section>
+
+<!-- 7 HyDE -->
+<section class="slide" data-part="4.1.2 해법">
+  <h2>&#9312; <span class="g">HyDE</span> &mdash; 답을 먼저 지어낸다</h2>
+  <p>질의로 의미 검색이 잘 안 되면, <b>그 질의에 답이 될 법한 문장</b>을 대신 검색하라.</p>
+  <div class="plabel">파운데이션 LLM이 지어낸 가설 답변</div>
+  <div class="box"><p style="margin:0"><i><b>세고비아</b>는 잘 보존된 로마 수도교와 알카사르 성으로 유명한 도시다. 구시가는 유네스코 세계유산이다. <b>마드리드에서 세고비아까지 기차로 보통 한 시간이 채 걸리지 않는다.</b></i></p></div>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; 문제는 이 답이 <b class="r">내 지식 베이스에 근거하고 있지 않다</b>는 점입니다. 우리가 찾고 싶은 건 (가이드 투어를 제공하고 있을) <b>내 지식 베이스에 있는 도시</b>죠.</div>
+  <div class="big" style="margin-top:12px">그래서 &mdash; <span class="y">질문이 아니라 가설 답변과</span> 맞는 청크를 찾는다</div>
+  <pre style="margin-top:12px">def hyde_rag(question):
+    answer = create_hypothetical_answer(question)  <span class="g"># "모르면 추측해서 답하라"</span>
+    return semantic_rag(<b>answer</b>)                    <span class="g"># 질문이 아니라 답으로 검색</span></pre>
+  <div class="hl">&#128218; 학술 문헌이 청크를 <b>문서</b>라 부르기에 이 방법의 이름은 <b class="g">HyDE</b>(hypothetical document embedding)입니다. 가설 답변은 <b class="r">틀려도 됩니다</b> &mdash; 우리가 쓰는 건 내용이 아니라 <b>모양</b>이니까요.</div>
+  <aside>잘 보존된 구시가 중심부를 다루거나 마드리드에서의 기차 소요 시간을 언급하는 청크가 걸릴 가능성이 높아집니다.</aside>
+</section>
+
+<!-- 8 HyDE 관점 -->
+<section class="slide" data-part="4.1.2 해법">
+  <h2>&#127917; HyDE의 뜻밖의 쓸모 &mdash; <span class="g">관점의 문제</span></h2>
+  <p>이 장의 예제 다수는 모든 정보가 옳고 논쟁의 여지가 없다고 전제한다. 그러나 많은 지식 베이스에는 <b>같은 사건을 두고 서로 다른 관점을 가진 사람들이 쓴 글</b>이 들어 있다.</p>
+  <div class="warn">&#129658; 공중보건에서 <b>마스크 착용 · 격리 · 낙태 · 수돗물 불소 첨가 · 주사기 교환 센터</b> 같은 주제는 격렬한 논쟁 대상이었습니다. 충분히 큰 의학 DB라면 <b class="r">서로 모순되는 청크</b>를 담고 있습니다.</div>
+  <div class="steps" style="margin-top:14px">
+    <div class="st"><span class="n">1</span><span class="t"><b>서로 다른 관점을 취하는 가설 답변들을</b> 생성한다</span></div>
+    <div class="st"><span class="n">2</span><span class="t">각 관점별로 <b>그 관점에 부합하는 문서</b>를 찾는다</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b class="g">그 문서들에만 한정해</b> RAG를 돌린다</span></div>
+  </div>
+  <div class="hl">&#128161; 모순되는 지식 베이스를 <b>억지로 하나의 답으로 뭉개지 않고</b>, 관점별로 나눠서 각각 일관되게 답할 수 있습니다.</div>
+  <aside>3장 패턴 8의 "모순 탐지"가 어느 쪽이 맞는지를 골랐다면, 이건 양쪽 다 보여주는 접근입니다.</aside>
+</section>
+
+<!-- 9 질의 확장 -->
+<section class="slide" data-part="4.1.2 해법">
+  <h2>&#9313; <span class="g">질의 확장</span> &mdash; 책이 쓰는 말투로 번역</h2>
+  <p>질의를 있는 그대로 넘기지 말고 <b>맥락을 덧붙이고 용어를 청크의 용어로 옮긴다.</b></p>
+  <pre>system: """The following question is about topics discussed in a
+second-century book about Alexander the Great. Clarify the question:
+* <b>Expand to include second-century names.</b> For example, a question
+  about Iranians should include Parthians, Persians, Medes, Bactrians.
+* <b>Provide context on terms.</b> For example, explain that Ammonites
+  came from Jordan or that Philip was the father of Alexander.
+Provide only the clarified question without any preamble."""</pre>
+  <pre style="margin-top:10px">def qryexp_rag(question):
+    expanded_question = add_context_to_query(question)
+    return semantic_rag(<b>expanded_question</b>)</pre>
+  <div class="hl">&#128161; 사용자는 <b>"페르시아 왕이 그리스인과 어떻게 싸웠나"</b>라고 묻지만, 2세기 책에는 <b class="g">파르티아인</b>과 <b class="g">마케도니아인</b>이라 적혀 있습니다. 질의 확장은 그 <b>번역</b>을 미리 해 주는 일입니다.</div>
+  <div class="warn">&#128260; 질의 확장은 <b>HyDE와 결합할 수도</b> 있습니다.</div>
+  <aside>정확히 어떤 맥락을 붙이고 어떤 용어를 옮길지는 유스케이스에 따라 다릅니다. 도메인마다 프롬프트를 새로 써야 해요.</aside>
+</section>
+
+<!-- 10 하이브리드 + GraphRAG -->
+<section class="slide" data-part="4.1.2 해법">
+  <h2>&#9314;&#9315; <span class="g">하이브리드 검색</span>과 <span class="g">GraphRAG</span></h2>
+  <div class="box">
+    <h3>&#9314; 하이브리드 검색 &mdash; 두 자로 동시에 재기</h3>
+    <p style="margin:6px 0 0">청크가 커질수록 <b>포착된 의미 속에서 세밀한 세부가 사라진다.</b> 그래서 청크를 <b>키워드와 임베딩 양쪽으로</b> 색인하고 두 점수의 <b class="g">가중 평균</b>을 쓴다.</p>
+    <pre style="margin-top:8px">query_engine = index.as_query_engine(
+    vector_store_query_mode="hybrid", similarity_top_k=2, <b>alpha=0.25</b>)
+<span class="g"># alpha 0.0 = 순수 BM25 / 1.0 = 순수 벡터 검색</span></pre>
+    <p style="margin:8px 0 0"><small>벡터 스토어가 <b>양쪽 색인을 지원</b>해야 합니다 &mdash; 집필 시점 기준 <b>Postgres · Pinecone · Weaviate</b>. 지원하지 않으면 <b>검색기 두 개를 써서 결과를 합치는</b> 방식으로 흉내 낼 수 있습니다(패턴 10).</small></p>
+  </div>
+  <div class="box" style="margin-top:12px;border-color:var(--gr)">
+    <h3 class="g">&#9315; GraphRAG &mdash; 청크를 낱장이 아니라 그물로</h3>
+    <p style="margin:6px 0 0"><b>부분적으로 답이 되는 청크를 찾았다면 그와 관련된 청크들을 함께 가져올 수 있다.</b> 청크 하나하나가 작을 때 맥락을 채우는 데 도움이 된다.</p>
+    <ul class="pts" style="margin-top:6px">
+      <li>임베딩을 <b>트리 형태</b>로 저장 &mdash; 부모 노드가 그 아래 모든 노드의 전체적 의미를 담게</li>
+      <li>서로 다른 맥락에서 말이 된다면 <b>같은 노드를 반복 등장</b>시켜도 된다</li>
+      <li><b>질의 중심 요약</b> &mdash; 밀접하게 관련된 개체 그룹마다 요약을 미리 생성해 저장</li>
+    </ul>
+  </div>
+  <aside>GraphRAG는 3장 패턴 7의 RAPTOR를 일반화한 것입니다. RAPTOR가 GraphRAG의 단순화 버전이라고 했던 그 관계예요.</aside>
+</section>
+
+<!-- 11 GraphRAG 구현 -->
+<section class="slide" data-part="4.1.2 해법">
+  <h2>&#128376;&#65039; GraphRAG &mdash; <span class="g">그래프 DB가 문서 저장소</span></h2>
+  <div class="chain">
+    <div class="cell"><small>인덱싱</small><b>그래프에<br>노드 추가</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>검색</small><b>그래프의<br>관계 활용</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>생성</small><b class="g">노드 사이의<br>관계까지 활용</b></div>
+  </div>
+  <pre style="margin-top:14px"><span class="g"># 지식 그래프가 없다면 LLM에게 개체를 추출·연결시킨다</span>
+llm_transformer = LLMGraphTransformer(llm=llm)
+graph_documents = llm_transformer.convert_to_graph_documents(text)
+
+graph_store = Neo4jGraphStore(...)
+graph_store.write_graph(graph_documents)
+
+graph_rag_retriever = KnowledgeGraphRAGRetriever(...)
+query_engine = RetrieverQueryEngine.from_args(graph_rag_retriever)</pre>
+  <div class="big" style="margin-top:14px">벡터 DB 기반 시스템은<br>검색된 청크를 <span class="y">서로 독립적인 것으로 취급</span>한다<br><small>GraphRAG는 그 지점을 넘어선다</small></div>
+  <div class="hl">&#128161; 보통은 Neo4j 같은 그래프 DB에 <b>지식 그래프</b>를 구축해, 노드가 <b>자기 도메인에 적합한 관계</b>를 담도록 합니다.</div>
+  <aside>검색 방식 자체는 BM25 검색기나 의미 기반 검색기를 쓰는 것과 비슷합니다. 저장 구조가 다를 뿐이에요.</aside>
+</section>
+
+<!-- 12 PART 3 -->
+<section class="slide" data-part="4.1.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">4.1.3 예제</h2>
+    <div class="who">알렉산더 대왕 전기 &mdash; 2세기 역사서</div>
+  </div>
+  <aside>3장 패턴 6에서 썼던 바로 그 책입니다. 그때는 BM25였고 이번엔 의미 기반이에요.</aside>
+</section>
+
+<!-- 13 의미 RAG 한계 -->
+<section class="slide" data-part="4.1.3 예제">
+  <h2>&#9989; 잘 되는 것과 <span class="r">안 되는 것</span></h2>
+  <div class="box" style="border-color:var(--gr)">
+    <h3 class="g">&#9989; 잘 된다 &mdash; 그리고 <b>울타리를 지킨다</b></h3>
+    <p style="margin:6px 0 0"><b>Q. 알렉산더는 어디에서 죽었는가?</b><br><i>&rarr; "주어진 텍스트에는 &hellip; 정보가 없습니다."</i></p>
+    <p style="margin:6px 0 0"><small>이 책은 <b>생전의 군사 원정</b>만 다루기 때문. 파운데이션 모델이 사전학습으로 답을 알고 있는데도 <b class="g">책 안의 지식이라는 울타리를 벗어나지 않는다</b> &mdash; <b>독점 지식을 다루는 기업 유스케이스에서 결정적</b></small></p>
+  </div>
+  <table class="t" style="margin-top:12px">
+    <tr><th style="width:32%">질의</th><th>문제</th></tr>
+    <tr><td>알렉산더와 <b>디오게네스</b>의 관계</td><td>청크 100자면 찾지만 <b class="r">기본값 1,024자면 실패.</b> 3장에서는 매번 성공했는데, 그건 <b>키워드 매칭</b>이었고 <i>Diogenes</i>가 충분히 <b>희귀한 단어</b>였기 때문</td></tr>
+    <tr><td>다리우스 3세에 맞선 <b>전략</b></td><td>답이 <b class="r">전체 전략이 아니라 단일 전투의 전술</b>에 관한 것 &mdash; 폭풍으로 지연됐다, 이소스로 배를 보냈다&hellip;</td></tr>
+    <tr><td><b>페르시아 왕</b>은 <b>그리스인</b>과 어떻게 싸웠나</td><td><i>"페르시아인들은 창으로 얼굴을 찔렀고 기병대에 격퇴됐다."</i> &mdash; <b class="r">처참하게 제한적.</b> 당시엔 <b>파르티아인·마케도니아인</b>이라 불렀으니 그 단어를 쓰는 청크가 적다</td></tr>
+  </table>
+  <aside>세 번째가 21세기 용어 문제의 교과서적 사례입니다. 사용자는 현대어로 묻고 문서는 고대어로 적혀 있어요.</aside>
+</section>
+
+<!-- 14 HyDE 효과 -->
+<section class="slide" data-part="4.1.3 예제">
+  <h2>&#127881; <span class="g">HyDE</span>가 바꿔 놓는 것</h2>
+  <div class="plabel">가설 답변 (LLM이 지어낸 것)</div>
+  <div class="box"><p style="margin:0"><i>다리우스 3세에 맞선 알렉산더의 전략은 <b>결정적 전투를 강요</b>해 페르시아군을 무력화하는 데 있었다. 장기 공성전이나 소모전보다 <b>마케도니아 팔랑크스</b>를 활용해 다리우스를 <b>야전으로 끌어내고자</b> 했다.</i></p></div>
+  <div class="plabel" style="margin-top:12px">→ 이 답변과 매칭된 청크로 생성한 응답 (발췌)</div>
+  <div class="box" style="border-color:var(--gr)"><p style="margin:0"><i>알렉산더의 군대는 우익에 <b>기병 콤파니온</b>을 &hellip; 다리우스의 군대는 좌익에 <b>박트리아 기병·다안족·아라코시아인</b>을, 우익에 <b>메디아인·파르티아인·사카이인</b>을 &hellip; 중앙에는 그의 친족, <b>페르시아 근위대</b>, 인도인, 카리아인, 마르디아 궁수가 &hellip;</i></p></div>
+  <div class="hl" style="margin-top:12px">&#9989; <b>책 전체에서 청크가 걸리고</b>, 책에서 발견되는 세부에 근거하면서도 <b class="g">전체를 아우르는</b> 응답이 나옵니다.</div>
+  <div class="warn">&#128161; 디오게네스도 <b>청크 1,024자에서 수면 위로 올라옵니다.</b> 그리고 가설 답변에 있던 <b class="r">"항아리 속에서 살던"</b> 이야기는 <b class="g">응답에 나오지 않습니다</b> &mdash; HyDE 기반 RAG는 <b>그라운딩된 정보만 생성</b>하니까요.</div>
+  <aside>이 대비가 중요합니다. 가설 답변의 틀린 부분이 최종 답에 새어 들어가지 않아요. 검색에만 쓰이고 버려집니다.</aside>
+</section>
+
+<!-- 15 질의 확장 효과 -->
+<section class="slide" data-part="4.1.3 예제">
+  <h2>&#128260; <span class="g">질의 확장</span>이 바꿔 놓는 것</h2>
+  <div class="plabel">원 질의</div>
+  <pre>페르시아 왕은 그리스인들과 어떻게 싸웠는가?</pre>
+  <div class="plabel">확장된 질의</div>
+  <div class="box"><p style="margin:0"><i>2세기 CE에 쓰인 <b>아리아노스의 알렉산드로스 원정기</b>에 서술된 바, 아케메네스 페르시아의 왕 <b>다리우스 3세</b>는 마케도니아의 <b>필리포스 2세의 아들</b> 알렉산더가 이끄는 마케도니아인 및 다른 그리스인들과 어떻게 충돌했는가? <b>메디아·박트리아·소그드</b> 등 이란계 예속민의 기여를 포함해 전략·전술·무기, 그리고 <b>스키타이인이나 인도인</b>과의 동맹까지 함께 고려하라.</i></p></div>
+  <div class="plabel" style="margin-top:12px">응답 (발췌)</div>
+  <div class="box" style="border-color:var(--gr)"><p style="margin:0"><i>&hellip; <b>스키타이 기병</b>이 알렉산더 전열의 정면과 충돌했다. 다리우스는 고르지 않은 지형에서 <b>전차가 쓸모없어질 것을 우려해</b> 좌익에 우회를 명했다 &hellip; 페르시아군은 <b>낫 전차</b>를 돌격시켰으나 <b>아그리아니아인과 투창병</b>이 이를 막아냈다.</i></p></div>
+  <div class="hl" style="margin-top:12px">&#128161; 질의 확장은 <b class="g">사용자는 비전문적 언어를 쓰는데 지식 베이스는 상당히 전문적일 때</b> 특히 유용합니다. 맥락을 덧붙이고 <b>중의성을 해소</b>하는 데에도 쓸 수 있습니다.</div>
+  <aside>앞의 "창으로 얼굴을 찔렀다" 한 줄과 비교해 보세요. 같은 질문, 같은 책, 완전히 다른 답입니다.</aside>
+</section>
+
+<!-- 16 PART 4 -->
+<section class="slide" data-part="4.1.4 고려사항">
+  <div class="part">
+    <div class="pno">4</div>
+    <h2 style="margin:0">4.1.4 고려사항</h2>
+    <div class="who">파운데이션 모델에 기대는 대가</div>
+  </div>
+  <aside>가설 답변도 질의 확장도 파운데이션 모델이 이미 갖고 있는 지식에 기반해 생성됩니다. 그게 강점이자 약점이에요.</aside>
+</section>
+
+<!-- 17 세 위험 -->
+<section class="slide" data-part="4.1.4 고려사항">
+  <h2>&#9888;&#65039; <span class="r">세 가지 오염</span>과 의도의 변질</h2>
+  <div class="big">모델이 <span class="y">충분히 접해 보지 못한 도메인</span>이라면 &mdash;<br>가설 답변·질의 확장에 오염이 섞인다</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:22%">오염</th><th>언제 · 예</th></tr>
+    <tr><td><b class="r">환각</b></td><td>질의가 <b>모델이 접해 보지 못한 도메인</b>에 속할 때</td></tr>
+    <tr><td><b class="r">낡은 정보</b></td><td>파운데이션 모델의 <b>지식 컷오프</b> 때문</td></tr>
+    <tr><td><b class="r">무관한 데이터</b></td><td><i>"알렉산더는 어떤 <b>패턴</b>으로 가장 유명한가?"</i> &rarr; 팔랑크스 같은 전투 대형이 아니라 <b class="r">크리스토퍼 알렉산더의 건축 디자인 패턴</b>이 나올 가능성이 높다</td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#128165; 그러면 그 낡거나 무관한 데이터와 <b>매칭이 일어나고</b>, 결국 <b class="r">답이 텍스트에 근거한다는 RAG의 핵심 이점 하나가 사라집니다.</b></div>
+  <div class="hl">&#127919; <b>의도의 변질</b> &mdash; 페르시아 왕을 묻는 사용자는 <b>스키타이인·인도인과의 동맹에는 관심이 없을지</b> 모릅니다. 질의가 그것까지 포함하도록 확장되면 <b>페르시아에서 멀리 떨어진 전투</b>가 섞여 들 수 있고, 상황에 따라 <b class="r">잘못된 행동을 유발</b>합니다.</div>
+  <div class="warn">&#128376;&#65039; <b>GraphRAG</b>도 관련 청크를 식별하는 방식에서 오류를 들여올 수 있습니다 &mdash; 설계가 어설프면 <b>상충하는 정보나 문서의 이전 버전</b>을 끌어옵니다.</div>
+  <aside>"알렉산더 패턴" 예시가 재미있으면서도 무섭습니다. 완전히 그럴듯한 오답이 나오는 경로예요.</aside>
+</section>
+
+<!-- 18 PART 5 -->
+<section class="slide" data-part="4.1.5 참고문헌">
+  <h2>&#128218; 4.1.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:28%">출처</th><th>기여</th></tr>
+    <tr><td><b>Gao 외 (2022)</b></td><td><b>HyDE</b>를 도입. 검색 대상이 질문과는 맞지 않지만 <b class="g">그 가설 답변과는 맞을 때</b>(답이 틀렸을 때조차) 검색을 개선하는 방법</td></tr>
+    <tr><td><b>Azad · Deepak (2017)</b></td><td><b>질의 확장</b>은 정보 검색 분야에서 <b>오랜 역사</b>를 갖는다. 여러 기법에 대한 개관</td></tr>
+    <tr><td><b>Song · Zheng (2024)</b></td><td>LLM의 등장으로 <b>질의 최적화</b>(확장·분해·중의성 해소·추상화)라는 더 넓은 주제에 <b>관심이 되살아났다</b></td></tr>
+    <tr><td><b>Peng 외 (2024)</b></td><td><b>GraphRAG</b> 시스템에 대한 개관</td></tr>
+    <tr><td><b>deepset</b></td><td>그래프 기반 RAG를 <b>반복적 프로세스</b>로 활용하며 <b>금융 데이터</b>에서 시연</td></tr>
+  </table>
+  <div class="hl">&#128161; 질의 확장이 <b>LLM 이전부터 있던 기법</b>이라는 게 흥미롭습니다. 검색 엔진 시대의 기술이 RAG에서 다시 쓸모를 찾은 것이죠.</div>
+  <aside>HyDE 논문 제목이 정확히 그 발상입니다 — 답이 틀렸어도 검색은 개선된다.</aside>
+</section>
+
+<!-- 19 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#128269; 질문을 <span class="g">고쳐 던져라</span></h1>
+    <div class="big" style="margin-top:24px">질문을 그대로 던지지 말고<br><span class="y">색인이 알아들을 말로 바꿔서</span> 던져라<br><br><small>단 &mdash; 그 번역은 <b>파운데이션 모델의 지식</b>에 기대므로<br>모르는 도메인에서는 <span class="y">환각이 섞인다</span></small></div>
+    <p class="sub" style="margin-top:22px">패턴 9 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 10 노드 후처리</b></p>
+  </div>
+  <aside>패턴 9가 검색 앞에서 일했다면, 패턴 10은 검색 뒤에서 일합니다. 가져온 것을 다시 고르는 쪽이에요.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>신뢰할 수 있는 생성 · 패턴 11 (4장)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 4 &middot; Pattern 11</div>
+    <h1 style="margin:18px 0">신뢰할 수 있는 <span class="g">생성</span></h1>
+    <p class="sub">Trustworthy Generation &mdash; 답변에 <b>둘 수 있는 신뢰</b>를 높이는 기법들</p>
+  </div>
+  <aside>1장 토론노트에서 "우리 시스템에 1순위"로 꼽았던 바로 그 패턴입니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 4.3의 다섯 절</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>4.3.1 문제</b> &mdash; 네 가지 위험, 그리고 완전히 피할 수 없다는 사실</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>4.3.2 해법</b> &mdash; 도메인 밖 탐지 · 인용 · 가드레일 · 관측 가능성 · 사람 피드백 · CRAG · Self-RAG · UI</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>4.3.3 예제</b> &mdash; 응답에 인용 달기 (브란덴부르크 협주곡)</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>4.3.4 고려사항</b> &mdash; 한계와 대안</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>4.3.5 참고문헌</b></span></div>
+  </div>
+  <div class="hl">&#128161; <b>한 줄로</b> &mdash; 오류를 없앨 수 없으니 <b class="g">오류일 가능성을 사용자가 볼 수 있게</b> 만든다.</div>
+  <aside>논문에 각주가 없으면 아무리 그럴듯해도 못 믿습니다. 이 패턴은 AI 답변에 각주와 출처, 그리고 "모르겠다"는 말을 붙이는 일이에요.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="4.3.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">4.3.1 문제</h2>
+    <div class="who">RAG를 붙여도 남는 위험</div>
+  </div>
+  <aside>문서 저장소에서 정보를 검색해 온다고 해도 잠재적 위험이 남습니다.</aside>
+</section>
+
+<!-- 4 네 위험 -->
+<section class="slide" data-part="4.3.1 문제">
+  <h2>&#9888;&#65039; <span class="r">네 가지 위험</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">위험</th><th>내용</th></tr>
+    <tr><td><b class="r">검색 실패</b><br><small>retrieval failures</small></td><td>관련 없는 문서를 가져오거나 <b>핵심 정보를 놓친다</b> &rarr; 답이 최적에 못 미친다</td></tr>
+    <tr><td><b class="r">컨텍스트 신뢰성</b><br><small>context reliability</small></td><td>모두 관련 있어도 일부는 <b>낡았거나 편향됐거나 틀린</b> 정보 &rarr; 답도 그렇게 된다</td></tr>
+    <tr><td><b class="r">추론 오류</b><br><small>reasoning errors</small></td><td>검색된 정보를 <b>잘못 추론하거나 오독</b>한다</td></tr>
+    <tr><td><b class="r">환각 위험</b><br><small>hallucination risks</small></td><td>RAG도 여전히 <b>정보를 꾸며내거나 문서를 잘못 섞는다</b> &mdash; 특히 복잡한 주제에서</td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">현재로서는 이 문제들을<br><span class="y">완전히 피할 방법이 없다</span></div>
+  <div class="hl">&#127993; 그러나 <b>신뢰도를 평가하고 그 정보를 소비자에게 전달할</b> 모범 사례는 있습니다. 답변이 <b class="g">행동을 유발</b>하는 상황이라면, 사용자가 <b>그 행동을 할지 말지 결정할 수 있도록</b> 신뢰도를 드러내는 일이 중요합니다.</div>
+  <aside>의료 RAG에 "1형 당뇨병 치료 선택지"를 물었다면, 답이 옳도록 하는 것도 중요하고 어떤 선택지가 낡았거나 동료 심사를 안 거친 출처에서 왔는지 드러내는 것도 중요합니다.</aside>
+</section>
+
+<!-- 5 PART 2 -->
+<section class="slide" data-part="4.3.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">4.3.2 해법</h2>
+    <div class="who">다섯 갈래로 신뢰를 쌓는다</div>
+  </div>
+  <aside>지식 베이스가 충분한 질문에만 답하기, 인용 제공, 루프에 사람 넣기, 틀릴 수 있는 정보 검증하기, 적절한 UI 설계.</aside>
+</section>
+
+<!-- 6 OOD -->
+<section class="slide" data-part="4.3.2 해법">
+  <h2>&#128683; <span class="g">도메인 밖 탐지</span> &mdash; 모른다고 말하기</h2>
+  <div class="big">신뢰를 쌓는 가장 좋은 방법 하나는<br><span class="y">응답하지 말아야 할 때를 시스템이 안다는 것</span>을 알려 주는 것</div>
+  <p style="margin-top:14px">의료 RAG에 <b>병원까지 가는 길</b>을 물었다면? <b class="g">응답을 거절</b>하거나 <b class="g">Google 지도로 넘겨야</b> 한다.</p>
+  <table class="t">
+    <tr><th style="width:26%">전략</th><th>내용</th></tr>
+    <tr><td><b>임베딩 거리</b></td><td>질의를 임베딩해 <b>모든 청크와의 유사도</b>를 본다. 도메인 밖에서는 점수가 <b class="r">가파르게 떨어진다.</b> 최적 임계값은 도메인마다 다르고, <b>시간에 따라 추적</b>하며 조정할 수 있다</td></tr>
+    <tr><td><b>제로샷 분류</b></td><td>범주를 정의한다 &mdash; 의료라면 <code>["Medical", "Not Medical"]</code>. <b>작은 언어 모델이어도</b> 된다. 맥락이 달라지면 예시를 넣어 <b>퓨샷</b>으로. 여러 범주라면 <b>최소 30% 신뢰도</b>를 임계값으로</td></tr>
+    <tr><td><b>키워드·용어 요구</b></td><td>가장 제한적. 의료라면 <b>의학 사전의 용어가 하나 이상</b> 등장하도록 요구</td></tr>
+  </table>
+  <div class="hl" style="margin-top:12px">&#128161; 저마다 장단이 있으니 <b class="g">세 신호의 가중합</b> 같은 하이브리드 접근을 택할 수도 있습니다. 탐지했다면 검색·생성을 <b>단축(short-circuit)</b>하고 거절하거나 <b>다른 리소스로 라우팅</b>합니다.</div>
+  <aside>억지로 답하는 것보다 "그건 제 영역이 아닙니다" 하고 넘겨주는 쪽이 훨씬 신뢰를 얻습니다.</aside>
+</section>
+
+<!-- 7 인용 -->
+<section class="slide" data-part="4.3.2 해법">
+  <h2>&#128209; <span class="g">인용</span> &mdash; 세 가지 수준</h2>
+  <p>인용은 신뢰를 쌓는 <b>가장 효과적인 방법 중 하나</b>다. 사용자는 시스템이 성실하게 만들어졌음을 이해하고, 참조는 정확성을 <b class="g">즉시 검증</b>할 수단이 된다.</p>
+  <table class="t">
+    <tr><th style="width:24%">방법</th><th>내용</th><th style="width:22%">특징</th></tr>
+    <tr><td><b>출처 수준 추적</b><br><small>source-level</small></td><td><b>검색 계보</b>를 기반으로. 청크와 함께 저장한 메타데이터를 <b>인용을 아는 프롬프트</b>에 넘겨 생성하고 후처리로 포매팅</td><td>단순하지만 <b class="r">인용을 과하게 다는 경향</b></td></tr>
+    <tr><td><b>분류 기반</b><br><small>classification</small></td><td><b>분류기</b>가 인용이 필요 없는 <b>상식</b>과 인용이 필요한 <b>사실 주장</b>을 구분. 기준은 도메인마다 다르다(학술 논문은 더 많이 요구)</td><td><b class="g">더 정밀</b>하지만 분류기를 마련·파인튜닝해야 해 <b class="r">복잡도 증가</b></td></tr>
+    <tr><td><b>토큰 수준 귀속</b><br><small>token-level</small></td><td>생성 과정에서 메타데이터를 <b class="g">LLM의 어텐션 메커니즘을 통해 추적</b> &rarr; 토큰 하나하나를 하나 이상의 출처에 귀속. <b>임계값</b> 이상일 때만 표시</td><td><b class="g">패러프레이즈를 귀속 손실 없이</b> 다루고 <b>여러 출처 혼합</b> 지원</td></tr>
+  </table>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; 토큰 수준 귀속은 <b class="r">집필 시점 기준 활발한 연구 영역</b>이며, <b>실서비스에 쓸 만한 오픈소스 구현은 아직 없습니다.</b></div>
+  <div class="hl">&#128161; 왜 필요한가 &mdash; 생성 과정에서 <b>원래 청크의 경계가 흐려지고</b>, 여러 청크가 한 문장에 기여하며, LLM이 <b class="r">바꿔 쓰는 경향</b> 때문에 직접적인 텍스트 매칭이 어려워집니다.</div>
+  <aside>세 번째 줄의 예로 책은 "그는 서양 음악사에서 가장 위대한 작곡가 중 한 사람으로 널리 평가받는다" 같은 문장을 듭니다. 상식이 아니라 인용이 필요한 진술이죠.</aside>
+</section>
+
+<!-- 8 가드레일 -->
+<section class="slide" data-part="4.3.2 해법">
+  <h2>&#128737;&#65039; <span class="g">가드레일</span> &mdash; 네 지점에서</h2>
+  <table class="t">
+    <tr><th style="width:20%">시점</th><th>검사</th></tr>
+    <tr><td><b>검색 전</b></td><td>도메인 밖 탐지로 <b>유해·부적절 질의</b> 차단 · <b class="r">주입 공격</b> 방지를 위한 입력 정제 · <b>신뢰도가 매우 높은 출처</b>만 남기기</td></tr>
+    <tr><td><b>검색 후</b></td><td><b>청크 메타데이터 추적 강제</b> · 출처와 관련성으로 <b>우선순위 매기고 임계값 미만 제거</b> · <b>성찰형 RAG</b>로 사실 확인 · <b>프라이버시 준수</b> 확인</td></tr>
+    <tr><td><b>생성 전</b></td><td><b>데이터 신선도</b>(예: 6개월 초과 제외) · <b>출처 다양성</b> 강제 · <b>유해한 내용</b> 확인</td></tr>
+    <tr><td><b>생성 후</b></td><td><b>인용과 출처 귀속 강제</b> · 사실 확인 · 데이터 프라이버시 · <b>의도치 않은 유해 생성</b> 확인</td></tr>
+  </table>
+  <div class="warn" style="margin-top:12px">&#9940; 검사를 통과하지 못한 청크는 <b class="r">버립니다 &mdash; 응답 생성 단계로 절대 넘기지 않습니다.</b> 가드레일 중 하나라도 실패하면 <b>질의를 다시 쓰고</b> 새 생성이나 새 검색을 트리거합니다.</div>
+  <div class="hl">&#128295; <b>도구</b> &mdash; <b>Guardrails AI</b>(PII·도메인 밖·탈옥·욕설 탐지) · <b>DeepEval</b>(인용 정확도·검색 정밀도·환각 탐지 + 레드티밍) · <b>Ragas</b>(답변 정확성·컨텍스트 개체 재현율). 이들을 쓰면 <b class="g">관측 가능성</b>도 함께 좋아집니다.</div>
+  <aside>가드레일이 파이프라인 전반에 깔린다는 게 핵심입니다. 한 곳에서만 막는 게 아니에요.</aside>
+</section>
+
+<!-- 9 관측 가능성 -->
+<section class="slide" data-part="4.3.2 해법">
+  <h2>&#128200; <span class="g">관측 가능성</span></h2>
+  <p>LLM의 입력과 출력을 추적하며 지표를 자동으로 만든다.</p>
+  <div class="chain">
+    <div class="cell"><small>1</small><b>컨텍스트<br>관련성</b></div>
+    <div class="cell"><small>2</small><b>응답<br>관련성</b></div>
+    <div class="cell"><small>3</small><b>충실도<br><small style="color:var(--soft)">faithfulness</small></b></div>
+    <div class="cell"><small>4</small><b>컨텍스트<br>재현율·정밀도</b></div>
+  </div>
+  <div class="big" style="margin-top:16px">엄밀한 관측 가능성을 구현하면<br><span class="y">사용자 신뢰와 시스템 채택률이<br>측정 가능한 수준으로 향상된다</span></div>
+  <div class="hl" style="margin-top:14px">&#128161; 이해관계자가 <b>입력과 출력의 상관관계를 투명하게 평가</b>할 수 있게 되면 신뢰성과 정확성에 대한 확신이 커집니다. 그리고 <b class="g">지속적 최적화와 성능 검증을 위한 값진 데이터 포인트</b>도 얻습니다.</div>
+  <div class="warn">&#128230; 직접 구현할 수도 있지만 <b>나와 있는 라이브러리</b>를 권합니다 &mdash; 오픈소스로 <b>Arize Phoenix · Comet Opik · Langfuse · Langtrace</b>.</div>
+  <aside>저자들의 경험담이 실려 있는 드문 대목입니다. 관측 가능성이 신뢰로 이어진다는 것.</aside>
+</section>
+
+<!-- 10 사람 피드백 -->
+<section class="slide" data-part="4.3.2 해법">
+  <h2>&#128101; <span class="g">사람 피드백</span> &mdash; 온라인과 오프라인</h2>
+  <div class="grid2">
+    <div class="box"><h3>&#128260; 온라인 &mdash; 루프 안의 사람</h3><p style="margin:0">청크 <b>검색 후 검토 단계</b>를 넣어 찬반 투표로 관련성을 갱신 · 생성된 응답 전부 또는 <b>신뢰도 임계값 미만</b>인 것을 <b>검토 큐</b>로</p></div>
+    <div class="box"><h3>&#128203; 오프라인 &mdash; 일부만 봐도 된다</h3><p style="margin:0"><b>검색된 청크의 순위 검토</b> &rarr; <b class="g">도메인 특화 임베딩 모델</b>의 바탕 / 질의 재작성용 <b>LLM 파인튜닝</b>에도 쓸 수 있다</p></div>
+  </div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:26%">피드백 종류</th><th>예</th></tr>
+    <tr><td><b>명시적</b></td><td>청크·응답에 대한 <b>좋아요/싫어요</b></td></tr>
+    <tr><td><b>암묵적</b></td><td>사용자가 응답을 <b>제품 안에서 얼마나 자주 쓰는지</b> 같은 참여 지표</td></tr>
+    <tr><td><b>전문가</b></td><td>해당 분야 전문가의 <b>검증과 주석</b></td></tr>
+  </table>
+  <div class="hl">&#127919; 목표는 언제나 이 피드백 루프가 <b class="g">RAG 시스템의 각 구성 요소로 되돌아 연결되어</b> 각 프로세스를 개선하게 하는 것이어야 합니다.</div>
+  <aside>사람이 매긴 순위가 도메인 특화 임베딩 모델의 학습 데이터가 된다는 게 흥미롭습니다. 3장 패턴 7의 도메인 특화 모델과 이어져요.</aside>
+</section>
+
+<!-- 11 CRAG vs SelfRAG -->
+<section class="slide" data-part="4.3.2 해법">
+  <h2>&#128260; <span class="g">CRAG</span>와 <span class="g">Self-RAG</span> &mdash; 검사 시점의 차이</h2>
+  <div class="big">요리로 치면 &mdash;<br>CRAG는 <span class="y">재료 검수</span>, Self-RAG는 <span class="y">맛보기 후 다시 조리</span></div>
+  <div class="box" style="margin-top:14px">
+    <h3>&#129379; CRAG &mdash; 교정형 RAG (생성 <b>전</b>)</h3>
+    <p style="margin:6px 0 0">문서를 생성 단계로 넘기기 전에 <b>검색된 청크의 품질을 평가하는 평가기</b>를 추가. <b>신뢰도 점수</b>가 서로 다른 지식 검색 동작을 촉발한다.</p>
+    <ul class="pts" style="margin-top:6px">
+      <li><b>웹이나 기업 문서 저장소</b>(SharePoint · Google Drive)를 검색해 보강 &mdash; 지식 베이스는 정적인데 <b>온라인 콘텐츠는 더 빨리 갱신</b>되므로</li>
+      <li><b>"분해 후 재구성"</b> &mdash; 관련 없어 보이는 내용을 걸러 핵심에 집중하게</li>
+    </ul>
+    <p style="margin:8px 0 0"><small>관련 없는 콘텐츠는 검색 결과로 <b>완전히 대체</b>, 중의적인 콘텐츠는 검색 결과와 <b>결합</b>한 뒤 넘긴다</small></p>
+  </div>
+  <div class="box" style="margin-top:12px;border-color:var(--gr)">
+    <h3 class="g">&#129504; Self-RAG &mdash; 성찰형 (생성 <b>후</b>·전체)</h3>
+    <p style="margin:6px 0 0"><b>자기 평가</b>(검색 품질을 스스로 비판) · <b>적응형 검색</b>(더 검색할지 생성으로 갈지 스스로 결정) · <b>통제된 생성</b>(검색 지식 vs 기반 LLM의 <b>파라미터 지식</b> 사이를 조절)</p>
+    <p style="margin:8px 0 0"><small>이 모두는 <b class="g">프롬프트로 달성할 수 있습니다</b>(6장 패턴 17 LLM-as-Judge). 루프와 복잡도가 늘지만 환각을 줄이고 <b>설명 가능성</b>을 높입니다.</small></p>
+  </div>
+  <aside>Self-RAG는 고정된 결합 방식 대신 맥락에 따라 검색 지식과 파라미터 지식을 더 잘 섞을 수 있습니다.</aside>
+</section>
+
+<!-- 12 UI -->
+<section class="slide" data-part="4.3.2 해법">
+  <h2>&#128421;&#65039; <span class="g">UI 설계</span> &mdash; 블랙박스에서 연구 조수로</h2>
+  <p>사용자는 <b>어떤 문서가 참조됐는지, 정보가 얼마나 최신인지, LLM이 얼마나 확신하는지</b>를 볼 수 있을 때 더 신뢰한다.</p>
+  <ul class="pts">
+    <li><b>시각 지표</b> &mdash; 인용 링크 · 출처 미리보기 · <b>신뢰도 게이지</b></li>
+    <li><b>인라인 인용</b>과 원문에 <b>원클릭 접근</b> &mdash; 사용자의 지성을 존중하는 태도를 보인다</li>
+    <li><b>통제권</b> &mdash; 검색 파라미터 조정 · <b>날짜나 출처 권위로 필터링</b> · 초기 응답을 바탕으로 질의 다듬기 &rarr; 일방적 전달이 아니라 <b class="g">협업하는 경험</b></li>
+    <li><b>점진적 공개</b>(progressive disclosure) &mdash; 단순화된 결과를 먼저, 더 깊이 팔 선택지를 제공 &rarr; <b>깊이를 유지하면서도 압도하지 않는다</b></li>
+    <li><b>피드백 메커니즘</b> &mdash; 좋아요/싫어요 · 정정 · <b>눈에 보이는 시스템 개선</b></li>
+  </ul>
+  <div class="big" style="margin-top:14px">알 수 없는 <span class="y">블랙박스</span>에서<br>작업 내용을 검증하고 신뢰할 수 있는 <span class="y">연구 조수</span>로</div>
+  <div class="hl">&#128161; 자기 피드백이 <b>개선된 응답에 반영되는 것을 볼 때</b> 사용자는 시스템의 지속적 개선과 신뢰성에 확신을 갖게 됩니다.</div>
+  <aside>책은 Perplexity AI의 검색 인터페이스를 예로 듭니다. 인용을 어떻게 보여주는지가 신뢰를 크게 좌우해요.</aside>
+</section>
+
+<!-- 13 PART 3 -->
+<section class="slide" data-part="4.3.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">4.3.3 예제</h2>
+    <div class="who">응답에 인용 달기 &mdash; 분류 기반</div>
+  </div>
+  <aside>해법 중 가장 효과적인 것이 인용입니다. 분류기로 인용이 필요한 부분을 탐지하고 관련 인용을 제공합니다.</aside>
+</section>
+
+<!-- 14 6단계 -->
+<section class="slide" data-part="4.3.3 예제">
+  <h2>&#128207; <span class="g">여섯 단계</span></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>최초 응답 생성</b> &mdash; 아직 <b>검토되지 않은</b> 응답</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>더 작은 조각으로 청킹</b> &mdash; 이 예제는 <b>문장 수준</b>까지</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>인용이 필요한지 검사</b> &mdash; 파인튜닝된 <b>BERT 같은 작은 모델</b>이나 <b>LLM 제로샷 호출</b></span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>출처 조회</b> &mdash; 문서 저장소에서 유사 문서 검색</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>응답에 인용 넣기</b></span></div>
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">6</span><span class="t"><b class="r">필요한 경고나 정정 추가</b></span></div>
+  </div>
+  <pre style="margin-top:12px">sentences = raw_response.split(".")
+for sentence in sentences:
+    review = <b>needs_citation(sentence)</b>
+    chunks = <b>check_sources(sentence)</b> if review else []</pre>
+  <pre style="margin-top:8px">prompt = """Check if the content requires citations. Return
+{{"requires_citations": true}} &hellip; Content: {content}"""</pre>
+  <aside>인용을 얼마나 세밀하게 달고 싶은지에 따라 2단계의 청킹 전략을 바꿔도 됩니다.</aside>
+</section>
+
+<!-- 15 결과 -->
+<section class="slide" data-part="4.3.3 예제">
+  <h2>&#127925; 결과 &mdash; <span class="g">브란덴부르크 협주곡</span></h2>
+  <div class="box" style="border-color:var(--gr)"><p style="margin:0"><i>브란덴부르크 협주곡(BWV 1046–1051)은 요한 제바스티안 바흐의 기악 작품 여섯 곡 모음으로, 1721년 브란덴부르크슈베트의 변경백 크리스티안 루트비히에게 헌정됐다. <b class="g">[1]</b> 이 협주곡들은 바로크 시대 최고의 관현악 작품 중 하나로 높이 평가받는다. <b class="g">[1]</b> 협주곡들은 다양한 독주 악기 조합을 특징으로 한다. 최근 연구는 &hellip; 이전 음악에 기반했을 수 있음을 시사한다. <b class="g">[1, 2]</b></i></p>
+  <p style="margin:8px 0 0"><small><b>References</b> &mdash; [1] bach_brandenburg-concertos.txt · [2] bach_mass-in-b-minor-bach.txt</small></p></div>
+  <div class="hl" style="margin-top:12px">&#128161; <b>인용이 없는 문장</b>도 있다는 점에 주목하세요. 분류기가 <b>인용이 필요 없다고 판단한 것</b>입니다.</div>
+  <pre style="margin-top:12px">if review and len(chunks) == <b>0</b>:
+    response_with_citations += " <b class="r">[Citation needed]</b> "</pre>
+  <div class="warn">&#9888;&#65039; <b>6단계가 이 예제의 핵심</b>입니다 &mdash; 분류기는 인용을 요구했는데 <b class="r">문서 저장소에서 출처를 못 찾았다면</b> 그때가 <b>사용자에게 알려야 할 순간</b>. 여기서는 <code>[Citation needed]</code>를 보이지만, 그 진술을 <b class="r">붉게 표시</b>하거나 <b>제거</b>하거나 <b>전체를 강제 재생성</b>할 수도 있습니다.</div>
+  <div class="warn">&#128221; GitHub에는 <b>프롬프트 기반 인용</b> 예제도 있지만 단점이 있습니다 &mdash; <b class="r">생성된 주장을 문서 저장소와 다시 대조하지 않으며</b>, 인용 포매팅을 세밀하게 통제할 수 없습니다.</div>
+  <aside>실제 구현에서는 예제용 텍스트 파일이 아니라 청크의 메타데이터에서 온 제대로 된 출처를 가리켜야 합니다.</aside>
+</section>
+
+<!-- 16 PART 4 -->
+<section class="slide" data-part="4.3.4 고려사항">
+  <h2>&#9888;&#65039; 4.3.4 <span class="r">한계</span></h2>
+  <div class="warn">&#128165; Self-RAG처럼 정교한 구현은 <b class="r">파이프라인 복잡도를 높이고 실패 지점을 늘립니다.</b> 도구를 하나 더할 때마다 응답 시간이 늘고 결국 UX에 영향을 주므로, <b class="g">더 단순한 대안으로 되는지 따져 봐야</b> 합니다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:26%">한계</th><th>내용</th></tr>
+    <tr><td><b class="r">임계값 의존</b></td><td>유사도 점수와 임계값에 크게 의존하는데, 이 임계값은 <b>도메인에 극도로 특화</b>돼 세심한 튜닝과 지속적 갱신이 필요하다. <b class="r">엣지 케이스</b>가 흔들 수 있고 예상보다 많은 노력을 요구한다</td></tr>
+    <tr><td><b class="r">안전장치 vs 정보 손실</b></td><td>대부분을 걸러 내는 아주 엄격한 RAG는 <b class="r">값진 정보를 지워 버리고</b> 불완전한 답을 만들며 UX를 해친다</td></tr>
+    <tr><td><b class="r">확장의 한계</b></td><td>검증 단계는 &mdash; 루프 안의 사람과 마찬가지로 &mdash; <b class="r">어느 지점을 넘으면 불가능</b>해진다. 지식 베이스가 커지고 상충 정보가 더해지면 <b>거짓 양성</b>도 시간이 갈수록 늘어난다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:12px">&#9878;&#65039; <b>균형</b>이 이 절의 주제입니다. 너무 느슨하면 신뢰가 안 되고, 너무 빡빡하면 쓸모가 없어집니다.</div>
+  <aside>두 번째가 실무에서 자주 부딪힙니다. 안전하게 만들려다 아무 답도 못 하는 시스템이 되는 거죠.</aside>
+</section>
+
+<!-- 17 대안 -->
+<section class="slide" data-part="4.3.4 고려사항">
+  <h2>&#128257; 두 가지 <span class="g">대안</span></h2>
+  <div class="box" style="border-color:var(--gr)">
+    <h3 class="g">&#9312; 여러 지식 출처를 통합</h3>
+    <p style="margin:6px 0 0">단일 원샷이 아니라 <b>여러 출처로 검색</b>하는 파이프라인은 전반적으로 더 나은 응답을 낸다.</p>
+    <ul class="pts" style="margin-top:6px">
+      <li>LLM의 <b>파라미터 정보</b>와 검색을 통한 <b>비파라미터 정보</b>를 결합</li>
+      <li><b>지식 그래프</b>를 써서 응답 품질을 더 높이기</li>
+    </ul>
+  </div>
+  <div class="box" style="margin-top:12px;border-color:var(--gr)">
+    <h3 class="g">&#9313; 자동 교정 대신 설명 가능성에 집중</h3>
+    <p style="margin:6px 0 0">환각을 자동으로 고치거나 엄격한 가드레일을 넣기보다 &mdash;</p>
+    <ul class="pts" style="margin-top:6px">
+      <li>검색된 청크를 <b>신뢰도 점수와 함께 노출</b></li>
+      <li>시스템의 <b>추론 단계</b>를 사용자에게 제공</li>
+      <li>인용된 출처를 생성 응답과 <b>나란히 볼 수 있는 대화형 UI</b></li>
+    </ul>
+  </div>
+  <div class="big" style="margin-top:14px">고치려 들지 말고<br><span class="y">보이게 하라</span></div>
+  <aside>두 번째가 이 패턴 전체의 정신입니다. 오류를 없앨 수 없다면 판단 재료를 사용자에게 넘기는 거죠.</aside>
+</section>
+
+<!-- 18 PART 5 -->
+<section class="slide" data-part="4.3.5 참고문헌">
+  <h2>&#128218; 4.3.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:24%">주제</th><th>출처</th></tr>
+    <tr><td><b>가드레일</b></td><td><b>Guardrails AI</b> 문서(임베딩 거리·제로샷 분류) · <b>Jarvis (2023)</b> OpenAI Cookbook 「How to Implement LLM Guardrails」 · <b>Lunden (2024)</b> ML6 「The Landscape of LLM Guardrails」</td></tr>
+    <tr><td><b>토큰 수준 귀속</b></td><td><b>Qi 외 (2024)</b> 「Model Internals-based Answer Attribution」 · <b>Phukan 외 (2024)</b> 「Peering into the Mind of Language Models」 · <b>Huang 외 (2024)</b> 「Citation: A Key to Building Responsible and Accountable LLMs」(<b>생성 전 vs 생성 후</b> 인용 비교)</td></tr>
+    <tr><td><b>CRAG</b></td><td><b>Yan 외 (2024)</b> 「Corrective Retrieval Augmented Generation」 · LangGraph 튜토리얼 · DataCamp 구현 가이드</td></tr>
+    <tr><td><b>Self-RAG</b></td><td><b>Asai 외 (2023)</b> 「Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection」 · 공식 GitHub · LangChain Self-Reflective RAG</td></tr>
+    <tr><td><b>실제 제품</b></td><td><b>Google NotebookLM</b> &mdash; 답변 생성에 쓰인 원 자료에 대한 <b>인라인 인용</b> 제공</td></tr>
+  </table>
+  <aside>이 패턴은 참고문헌이 가장 풍부합니다. 그만큼 활발히 연구되고 있고 실무 자료도 많다는 뜻이에요.</aside>
+</section>
+
+<!-- 19 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#128209; 각주를 <span class="g">붙여라</span></h1>
+    <div class="big" style="margin-top:24px">오류를 완전히 없앨 수는 없으니<br><span class="y">오류일 가능성을 사용자가 볼 수 있게</span><br>만들어 신뢰를 얻는다<br><br><small>모르는 건 <span class="y">모른다고 말하고</span>, 근거는 <span class="y">보여 준다</span></small></div>
+    <p class="sub" style="margin-top:22px">패턴 11 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 12 깊은 검색</b></p>
+  </div>
+  <aside>1장 토론노트의 결론 — "우리에게 급한 건 LLM을 더 잘 쓰는 패턴이 아니라 안 쓰기로 한 결정을 지켜내는 패턴" — 과 정확히 맞물리는 자리입니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

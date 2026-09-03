@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>지식 더하기 패턴 7종 · 3·4장 통합 요약</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 3 &amp; 4 &middot; Summary</div>
+    <h1 style="margin:18px 0">지식 더하기 &mdash; <span class="g">패턴 7종</span></h1>
+    <p class="sub">3·4장 통합 요약 <small>(책 4.4.6)</small></p>
+    <p class="sub" style="margin-top:6px"><small>저자가 3장 요약을 미뤄 두고 4장 끝에서 한꺼번에 한 이유 &mdash; <b>일곱을 함께 봐야 지도가 보인다</b></small></p>
+  </div>
+  <aside>3장과 4장의 패턴들은 RAG 시스템을 써서 파운데이션 모델의 지식을 확장합니다. 패턴 6의 아키텍처에서 출발해 하나씩 넘어갈 때마다 복잡도가 올라가요.</aside>
+</section>
+
+<!-- 2 지도 -->
+<section class="slide" data-part="요약">
+  <h2>&#128506;&#65039; 일곱 패턴의 <span class="g">지도</span></h2>
+  <div class="chain">
+    <div class="cell" style="border-color:var(--gr)"><small>3장 · 베이스</small><b class="g">인덱싱을<br>똑똑하게</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gold)"><small>4장 · 싱코페이션</small><b class="gold">검색·생성을<br>똑똑하게</b></div>
+  </div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:8%">#</th><th style="width:28%">패턴</th><th>끼어드는 자리</th></tr>
+    <tr><td><b>6</b></td><td>기본 RAG</td><td><b>출발점</b> &mdash; 인덱싱 · 검색 · 생성</td></tr>
+    <tr><td><b>7</b></td><td>의미 기반 색인</td><td>인덱싱 &mdash; <b>단어 대신 뜻</b></td></tr>
+    <tr><td><b>8</b></td><td>대규모 색인 운영</td><td>인덱싱 &mdash; <b>메타데이터</b></td></tr>
+    <tr><td><b>9</b></td><td>색인을 아는 검색</td><td><b>검색 앞</b> &mdash; 질의를 고쳐 쓴다</td></tr>
+    <tr><td><b>10</b></td><td>노드 후처리</td><td><b>검색과 생성 사이</b> &mdash; 다시 고른다</td></tr>
+    <tr><td><b>11</b></td><td>신뢰할 수 있는 생성</td><td><b>전 단계</b> &mdash; 가드레일 · 인용</td></tr>
+    <tr><td><b>12</b></td><td>깊은 검색</td><td><b>전체를 루프로</b></td></tr>
+  </table>
+  <aside>번호가 커질수록 아키텍처의 복잡도가 올라갑니다. 그리고 앞 패턴을 재료로 씁니다.</aside>
+</section>
+
+<!-- 3 문제-해법 1 -->
+<section class="slide" data-part="요약">
+  <h2>&#128203; 문제와 해법 <span class="g">&#9312;</span> <small>&mdash; 3장</small></h2>
+  <table class="t">
+    <tr><th style="width:20%">패턴</th><th style="width:40%">문제</th><th>해법</th></tr>
+    <tr><td><b>6</b> 기본 RAG</td><td><b>지식 컷오프 · 기밀 데이터 · 환각</b>이 LLM의 제로샷 생성에 문제를 일으킨다</td><td>지식 베이스의 관련 정보를 <b>프롬프트 컨텍스트에 넣어</b> 응답을 <b class="g">그라운딩</b>한다</td></tr>
+    <tr><td><b>7</b> 의미 기반 색인</td><td>문서가 복잡해지거나 <b>이미지·표 같은 여러 매체</b>를 담거나 여러 도메인에 걸치면 <b class="r">키워드 인덱싱이 실패</b>한다</td><td><b class="g">임베딩</b>으로 여러 매체의 의미를 포착. 청크와 질의의 임베딩을 비교해 관련 청크를 찾는다</td></tr>
+    <tr><td><b>8</b> 대규모 색인 운영</td><td>지식 베이스의 <b class="r">낡거나 모순되는 정보</b>를 처리해야 한다</td><td><b class="g">메타데이터</b>, 질의 필터링, <b>결과 재순위화</b>를 쓴다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; 3장의 셋은 모두 <b class="g">인덱싱 시점</b>에 일합니다 &mdash; 비용을 <b>한 번 내면 끝</b>이라는 뜻이기도 합니다.</div>
+  <aside>인덱싱은 배치로 미리 돌리니까요. 질의마다 비용이 붙지 않습니다.</aside>
+</section>
+
+<!-- 4 문제-해법 2 -->
+<section class="slide" data-part="요약">
+  <h2>&#128203; 문제와 해법 <span class="g">&#9313;</span> <small>&mdash; 4장</small></h2>
+  <table class="t">
+    <tr><th style="width:20%">패턴</th><th style="width:40%">문제</th><th>해법</th></tr>
+    <tr><td><b>9</b> 색인을 아는 검색</td><td>질문 자체가 지식 베이스에 없고, <b>동의어·전문 용어</b>를 쓰거나 <b>전체적 해석</b>을 요구해 질문과 청크를 맞추기 까다롭다</td><td><b class="g">가설 답변(HyDE) · 질의 확장 · 하이브리드 검색 · GraphRAG</b></td></tr>
+    <tr><td><b>10</b> 노드 후처리</td><td><b class="r">관련 없는 내용 · 중의적 개체 · 천편일률적 답</b>을 처리해야 한다</td><td><b class="g">재순위화</b>를 도입하면 하이브리드 검색·질의 확장·필터링·<b>컨텍스추얼 압축</b>·중의성 해소·개인화를 함께 얹을 수 있다</td></tr>
+    <tr><td><b>11</b> 신뢰할 수 있는 생성</td><td><b class="r">오류를 완전히 피할 방법이 없는</b> 상황에서 사용자 신뢰를 어떻게 유지할지</td><td><b class="g">도메인 밖 탐지 · 인용 · 가드레일 · 사람 피드백 · 교정형 RAG · UX 설계</b></td></tr>
+    <tr><td><b>12</b> 깊은 검색</td><td><b>컨텍스트 윈도 제약 · 질의 중의성 · 정보 검증 · 얕은 추론 · 멀티홉 질의</b></td><td><b class="g">검색 · 읽기 · 추론의 반복</b> 과정</td></tr>
+  </table>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; 4장의 넷은 <b class="r">질의마다 비용이 붙습니다.</b> 성격이 3장과 다릅니다.</div>
+  <aside>그래서 4장의 모든 「고려사항」 절이 "더 단순한 대안으로 되는지 먼저 따져 보라"고 말합니다.</aside>
+</section>
+
+<!-- 5 용례 -->
+<section class="slide" data-part="요약">
+  <h2>&#128188; RAG 시스템의 <span class="g">일곱 가지 용례</span></h2>
+  <ul class="pts">
+    <li><b>고객 서비스 챗봇</b> &mdash; 회사 지식 베이스에 근거해 정확하고 <b>맥락을 아는</b> 응답을</li>
+    <li><b>지능형 내부 검색 엔진</b> &mdash; 사내 문서·DB·업무별 보고서에서 직원 질문의 답을 종합</li>
+    <li><b>애널리스트 지원</b> &mdash; 방대한 조사 보고서와 홍보 자료에서 정보를 빠르게 찾아 종합</li>
+    <li><b>법률</b> &mdash; 관련 <b>판례와 법령</b>을 효율적으로 검색해 변호사가 최신·정확한 정보를 갖도록</li>
+    <li><b>경쟁 인텔리전스</b> &mdash; 뉴스·재무 보고서·제품 발표 같은 <b>경쟁사 공개 정보</b>를 보고서로</li>
+    <li><b>문헌 검토 가속</b> &mdash; 연구 질문에 근거해 검색하고 <b>서로 다른 발견들의 비교</b>를 생성</li>
+    <li><b>개인화된 요약</b> &mdash; 최신 정보로부터 관심 주제에 대한 요약을 <b>생성·갱신</b></li>
+  </ul>
+  <div class="big" style="margin-top:16px">기술이 발전하면서<br><span class="y">RAG의 응용 범위는 계속 넓어지고 있다</span></div>
+  <aside>공통점이 보이시나요. 전부 "우리 조직 안에 있는데 찾기 어려운 지식"입니다.</aside>
+</section>
+
+<!-- 6 어디까지 -->
+<section class="slide" data-part="요약">
+  <h2>&#129517; <span class="g">어디까지</span> 올라갈 것인가</h2>
+  <div class="steps">
+    <div class="st"><span class="n">6</span><span class="t"><b>먼저 물어라</b> &mdash; 문서가 <b class="g">20만 토큰(약 500쪽)</b> 이하면 RAG 없이 <b>통째로 프롬프트에</b> 넣어도 된다</span></div>
+    <div class="st"><span class="n">7</span><span class="t">키워드로 못 찾는 게 생기면 &rarr; <b>임베딩</b></span></div>
+    <div class="st"><span class="n">8</span><span class="t">색인이 커지며 <b>모순·낡음</b>이 나타나면 &rarr; <b>메타데이터</b></span></div>
+    <div class="st"><span class="n">9</span><span class="t">질문과 문서의 <b>말이 다르면</b> &rarr; 질의를 고쳐 쓰기</span></div>
+    <div class="st"><span class="n">10</span><span class="t"><b>관련 없는 청크·모호성</b>을 처리해야 하면 &rarr; 후처리</span></div>
+    <div class="st"><span class="n">11</span><span class="t">답이 <b class="r">행동을 유발</b>한다면 &rarr; 신뢰 장치</span></div>
+    <div class="st"><span class="n">12</span><span class="t">한 번의 검색으로 <b>답이 안 되는 질문</b>이면 &rarr; 반복</span></div>
+  </div>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; 저자의 경고 &mdash; <b class="r">먼저 적용해서 복잡도를 더하는 것이 「측정 가능한 이득」을 주는지</b> 신중히 평가하라. 이 패턴들은 기본 RAG에 얹는 <b>애드온</b>이다.</div>
+  <aside>화살표는 "필요가 생겼을 때" 올라가라는 뜻입니다. 미리 다 쌓아 두는 게 아니에요.</aside>
+</section>
+
+<!-- 7 숫자 -->
+<section class="slide" data-part="요약">
+  <h2>&#128290; 3·4장에서 <span class="g">기억할 숫자</span></h2>
+  <table class="t">
+    <tr><th style="width:24%">숫자</th><th>뜻</th></tr>
+    <tr><td><b class="gold">연 1,000만 달러</b></td><td>지식을 최신으로 유지하려고 <b>매일 재학습</b>한다면 &mdash; 그래서 RAG를 쓴다</td></tr>
+    <tr><td><b class="gold">61.04 vs 1.01</b></td><td>알렉산더 전기에서 <i>Alexander</i>(1,311회) vs <i>Diogenes</i>(6회)의 TF-IDF &mdash; <b>BM25의 포화가 필요한 이유</b></td></tr>
+    <tr><td><b class="gold">768~4,096</b></td><td>임베딩 차원. 늘리면 섬세하지만 <b class="r">차원의 저주</b></td></tr>
+    <tr><td><b class="gold">67% 감소</b></td><td>Anthropic <b>컨텍스추얼 리트리벌</b>의 잘못된 검색 감소율</td></tr>
+    <tr><td><b class="gold">20만 / 200만 토큰</b></td><td>약 500쪽(RAG 불필요) / 프런티어 최대(프랑스 세법 전체)</td></tr>
+    <tr><td><b class="gold">N&times;(N&minus;1) vs N&minus;1</b></td><td>상충 탐지 vs 중의성 해소의 LLM 호출 수 &mdash; <b>비용이 갈리는 지점</b></td></tr>
+    <tr><td><b class="gold">최소 30%</b></td><td>여러 범주 제로샷 분류에서 도메인 밖 판정 <b>신뢰도 임계값</b></td></tr>
+  </table>
+  <aside>이 숫자들이 설계 판단의 근거가 됩니다. 감각으로 하지 말고 숫자로 하라는 뜻이에요.</aside>
+</section>
+
+<!-- 8 경고 -->
+<section class="slide" data-part="요약">
+  <h2>&#9888;&#65039; 3·4장의 <span class="r">실무 경고 여섯</span></h2>
+  <div class="steps">
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">1</span><span class="t"><b class="r">RAG는 환각을 없애지 않는다. 줄일 뿐이다.</b></span></div>
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">2</span><span class="t">임베딩만 쓰고 <b class="r">BM25 같은 키워드 검색기가 없는 RAG는 부적절하다</b> &mdash; 품번·제품명을 못 찾는다</span></div>
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">3</span><span class="t">낡은 문서를 <b class="r">그냥 지우면 최신 갱신이 맥락을 잃는다</b> (CDC 격리 지침)</span></div>
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">4</span><span class="t">가설 답변·질의 확장은 <b class="r">모르는 도메인에서 환각을 들여온다</b> &mdash; "알렉산더 패턴" &rarr; 건축 디자인 패턴</span></div>
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">5</span><span class="t"><b class="r">유사성은 관련성이 아니다</b> &mdash; 지질학 용어가 있다는 이유로 목차가 최상위로</span></div>
+    <div class="st" style="border-color:var(--red)"><span class="n" style="background:var(--red)">6</span><span class="t">너무 엄격한 가드레일은 <b class="r">값진 정보를 지우고 불완전한 답</b>을 만든다</span></div>
+  </div>
+  <div class="hl">&#128161; 여섯 개의 공통점 &mdash; 전부 <b class="g">"좋아 보이는데 틀린"</b> 상황입니다. 그래서 <b>측정과 관측 가능성</b>이 중요합니다.</div>
+  <aside>다섯 번째가 특히 무섭습니다. 답이 그럴듯하고 숫자까지 붙어 있어서 틀린 줄 모르고 넘어가요.</aside>
+</section>
+
+<!-- 9 우리 프로젝트 -->
+<section class="slide" data-part="요약">
+  <h2>&#128279; 우리 프로젝트와 <span class="g">연결</span></h2>
+  <p>1장 토론노트 6번의 결론 &mdash; <i>"우리에게 급한 건 <b>LLM을 더 잘 쓰는 패턴</b>이 아니라 <b class="g">LLM을 쓰지 않기로 한 결정을 지켜내는 패턴</b>"</i></p>
+  <table class="t">
+    <tr><th style="width:16%">순위</th><th style="width:26%">패턴</th><th>왜</th></tr>
+    <tr><td><b>&#129351; 1순위</b></td><td><b class="g">패턴 11 신뢰할 수 있는 생성</b></td><td>우리 <b>원칙 1 그 자체.</b> <code>SearchLog</code>, 「신규 없음」 vs 「조회 실패」 구분, A등급 2회 연속 0건 경고가 <b class="g">전부 이 패턴의 구현</b> &mdash; <b>이미 하는 일에 이름과 체계를 붙여 주는 장</b></td></tr>
+    <tr><td><b>&#9940; 금지</b></td><td>3·4장 RAG 전반</td><td>우리는 "검색해서 답하기"가 아니라 <b>"수집해서 나열하기"</b>. <b class="r">지금은 불필요</b></td></tr>
+  </table>
+  <div class="hl" style="margin-top:12px">&#128161; 그래도 3·4장을 읽는 이유 &mdash; <b class="g">패턴 11의 구멍을 찾기 위해서</b>입니다. 도메인 밖 탐지 · 인용 · 가드레일 4단계 중 <b>우리가 안 하고 있는 것</b>이 무엇인지 보이거든요.</div>
+  <div class="warn">&#128073; 나중에 다이제스트에 LLM을 쓰게 된다면 <b>패턴 11 + 9장 패턴 30(조립 후 재구성)</b>이 유일하게 허용 가능한 조합입니다.</div>
+  <aside>책의 패턴을 다 쓰는 게 목표가 아닙니다. 우리 원칙에 맞는 것만 골라 쓰고, 충돌하는 건 명시적으로 배제하는 거죠.</aside>
+</section>
+
+<!-- 10 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#127925;&#127926; 베이스와 <span class="g">싱코페이션</span></h1>
+    <div class="big" style="margin-top:24px">모델을 다시 가르치는 대신<br><span class="y">물어볼 때마다 필요한 자료를 찾아<br>같이 건네는 것</span><br><br>그 위에 <span class="y">일곱 겹의 정교함</span></div>
+    <p class="sub" style="margin-top:22px">3·4장 &mdash; 여기까지</p>
+    <p class="sub" style="margin-top:4px"><small>다음 &mdash; <b>5장 추론과 전문 역량 강화</b> (사고 연쇄 · 사고 트리 · 어댑터 조정 · 지시사항 진화)</small></p>
+  </div>
+  <aside>3·4장이 "모르는 것을 찾아오는" 이야기였다면, 5장은 "못 하는 것을 할 수 있게 만드는" 이야기입니다. 1장 토론노트 3번의 "모를 문제 vs 못 하는 문제" 구분이 그대로 장 구분이 되는 셈이에요.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>
