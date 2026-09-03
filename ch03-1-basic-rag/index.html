@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>기본 RAG · 패턴 6 (3장)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 3 &middot; Pattern 6</div>
+    <h1 style="margin:18px 0">기본 <span class="g">RAG</span></h1>
+    <p class="sub">Basic RAG &mdash; 인덱싱 · 검색 · 생성 세 단계로 <b>외부 지식을 얹는다</b></p>
+  </div>
+  <aside>이 패턴을 그대로 쓰게 되리라고는 기대하지 않는다고 저자가 못 박습니다. 이 단순한 구현의 한계가 나머지 패턴이 왜 필요한지를 설명해 주기 때문에 다루는 겁니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 3.1의 다섯 절</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>3.1.1 문제</b> &mdash; 세계 지식의 세 가지 한계, 환각, 출처 부재</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>3.1.2 해법</b> &mdash; 그라운딩 · 프라이밍 · 두 파이프라인 · 인덱싱 · 검색(BM25) · 생성</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>3.1.3 예제</b> &mdash; 장비 매뉴얼, PDF 인제스트</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>3.1.4 고려사항과 대안</b> &mdash; 2장 기법은 왜 안 되나 · 긴 컨텍스트 · 두 가지 한계</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>3.1.5 참고문헌</b></span></div>
+  </div>
+  <div class="hl">&#128161; <b>한 줄로</b> &mdash; 관련 청크를 프롬프트에 넣어 답을 <b class="g">그라운딩</b>(근거 대기)한다.</div>
+  <aside>더 진보한 기법들이 왜 필요한지와 그 트레이드오프를 이해해야, 구현을 쓸데없이 복잡하게 만들지 않을 수 있습니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="3.1.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">3.1.1 문제</h2>
+    <div class="who">세계 지식만으로는 부족하다</div>
+  </div>
+  <aside>파운데이션 모델은 Common Crawl, 구텐베르크, 위키백과, arxiv, GitHub, Reddit, 신문 아카이브, EDGAR 공시, 유럽의회 회의록 같은 방대한 코퍼스로 학습됐습니다. 이렇게 쌓인 것이 세계 지식입니다.</aside>
+</section>
+
+<!-- 4 세 한계 -->
+<section class="slide" data-part="3.1.1 문제">
+  <h2>&#128683; 엔터프라이즈에서 <span class="r">부족한 세 가지</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">한계</th><th>내용</th></tr>
+    <tr><td><b>정적인 지식 컷오프</b><br><small>static knowledge cutoff</small></td><td>학습 데이터가 수집된 날짜 <b>이후 정보에 접근할 수 없다.</b> 빠르게 바뀌는 주제나 최근 사건에서 특히 낡거나 부정확해진다</td></tr>
+    <tr><td><b>모델 용량의 한계</b><br><small>model capacity limits</small></td><td>크기가 어마어마해도 파라미터 안에 저장할 수 있는 정보량에는 한계가 있다. 파운데이션 모델은 학습 데이터셋의 <b class="gold">손실 압축본</b>이라고 생각하면 된다</td></tr>
+    <tr><td><b>비공개 데이터 접근 부재</b><br><small>lack of access to private data</small></td><td>사내 보고서, 구독자 전용 업계 리포트, <b>고객의 최근 주문 내역</b> 같은 개인화 데이터는 학습 데이터셋에 없다</td></tr>
+  </table>
+  <div class="hl">&#128161; <b>"손실 압축본"</b>이라는 표현이 정확합니다. 원본을 다 담은 게 아니라 <b>줄여서 담은 것</b>이라, 세부는 흐려지거나 사라집니다.</div>
+  <aside>세 번째가 엔터프라이즈에서 가장 자주 걸립니다. 모델이 아무리 좋아도 우리 회사 데이터는 애초에 못 봤으니까요.</aside>
+</section>
+
+<!-- 5 환각 -->
+<section class="slide" data-part="3.1.1 문제">
+  <h2>&#127917; 밖으로 나가려는 성향이 <span class="r">두 문제</span>를 더 만든다</h2>
+  <p>학습 데이터 범위를 벗어난 주제에 답하라고 하면, 모델은 그래도 <b>그럴듯한 다음 토큰을 골라 이어 붙인다.</b> 이건 <b class="g">LLM이 창의적일 수 있는 중요한 이유</b>이기도 하다.</p>
+  <div class="box">
+    <p style="margin:0"><i>"다른 <b>시간대</b>에 있는 연인에 대해 <b>루미(Rumi)</b> 풍의 시를 지어 줘."</i></p>
+    <p style="margin:6px 0 0"><small>루미는 시간대라는 개념을 들어 본 적도 없다. 그래도 시는 나온다 &mdash; 그리고 그건 <b class="g">문제가 아니다.</b></small></p>
+  </div>
+  <p style="margin-top:14px">하지만 <b class="r">사실 관계를 묻는 질문</b>에서는 이야기가 다르다.</p>
+  <table class="t">
+    <tr><th style="width:26%">문제</th><th>내용</th></tr>
+    <tr><td><b class="r">환각</b><br><small>hallucination</small></td><td><b>그럴듯하게 들리지만 사실과 다르거나 현실에 근거가 없는</b> 출력. 학습 범위 밖 정보를 처리하라고 요구받았을 때 자주 일어난다</td></tr>
+    <tr><td><b class="r">출처를 댈 수 없음</b><br><small>inability to make citations</small></td><td>텍스트를 <b>토큰 단위로</b> 생성하므로 <b>어떤 특정 출처와도 묶여 있지 않다.</b> 사전학습에 근거해 내놓은 문장에 출처를 댈 수가 없다</td></tr>
+  </table>
+  <aside>같은 성질이 시에서는 장점이고 사실 질문에서는 치명적입니다. 그래서 "고쳐야 할 버그"가 아니라 "용도에 맞게 감싸야 할 성질"인 거죠.</aside>
+</section>
+
+<!-- 6 PART 2 -->
+<section class="slide" data-part="3.1.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">3.1.2 해법</h2>
+    <div class="who">그라운딩 &mdash; 신뢰할 수 있는 출처에 근거하게</div>
+  </div>
+  <aside>런타임에 추가 지식을 줄 수 있게 되면 앞의 문제들이 하나씩 풀립니다.</aside>
+</section>
+
+<!-- 7 그라운딩 -->
+<section class="slide" data-part="3.1.2 해법">
+  <h2>&#9875; <span class="g">그라운딩</span> &mdash; 다섯 문제가 어떻게 풀리나</h2>
+  <div class="big"><span class="y">신뢰할 수 있는 지식 출처 집합에 근거해서</span> 답하게 만든다</div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:26%">문제</th><th>RAG가 하는 일</th></tr>
+    <tr><td>지식 컷오프</td><td>더 최신인 외부 출처를 덧대 <b>정보에 근거하면서도 최신인</b> 응답</td></tr>
+    <tr><td>모델 용량 한계</td><td>외부 지식 베이스에 연결해 <b>지식 용량을 사실상 확장</b></td></tr>
+    <tr><td>비공개 데이터</td><td>그 데이터는 <b>런타임에 클라이언트 쪽에서만</b> 접근 가능하면 된다</td></tr>
+    <tr><td>환각</td><td>사실 데이터에 근거하게 해 가능성을 <b class="gold">줄인다 &mdash; 없애지는 못한다</b></td></tr>
+    <tr><td>출처 부재</td><td>생성 내용을 특정 문서와 연결 &rarr; <b class="g">귀속</b>(attribution)이 가능</td></tr>
+  </table>
+  <div class="warn">&#9888;&#65039; 네 번째 줄을 주의해서 읽으세요. <b class="r">RAG는 환각을 없애지 않습니다.</b> 줄일 뿐입니다.</div>
+  <aside>저자가 조심스럽게 씁니다. RAG를 붙였으니 환각이 사라졌다고 생각하면 안 돼요.</aside>
+</section>
+
+<!-- 8 프라이밍 -->
+<section class="slide" data-part="3.1.2 해법">
+  <h2>&#128161; 왜 통하나 &mdash; <span class="g">프라이밍</span>(점화)</h2>
+  <p>LLM은 응답을 생성할 때 <b>프롬프트 안에 있는 정보를 우선적으로 사용한다.</b></p>
+  <div class="grid2">
+    <div class="box"><h3>&#10060; 그냥 물으면</h3><pre style="margin:6px 0 0">유럽에서 가 볼 만한
+작은 도시 세 곳을 추천해 줘.</pre><p style="margin:6px 0 0"><small>물어볼 때마다 <b>다른 응답</b></small></p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 한 줄을 얹으면</h3><pre style="margin:6px 0 0"><b>프랑스 최고의 음식은 리옹에 있다.</b>
+유럽에서 가 볼 만한
+작은 도시 세 곳을 추천해 줘.</pre><p style="margin:6px 0 0"><small>모든 응답이 <b class="g">미식 도시</b>로</small></p></div>
+  </div>
+  <div class="hl" style="margin-top:14px">&#128161; <b>음식으로 유명한 도시를 달라고 요구하지 않았습니다.</b> 단지 첫 문장이 컨텍스트에 있다는 이유만으로요. LLM이 생성하는 토큰은 <b>컨텍스트에서 마주친 텍스트와 관련된 것일 가능성이 훨씬 높습니다.</b></div>
+  <aside>저자는 각주에서 "직접 해 보라"고 합니다. 미식 도시가 나오는지는 모델이 컨텍스트 정보를 얼마나 활용하도록 학습됐는지에 달렸다면서요.</aside>
+</section>
+
+<!-- 9 덮어쓰기 -->
+<section class="slide" data-part="3.1.2 해법">
+  <h2>&#9999;&#65039; 지식을 <span class="g">덮어쓸</span> 수도 있다</h2>
+  <pre>시호크스는 주말 사이에 공격의 두 축을 트레이드했다.
+리시버 DK 메트카프는 스틸러스로,
+쿼터백 <b>지노 스미스는 레이더스로</b> 갔다.
+
+Q: 지노 스미스는 어느 팀에서 뛰고 있지?</pre>
+  <div class="big" style="margin-top:14px">LLM은 지노 스미스가 <span class="y">시호크스 소속</span>이라 서술한<br>방대한 문서로 학습됐지만 &mdash;<br><span class="y">이 컨텍스트 한 조각이 그 모든 토큰을 덮어쓴다</span></div>
+  <div class="hl" style="margin-top:14px">&#128274; 각주 &mdash; 컨텍스트에 든 정보는 <b>그 한 번의 상호작용에만</b> 쓰입니다. 프롬프트로 들어온 사용자 데이터로 학습하면 모델이 <b class="r">적대적 공격에 취약</b>해지기 때문입니다.</div>
+  <aside>모델 제공자가 "프롬프트를 모델 개선에 쓸 수 있다"고 말할 때, 실제로는 사용 패턴이나 주제를 살펴본다는 뜻일 가능성이 높다는 게 저자의 설명입니다.</aside>
+</section>
+
+<!-- 10 관련성 -->
+<section class="slide" data-part="3.1.2 해법">
+  <h2>&#127919; <span class="g">관련성</span> &mdash; 런타임에 결정된다</h2>
+  <p>그라운딩은 지식 베이스에서 <b>(질의에) 관련 있는 청크</b>를 골라 프롬프트에 넣는 방식으로 작동한다.</p>
+  <div class="big"><span class="y">관련 있는 청크가 무엇인지는<br>질의를 알고 나서야 판별할 수 있다</span></div>
+  <p style="margin-top:14px">그래서 이 일은 <b>학습 때가 아니라 런타임에</b> 한다 &mdash; <b class="g">런타임 컴퓨트</b>(runtime compute)의 한 사례.</p>
+  <div class="chain">
+    <div class="cell"><small>미리</small><b>인덱싱<br><small style="color:var(--soft)">효율적 데이터스토어 구축</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>런타임</small><b class="g">검색<br><small style="color:var(--soft)">관련 청크 찾기</small></b></div>
+  </div>
+  <div class="warn" style="margin-top:14px">&#128161; <b>일치하는 것이 없을 때</b>를 반드시 일러 주세요 &mdash; <i>"어느 것과도 맞지 않으면 <b>'해당 없음'</b>이라고 답하세요."</i> 2장 <b>Grammar 패턴</b>을 쓴다면 스키마가 "해당 없음"도 허용하도록 만들어 둬야 합니다.</div>
+  <aside>2장의 탈출구 이야기가 여기서 다시 나옵니다. 못 찾았을 때 지어내지 않게 하는 장치예요.</aside>
+</section>
+
+<!-- 11 두 파이프라인 -->
+<section class="slide" data-part="3.1.2 해법">
+  <h2>&#128260; <span class="g">두 개의 파이프라인</span></h2>
+  <div class="box">
+    <h3>&#128193; 인덱싱 파이프라인 &mdash; 미리, 보통 배치로</h3>
+    <div class="chain" style="margin:8px 0 0">
+      <div class="cell"><small>1</small><b>지식 출처</b></div><span class="ar">&rarr;</span>
+      <div class="cell"><small>2</small><b>청킹</b></div><span class="ar">&rarr;</span>
+      <div class="cell"><small>3</small><b>색인</b></div><span class="ar">&rarr;</span>
+      <div class="cell"><small>4</small><b>문서 저장소</b></div>
+    </div>
+    <p style="margin:8px 0 0"><small>새 지식 출처가 도착할 때 <b>트리거되게</b> 할 수도 있다</small></p>
+  </div>
+  <div class="box" style="margin-top:12px;border-color:var(--gr)">
+    <h3 class="g">&#10067; 질의응답 파이프라인 &mdash; 질의가 올 때마다</h3>
+    <div class="chain" style="margin:8px 0 0">
+      <div class="cell"><small>1</small><b>질의</b></div><span class="ar">&rarr;</span>
+      <div class="cell" style="border-color:var(--gr)"><small>2</small><b class="g">검색</b></div><span class="ar">&rarr;</span>
+      <div class="cell" style="border-color:var(--gr)"><small>3</small><b class="g">생성</b></div><span class="ar">&rarr;</span>
+      <div class="cell"><small>4</small><b>답 + 청크</b></div>
+    </div>
+  </div>
+  <div class="hl">&#128209; 응답은 <b>생성된 텍스트</b>와 함께 <b class="g">답을 만드는 데 쓰인 관련 청크</b>로 구성됩니다 &mdash; 그래야 인용 목록을 만들 수 있습니다.</div>
+  <aside>청크를 같이 돌려보내는 게 중요합니다. LlamaIndex 노드는 자신이 나온 문서의 메타데이터와 문서 내 위치 정보를 갖고 있어요.</aside>
+</section>
+
+<!-- 12 인덱싱 -->
+<section class="slide" data-part="3.1.2 해법">
+  <h2>&#128193; <span class="g">인덱싱</span> &mdash; 문서를 청크로</h2>
+  <p>검색이 <b>비교적 작은 문서 조각</b>을 돌려주기를 바라므로, 문서를 통째로 색인하지 않고 <b>적절한 크기의 청크</b>로 쪼갠다.</p>
+  <pre># 불필요한 공백 제거
+content = text[start_pos:end_pos].strip()
+content = re.sub(r'\n{3,}', '\n\n', content)
+
+document = Document(text=content,
+    metadata={"source": url, "filename": filename,
+              "date_loaded": time.strftime("%Y-%m-%d %H:%M:%S")})</pre>
+  <div class="grid2" style="margin-top:12px">
+    <div class="box"><h3>&#128290; 정보 밀도</h3><p style="margin:0">입력 토큰이 제한돼 있으니 청크가 <b>최대한 많은 지식</b>을 담아야 한다. <b class="r">대부분이 공백인 청크는 정보가 없다</b></p></div>
+    <div class="box"><h3>&#127991;&#65039; 메타데이터</h3><p style="margin:0">청크의 <b>출처를 댈 수 있게</b> 붙인다. <b class="g">계속 추적해야 한다</b> &mdash; 패턴 8의 주제</p></div>
+  </div>
+  <pre style="margin-top:12px">node_parser = SentenceSplitter(<b>chunk_size=200, chunk_overlap=20</b>)
+nodes = node_parser.get_nodes_from_documents([document])
+docstore = SimpleDocumentStore(); docstore.add_documents(nodes)</pre>
+  <div class="hl">&#128161; <b>겹침(overlap)</b>을 둬서 중요한 정보가 <b>두 청크로 잘려 나가는 문제</b>를 줄입니다. LlamaIndex는 청크를 <b>노드</b>라 부르는데, 청크를 <b>지식 그래프</b>로 조직하고 싶을 수도 있기 때문입니다.</div>
+  <aside>SimpleDocumentStore는 메모리에 저장하지만 MongoDB·Postgres·Redis·Firestore도 지원됩니다. 생성자만 바꾸면 사용법은 똑같아요.</aside>
+</section>
+
+<!-- 13 TF-IDF -->
+<section class="slide" data-part="3.1.2 해법">
+  <h2>&#128269; <span class="g">검색</span> &mdash; TF-IDF의 직관</h2>
+  <p>직관적인 답은 <b>질의에 나온 단어를 포함한 청크</b>를 찾는 것. 더 많이 포함할수록 관련 있을 가능성이 높다.</p>
+  <table class="t">
+    <tr><th style="width:22%">개념</th><th>뜻</th></tr>
+    <tr><td><b>TF</b><br><small>term frequency</small></td><td>이 단어가 <b>이 청크에 몇 번</b> 나오나</td></tr>
+    <tr><td><b>불용어</b><br><small>stop word</small></td><td><i>the</i> 같은 아주 흔한 단어는 <b>빼 버린다</b>. 목록은 쉽게 구할 수 있다</td></tr>
+    <tr><td><b>IDF</b><br><small>inverse document frequency</small></td><td>그 단어를 <b>포함한 청크 비율의 역수</b>(실제로는 로그). <b class="g">희귀한 단어가 나왔다면 그건 신호</b></td></tr>
+  </table>
+  <div class="hl">&#128218; 왜 청크 빈도가 아니라 <b>문서</b> 빈도일까? <b>검색 엔진이 질의에 맞는 문서를 찾는 데서 유래한 말</b>이라, 학술 문헌에서 RAG의 청크에 해당하는 것이 문서이기 때문입니다.</div>
+  <div class="big" style="margin-top:12px">질의에서 <span class="y">더 희귀한 단어</span>를<br><span class="y">더 많이</span> 포함한 청크를 찾는다</div>
+  <aside>도서관 사서가 책을 읽지 않고 단어 개수만 세서 관련 있는 쪽을 골라 주는 것과 같습니다.</aside>
+</section>
+
+<!-- 14 BM25 -->
+<section class="slide" data-part="3.1.2 해법">
+  <h2>&#9878;&#65039; TF-IDF가 <span class="r">실패</span>하는 지점 &rarr; BM25</h2>
+  <p>『알렉산드로스 원정기』를 <b>200자 청크</b>로 쪼개고 <i>"알렉산더와 디오게네스의 관계"</i>를 물었다.</p>
+  <table class="t">
+    <tr><th style="width:26%">단어</th><th style="width:24%">등장 횟수</th><th>TF-IDF 가중치</th></tr>
+    <tr><td>Alexander</td><td><b>1,311회</b></td><td><b class="r">61.04</b></td></tr>
+    <tr><td>Diogenes</td><td>6회</td><td>1.01</td></tr>
+    <tr><td>relationship</td><td>&mdash;</td><td>0.26</td></tr>
+  </table>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; <b>알렉산더 전기</b>이니 "Alexander"는 온 사방에 나옵니다. TF가 워낙 커서 IDF로 깎아도 61이 나오고, 결과적으로 <b class="r">디오게네스가 없는 청크</b>가 잔뜩 딸려 옵니다 &mdash; <b>분자가 분모를 삼켜 버린 것.</b></div>
+  <pre style="margin-top:12px">해법 — 단어 빈도를 <b>포화</b>시킨다
+
+  count / (count + k)      (k는 양수)
+
+→ count에 따라 증가하면서도 <b class="g">결코 1을 넘지 않는다</b></pre>
+  <div class="hl">&#128161; <b>BM25</b>는 TF-IDF를 수정해 <b>분자에 단어 포화</b>를 넣고, 분모에는 <b>정보이론과 확률적 관련성</b>에 기반한 보정을 넣습니다. 관련 텍스트를 찾는 데 <b class="g">매우 성공적임이 입증된</b> 척도이고 지금도 실무 표준입니다.</div>
+  <aside>"많이 나옴"은 인정하되 무한정 점수를 주진 않는다 — 이 한 줄이 BM25의 핵심입니다.</aside>
+</section>
+
+<!-- 15 검색 코드 -->
+<section class="slide" data-part="3.1.2 해법">
+  <h2>&#128187; 검색 &mdash; <span class="g">코드와 결과</span></h2>
+  <pre>retriever = BM25Retriever.from_defaults(
+    docstore=index.get_docstore(),   <span class="g"># 모든 단어의 IDF 계산용</span>
+    <b>similarity_top_k=5</b>)              <span class="g"># 가장 관련 있는 청크 5개</span>
+
+retrieved_nodes = retriever.retrieve(query)</pre>
+  <div class="plabel">결과 노드</div>
+  <pre>Node ID: ee1ef41e-3e31-4e07-9949-5e585a50651c
+<b>Similarity: 4.2463765144348145</b>
+Text: But Diogenes said that he wanted nothing else, except
+that he and his attendants would stand out of the sunlight.
+Alexander is said to have expressed his admiration of
+Diogenes's conduct.</pre>
+  <div class="hl">&#128161; 문서 저장소를 넘겨 주는 이유는, 거기 담긴 청크들에서 나오는 <b>모든 단어의 IDF를 계산</b>해야 하기 때문입니다.</div>
+  <aside>이렇게 가져온 노드의 텍스트가 생성 단계에서 프롬프트 컨텍스트에 들어갑니다.</aside>
+</section>
+
+<!-- 16 생성 -->
+<section class="slide" data-part="3.1.2 해법">
+  <h2>&#9997;&#65039; <span class="g">생성</span> &mdash; 지시 · 컨텍스트 · 질의</h2>
+  <pre><span class="g"># ① 지시</span>
+messages = [ChatMessage(role="system",
+    content="Use the following text to answer the given question.")]
+
+<span class="g"># ② 컨텍스트</span>
+messages += [ChatMessage(role="system", content=node.text)
+             for node in retrieved_nodes]
+
+<span class="g"># ③ 질의</span>
+messages += [ChatMessage(role="user", content=query)]
+
+llm = Anthropic(model="claude-3-7-sonnet-latest", temperature=0.2)
+response = llm.chat(messages)</pre>
+  <div class="plabel">응답 (발췌)</div>
+  <div class="box"><p style="margin:0"><i>텍스트에 따르면 &hellip; 디오게네스는 어떤 호의나 선물도 청하지 않고 그저 <b>"햇빛을 가리지 말고 비켜 달라"</b>고만 요청했습니다 &hellip; 또한 텍스트는 알렉산더가 <b>"내가 알렉산더가 아니었다면 디오게네스가 되고 싶다"</b>고 말했다고 인용하는데 &hellip;</i></p></div>
+  <div class="hl">&#9989; 답이 <b>역사 텍스트에 아주 분명하게 근거</b>하고 있습니다. 순서에 주목하세요 &mdash; <b>지시 → 컨텍스트 → 질의</b>.</div>
+  <aside>temperature 0.2로 낮춰 잡은 것도 눈여겨보세요. 사실 기반 답변이라 창의성이 필요 없습니다.</aside>
+</section>
+
+<!-- 17 PART 3 -->
+<section class="slide" data-part="3.1.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">3.1.3 예제</h2>
+    <div class="who">장비 매뉴얼 &middot; PDF 인제스트</div>
+  </div>
+  <aside>이 예제들은 모든 문서를 이미 텍스트로 변환했고 이미지와 표는 추출해 뒀다고 전제합니다.</aside>
+</section>
+
+<!-- 18 매뉴얼 -->
+<section class="slide" data-part="3.1.3 예제">
+  <h2>&#128295; 예제 &mdash; <span class="g">장비 매뉴얼</span></h2>
+  <p><b>키워드 검색에 기반한 기본 RAG는 사실 위주의 자료에 가장 잘 맞는다.</b></p>
+  <div class="plabel">질의</div>
+  <pre>다이어프램이 <b>파열되면(ruptured)</b> 어떻게 해야 하나요?</pre>
+  <div class="plabel">응답</div>
+  <div class="box" style="border-color:var(--gr)"><p style="margin:0"><i>다이어프램이 파열됐다면 <b class="g">세이프티 헤드를 손상되지 않은 것으로 교체</b>해야 합니다 &hellip; 다이어프램 캡을 (렌치가 아니라) 손으로 풀어야 하며, 니들을 돌려 요크 블록의 위치를 건드리지 않도록 주의하십시오.</i></p>
+  <p style="margin:8px 0 0"><small><b>Sources</b> &mdash; Node 6afc9709 (Score <b>4.869</b>) · Node b84ca5bf (Score <b>3.282</b>)</small></p></div>
+  <div class="hl">&#9989; RAG 시스템이 텍스트에서 <b>아주 관련 있는 부분을 집어내</b> 좋은 답을 만들었습니다. <b>점수와 출처 노드</b>가 함께 돌아온다는 점도 확인하세요.</div>
+  <aside>이 답이 좋아 보인다는 게 중요합니다. 다음 파트에서 단어 하나만 바꿔서 이 답이 무너지는 걸 봅니다.</aside>
+</section>
+
+<!-- 19 PDF -->
+<section class="slide" data-part="3.1.3 예제">
+  <h2>&#128196; <span class="g">PDF</span> 인제스트 &mdash; 세 가지 접근</h2>
+  <p>PDF에는 텍스트·표·이미지와 임베드 객체가 섞여 있고, 머리말·꼬리말과 <b>비선형 레이아웃</b>까지 처리해야 한다.</p>
+  <table class="t">
+    <tr><th style="width:26%">접근</th><th>도구</th></tr>
+    <tr><td><b>직접 텍스트 추출</b></td><td>전용 라이브러리 사용</td></tr>
+    <tr><td><b>파이프라인 기반 파싱</b><br><small>문서 구조 보존</small></td><td><code>unstructured</code>·<code>docling</code>(다양한 문서 유형과 도구에 걸친 유연성) · <code>papermage</code>(<b>학술 논문 특화</b>) · <code>marker</code>(<b>PDF→마크다운</b>)</td></tr>
+    <tr><td><b>AI 기반 고급 파싱</b><br><small>복잡한 요소까지 해석</small></td><td><b>LlamaParse</b> &mdash; 텍스트·표·이미지는 물론 <b>수식까지</b> 추출해 마크다운처럼 인제스트하기 쉬운 형식으로</td></tr>
+  </table>
+  <div class="hl" style="margin-top:12px">&#128247; <b>또 다른 방법</b> &mdash; PDF 페이지의 <b>스크린샷</b>을 GPT-4o · Gemini-2.5 · Gemma3 · Llama4 같은 <b>멀티모달 LLM</b>에 넣어 내용을 뽑아낼 수도 있습니다.</div>
+  <div class="warn">&#9888;&#65039; Vertex AI RAG Engine이나 Glean 같은 <b>완전 관리형 RAG</b>는 PDF를 직접 인제스트해 주지만, <b>내부적으로 어떤 프레임워크를 쓰는지는 분명하지 않습니다.</b></div>
+  <aside>관리형이 편하지만 블랙박스라는 게 저자의 지적입니다. 문제가 생겼을 때 어디를 봐야 할지 모르게 되죠.</aside>
+</section>
+
+<!-- 20 PART 4 -->
+<section class="slide" data-part="3.1.4 고려사항">
+  <div class="part">
+    <div class="pno">4</div>
+    <h2 style="margin:0">3.1.4 고려사항과 대안</h2>
+    <div class="who">2장 기법 · 긴 컨텍스트 · 두 가지 한계</div>
+  </div>
+  <aside>RAG는 LLM에 사실 지식을 더하는 데 잘 맞습니다. 가장 관련 있는 지식을 찾아 프롬프트에 끼워 넣는 방식으로요.</aside>
+</section>
+
+<!-- 21 2장 기법 -->
+<section class="slide" data-part="3.1.4 고려사항">
+  <h2>&#10060; 2장의 스타일 제어 기법은 <span class="r">왜 안 되나</span></h2>
+  <div class="big"><span class="y">2장의 어느 기법도 지식을 더하지는 못한다</span></div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:26%">기법</th><th>안 되는 이유</th></tr>
+    <tr><td><b>로짓 마스킹</b><br><small>패턴 1</small></td><td><b>마스킹하려면 LLM이 그 토큰을 생성할 수 있어야</b> 한다. 2025년 이전 텍스트만 봤다면 <b>교황 레오 14세</b> 관련 토큰은 확률이 너무 낮아 <b class="r">애초에 선택지에 들지도 못한다</b></td></tr>
+    <tr><td><b>퓨샷 · 파인튜닝</b><br><small>패턴 3</small></td><td>과거에 팀을 옮긴 NFL 선수 사례를 보여 준다고 <b>지노 스미스가 레이더스에서 뛴다는 텍스트를 생성하게 되지는 않는다</b></td></tr>
+    <tr><td><b>인스트럭션 파인튜닝</b></td><td>조정할 <b>가중치를 LLM이 갖고 있어야</b> 하는데, <b class="r">한 번도 마주친 적 없는 토큰 조합</b>에 대해서는 불가능하다</td></tr>
+  </table>
+  <div class="hl">&#128273; 그 구체적인 데이터 포인트가 필요하고, 그것을 알 수 있는 <b class="g">유일한 시점은 추론 시점</b>입니다.</div>
+  <aside>2장과 3장의 역할이 왜 갈리는지를 가장 명확하게 설명하는 슬라이드입니다. 스타일은 가중치로, 지식은 컨텍스트로.</aside>
+</section>
+
+<!-- 22 긴 컨텍스트 -->
+<section class="slide" data-part="3.1.4 고려사항">
+  <h2>&#128209; RAG vs <span class="g">긴 컨텍스트 윈도우</span></h2>
+  <p>문서가 충분히 작다면 <b>검색 부분이 필요 없을 수도 있다.</b> 전체를 넣으면 <b class="g">청킹이나 검색에서 생기는 오류를 걱정할 필요가 없다.</b></p>
+  <pre>def answer_question(prompt, cached_tax_return):
+    response = client.models.generate_content(
+      model=GEMINI, contents=prompt,
+      config=types.GenerateContentConfig(
+        <b>cached_content=cached_tax_return</b>))   <span class="g"># Prompt Caching</span>
+    return response.text
+
+answer_question("How much did Obama claim in business expenses?", ...)
+answer_question("Did Obama make any retirement plan contributions?", ...)</pre>
+  <table class="t" style="margin-top:12px">
+    <tr><th style="width:26%">기준 <small>(2025년 6월)</small></th><th>내용</th></tr>
+    <tr><td><b>200만 토큰</b></td><td>프런티어 모델 최대치 &mdash; <b>프랑스 세법 전체</b>를 담기에 얼추 충분</td></tr>
+  </table>
+  <div class="hl">&#128176; 문서를 반복해 넣지 않으려고 서버 쪽 <b>Prompt Caching</b>(8장 패턴 25)을 씁니다. 토큰화와 임베딩을 미리 계산해 두고 <b>질의마다 재사용</b>하므로 비용이 합리적으로 유지됩니다.</div>
+  <aside>세법에 RAG를 구축하는 대신 세법 전체를 질의와 함께 넣어 버릴 수도 있다는 겁니다.</aside>
+</section>
+
+<!-- 23 한계 -->
+<section class="slide" data-part="3.1.4 고려사항">
+  <h2>&#9888;&#65039; 기본 RAG의 <span class="r">두 가지 한계</span></h2>
+  <div class="box" style="border-color:var(--red)">
+    <h3 class="r">&#9312; 정확히 일치해야만 한다</h3>
+    <p style="margin:6px 0 0">TF-IDF와 BM25는 <b>키워드가 정확히 일치</b>하는지로 관련성을 본다. 단어 하나만 바꿔 보자.</p>
+    <table class="t" style="margin-top:8px">
+      <tr><th style="width:34%">질의</th><th>답</th></tr>
+      <tr><td>다이어프램이 <b>파열(ruptured)</b>되면?</td><td><b class="g">세이프티 헤드</b>를 교체</td></tr>
+      <tr><td>다이어프램이 <b>고장(broken)</b> 나면?</td><td><b class="r">밸브-다이어프램 어셈블리</b>를 교체</td></tr>
+    </table>
+    <p style="margin:8px 0 0"><b class="r">이건 아주 나쁘다.</b> 정비공이 어떤 단어를 쓰든 <b>같은 청크</b>가 나와야 마땅하다. 관련 청크는 <b>질문을 이해하고</b> 그 청크에 질의 의도의 답이 들어 있는지를 근거로 골라야 한다.</p>
+  </div>
+  <div class="box" style="margin-top:12px">
+    <h3>&#9313; 청크 크기의 제약</h3>
+    <p style="margin:6px 0 0">청크에 <b>이어지는 내용이 얼마나 담겼는지</b>가 답의 완결성을 좌우한다. 매뉴얼을 <b>100자 청크</b>로 자르면 보통 <b class="r">다음 단계까지는 못 들어간다.</b> 그렇다고 입력 토큰이 길어질수록 <b>비용은 커지고 응답은 느려진다.</b></p>
+  </div>
+  <div class="hl">&#128073; 첫 번째 한계가 <b>패턴 7</b>로, 두 번째가 <b>시맨틱 청킹</b>과 <b>패턴 10 노드 후처리</b>로 이어집니다.</div>
+  <aside>같은 정비공이 같은 고장을 다른 단어로 물었다고 다른 수리 지침을 받는다면, 그건 시스템이 아니라 사고입니다.</aside>
+</section>
+
+<!-- 24 PART 5 -->
+<section class="slide" data-part="3.1.5 참고문헌">
+  <h2>&#128218; 3.1.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">출처</th><th>기여</th></tr>
+    <tr><td><b>Lewis 외 (2020)</b></td><td>정전급 논문 <i>"Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks"</i> &mdash; <b>RAG가 처음 소개</b>됐다</td></tr>
+    <tr><td><b>Gao 외 (2024)</b></td><td>여러 <b>RAG 변종을 정리</b>하고 <b>평가 프레임워크</b>를 제시</td></tr>
+    <tr><td><b>Fareed Khan (2025)</b></td><td>공통 평가 프레임워크로 <b>18가지 RAG 변종을 비교</b></td></tr>
+    <tr><td><b>AWS</b></td><td>고객의 실제 RAG 구축을 도우며 배운 <b>교훈</b>을 정리</td></tr>
+    <tr><td><b>Mercado Libre</b></td><td>RAG 시스템 구축의 <b>실전 경험과 통찰</b>을 공유</td></tr>
+  </table>
+  <div class="hl">&#128161; 뒤의 두 항목이 실무에 특히 쓸모 있습니다. <b>논문이 아니라 실제로 굴려 본 회사들의 기록</b>이거든요.</div>
+  <aside>18가지 변종 비교는 지금 우리가 어느 지점에 있는지 가늠할 때 좋은 참고가 됩니다.</aside>
+</section>
+
+<!-- 25 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#9875; 답을 <span class="g">땅에 묶기</span></h1>
+    <div class="big" style="margin-top:24px">관련 청크를 프롬프트에 넣어<br><span class="y">신뢰할 수 있는 출처에 근거하게</span> 만든다<br><br>단 &mdash; <span class="y">단어가 정확히 일치해야 찾는다</span><br><small>"파열"로 색인했는데 "고장"으로 물으면 다른 답이 나온다</small></div>
+    <p class="sub" style="margin-top:22px">패턴 6 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 7 의미 기반 색인</b></p>
+  </div>
+  <aside>다음 패턴이 정확히 이 한계를 풉니다. 단어가 아니라 뜻으로 찾는 방법이에요.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

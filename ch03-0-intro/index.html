@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3장 지식 더하기: 베이스 · 서론과 세 패턴 지도</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Generative AI Design Patterns &middot; Chapter 3</div>
+    <h1 style="margin:18px 0">지식 더하기: <span class="g">베이스</span></h1>
+    <p class="sub">3장 서론 &mdash; RAG의 기본기와 <b>세 패턴의 지도</b></p>
+    <p class="sub" style="margin-top:6px"><small>패턴 6 기본 RAG &middot; 7 의미 기반 색인 &middot; 8 대규모 색인 운영</small></p>
+  </div>
+  <aside>3장과 4장은 한 덩어리입니다. 3장이 RAG의 밑바닥을 깔고, 4장이 그 위에 고급 패턴을 얹습니다. 그래서 요약도 4장 끝에서 한꺼번에 합니다.</aside>
+</section>
+
+<!-- 2 베이스 -->
+<section class="slide" data-part="서론">
+  <h2>&#127928; 제목의 <span class="g">'베이스'</span>는 무슨 뜻인가</h2>
+  <p>이 책은 장 제목에 <b>음악 용어</b>를 붙인다.</p>
+  <div class="grid2">
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#127925; 3장 &mdash; 베이스 <small>Bass</small></h3><p style="margin:0">곡의 <b>밑바닥을 받쳐 주는 저음부.</b> RAG의 기본기 &mdash; <b>인덱싱 · 검색 · 생성</b> &mdash; 가 딱 그 역할이다</p></div>
+    <div class="box"><h3>&#127926; 4장 &mdash; 싱코페이션 <small>Syncopation</small></h3><p style="margin:0">그 위에 얹는 <b>엇박.</b> 고급 패턴들이 여기 해당한다</p></div>
+  </div>
+  <div class="hl" style="margin-top:16px">&#128161; 이름이 장식이 아닙니다. <b>베이스 없이 엇박만 치면 곡이 안 됩니다.</b> 그래서 3장을 건너뛰고 4장으로 갈 수 없습니다.</div>
+  <aside>2장이 스타일 제어였다면 3·4장은 지식을 다룹니다. 책 전체에서 가장 실무에 자주 쓰이는 두 장이기도 합니다.</aside>
+</section>
+
+<!-- 3 문제 -->
+<section class="slide" data-part="서론">
+  <h2>&#128274; 파운데이션 모델은 <span class="r">닫힌 시스템</span>이다</h2>
+  <div class="big"><span class="y">학습 데이터에 갇혀 있다</span></div>
+  <p style="margin-top:16px">그래서 많은 경우 모델에게 <b>추가 정보를 따로 넣어 줘야</b> 한다. 그 정보는 &mdash;</p>
+  <ul class="pts">
+    <li>모델을 학습시키던 시점에는 <b>아직 일어나지 않았던</b> 최근 사건</li>
+    <li>애초에 <b>비공개·기밀</b>이라 모델 학습자들이 손댈 수 없었던 자료</li>
+  </ul>
+  <div class="hl" style="margin-top:14px">&#127891; <b>비유</b> &mdash; 아주 똑똑하지만 <b>2년 전에 도서관에서 나온 뒤로 바깥 소식을 전혀 못 들은 천재.</b> "우리 회사 이번 분기 매출은?"이라고 물으면 모른다고 하면 다행인데, 실제로는 <b class="r">그럴듯하게 지어냅니다.</b> 천재라서 말이 되게 지어내요.</div>
+  <aside>1장에서 본 "모델을 믿지 말고 다룰 구조를 설계하라"가 여기서 구체적인 방법으로 나타납니다.</aside>
+</section>
+
+<!-- 4 재학습 -->
+<section class="slide" data-part="서론">
+  <h2>&#128176; 다시 학습시키면 되지 않나 &mdash; <span class="r">안 된다</span></h2>
+  <p>지식을 더하겠다고 LLM을 다시 학습시키거나 <b>계속 사전학습</b>(continuing pretraining, CPT)을 돌리는 것은 <b class="r">현실적이지 않다.</b></p>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>단 한 번의 학습 실행조차</b> 비용이 상당하다</span></div>
+    <div class="st"><span class="n">2</span><span class="t">정보는 <b>아주 빠르게 바뀌므로</b> CPT를 아주 자주 돌려야 한다</span></div>
+  </div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:44%">규모</th><th>비용 <small>(책의 각주 추정)</small></th></tr>
+    <tr><td>2025년 세대 프런티어 모델 학습<br><small>Gemini 2.0, GPT-4</small></td><td><b class="r">수천만 달러</b></td></tr>
+    <tr><td>130억 파라미터 모델 + 새 문서 100만 쪽</td><td>수만 달러</td></tr>
+    <tr><td><b>매일</b> 학습해야 한다면</td><td><b class="r">연간 약 1,000만 달러</b></td></tr>
+  </table>
+  <div class="big" style="margin-top:14px">그래서 보통은<br><span class="y">파운데이션 모델은 있는 그대로 쓰고<br>지식은 런타임에 얹는다</span></div>
+  <aside>1장의 블룸버그 CPT 사례와 이어집니다. 도메인 특화 학습에 큰돈을 썼는데 몇 달 뒤 범용 모델이 능가해 버린 사건이죠.</aside>
+</section>
+
+<!-- 5 RAG 등장 -->
+<section class="slide" data-part="서론">
+  <h2>&#128218; <span class="g">RAG</span>의 등장</h2>
+  <div class="box">
+    <h3>&#128220; Lewis 외 (2020) &mdash; 페이스북 AI 리서치(현 Meta)</h3>
+    <p style="margin:6px 0 0"><i>"Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks"</i></p>
+  </div>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell" style="border-color:var(--red)"><small>이전</small><b class="r">닫힌 시스템<br><small style="color:var(--soft)">학습 데이터에 갇힘</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>RAG 이후</small><b class="g">열린 시스템<br><small style="color:var(--soft)">필요할 때 외부 지식을</small></b></div>
+  </div>
+  <div class="big" style="margin-top:16px"><span class="y">검색 증강 생성</span><br><small>retrieval-augmented generation, RAG</small></div>
+  <div class="hl">&#128161; RAG는 파운데이션 모델을 <b class="g">"똑똑한 조사원"</b>으로 바꿔 놓습니다 &mdash; 자기 지식을 보충하려고 <b>외부 출처를 찾아보는</b> 조사원.</div>
+  <aside>2020년 논문인데 지금도 실무의 기본기입니다. 그만큼 발상이 견고했다는 뜻이에요.</aside>
+</section>
+
+<!-- 6 세 단계 -->
+<section class="slide" data-part="서론">
+  <h2>&#128207; RAG = <span class="g">세 단계</span>로 조립되는 시스템</h2>
+  <div class="chain">
+    <div class="cell"><small>미리 (배치)</small><b>인덱싱<br><small style="color:var(--soft)">indexing</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>질의마다</small><b>검색<br><small style="color:var(--soft)">retrieval</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>질의마다</small><b>생성<br><small style="color:var(--soft)">generation</small></b></div>
+  </div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:18%">단계</th><th>비유 &mdash; 서류함</th><th style="width:18%">언제</th></tr>
+    <tr><td><b>인덱싱</b></td><td>서류를 잘라 <b>색인표를 붙여 서류함에 정리</b></td><td>미리 (배치)</td></tr>
+    <tr><td><b>검색</b></td><td>질문을 듣고 <b>관련 서류만 몇 장 뽑아 옴</b></td><td>질문 올 때마다</td></tr>
+    <tr><td><b>생성</b></td><td>그 서류를 <b>같이 건네며</b> 답을 부탁</td><td>질문 올 때마다</td></tr>
+  </table>
+  <div class="hl">&#128161; 직접 배포해야 하지만 <b>구성 요소는 상당히 자유롭게 갈아 끼울 수 있습니다.</b> 그래서 RAG는 "하나의 기법"이 아니라 <b>시스템</b>으로 보는 게 맞습니다.</div>
+  <aside>인덱싱은 미리 한 번, 검색과 생성은 질의가 올 때마다입니다. 이 구분이 비용 구조를 결정합니다.</aside>
+</section>
+
+<!-- 7 순서대로 -->
+<section class="slide" data-part="서론">
+  <h2>&#9888;&#65039; 이 장만은 <span class="r">순서대로 다 읽어라</span></h2>
+  <p>이 책의 다른 장과 달리, 3·4장은 <b>자기 문제에 맞는 패턴만 골라 읽지 말라</b>는 것이 저자의 권고다.</p>
+  <div class="big"><span class="y">패턴들이 서로 위에 쌓인다</span><br><small>점점 까다로워지는 요구사항을 감당할 능력을 더해 간다</small></div>
+  <div class="hl" style="margin-top:16px">&#128200; 그림 3-1에서 <b>상자는 패턴</b>, <b>화살표는 왜 한 단계 위로 올라가고 싶어지는지</b>를 나타냅니다. 예를 들어 관련 없는 콘텐츠나 모호성을 처리해야 한다면 <b>패턴 9에서 패턴 10으로</b> 올라가게 됩니다.</div>
+  <div class="warn">&#9989; 그렇다고 <b>여기 나오는 아이디어를 전부 써야 하는 건 아닙니다.</b> 무엇이 필요한지는 ① 시스템의 <b>용도</b>(전문가용 내부 도구인가, 수백만 고객이 쓸 제품인가?) ② 내 RAG가 실제로 마주할 <b>질문과 문서의 유형</b>에 달렸습니다.</div>
+  <aside>저자가 이렇게 못 박는 장은 여기뿐입니다. 그만큼 패턴들이 서로 의존한다는 뜻이에요.</aside>
+</section>
+
+<!-- 8 세 패턴 -->
+<section class="slide" data-part="서론">
+  <h2>&#128203; 3장의 <span class="g">세 패턴</span></h2>
+  <table class="t">
+    <tr><th style="width:6%">#</th><th style="width:24%">패턴</th><th>한 줄 요약</th></tr>
+    <tr><td><b>6</b></td><td><b>기본 RAG</b><br><small>Basic RAG</small></td><td>인덱싱·검색·생성 세 단계로 <b>외부 지식을 프롬프트에 얹는</b> 가장 단순한 형태. 나머지 패턴들의 <b>출발점이자 대조군</b></td></tr>
+    <tr><td><b>7</b></td><td><b>의미 기반 색인</b><br><small>Semantic Indexing</small></td><td>키워드가 아니라 <b>의미(임베딩)</b>로 청크를 색인해, <b>표현이 달라도</b> 찾아낸다</td></tr>
+    <tr><td><b>8</b></td><td><b>대규모 색인 운영</b><br><small>Indexing at Scale</small></td><td><b>메타데이터</b>로 중의성·최신성·모순을 다스려, 색인이 커져도 성능이 무너지지 않게 한다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; 세 패턴은 모두 <b class="g">인덱싱 단계를 점점 똑똑하게</b> 만드는 이야기입니다. <b>검색·생성 단계를 손보는 이야기는 4장</b>에 있습니다.</div>
+  <aside>이 구분을 잡고 가면 3장과 4장의 역할이 헷갈리지 않습니다.</aside>
+</section>
+
+<!-- 9 패턴6 -->
+<section class="slide" data-part="패턴 요약">
+  <h2><span class="g">패턴 6</span> 기본 RAG &mdash; 요약</h2>
+  <div class="grid2">
+    <div class="box"><h3 class="r">&#10060; 문제</h3><p style="margin:0"><b>지식 컷오프</b> · <b>모델 용량 한계</b> · <b>비공개 데이터 접근 부재</b>. 그 결과 <b class="r">환각</b>과 <b class="r">출처를 댈 수 없음</b></p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 해법</h3><p style="margin:0">관련 청크를 프롬프트에 넣어 응답을 <b>그라운딩</b>(근거 대기). 검색은 <b>BM25</b> 같은 키워드 기반</p></div>
+  </div>
+  <div class="hl" style="margin-top:14px">&#127919; 작동 원리는 <b>프라이밍</b>(priming) &mdash; LLM은 <b>프롬프트 안의 정보를 우선적으로 사용</b>합니다. 컨텍스트 한 줄이 학습된 지식을 <b>덮어쓸</b> 수도 있어요.</div>
+  <div class="warn">&#9888;&#65039; <b>이걸 그대로 쓰게 되리라 기대하지 말 것.</b> 저자는 이 단순한 구현의 <b>한계가 나머지 패턴이 왜 필요한지를 설명</b>하기 때문에 다룬다고 명시합니다.</div>
+  <p class="sub" style="margin-top:10px;text-align:center"><small>상세 &rarr; <b>패턴 6 덱</b></small></p>
+  <aside>대조군이라는 표현이 정확합니다. 더 복잡한 기법을 쓰기 전에 "이걸로 충분한가"를 재는 기준선이에요.</aside>
+</section>
+
+<!-- 10 패턴7 -->
+<section class="slide" data-part="패턴 요약">
+  <h2><span class="g">패턴 7</span> 의미 기반 색인 &mdash; 요약</h2>
+  <div class="grid2">
+    <div class="box"><h3 class="r">&#10060; 문제</h3><p style="margin:0"><b>같은 뜻 다른 단어.</b> 질의는 "AI"인데 문서는 "Artificial Intelligence". 동의어·다국어·이미지·표·레이아웃을 <b>키워드로는 못 다룬다</b></p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 해법</h3><p style="margin:0"><b>임베딩</b>으로 의미를 색인한다. 청크를 <b>고차원 벡터</b>로 바꿔 <b>벡터 스토어</b>에 저장</p></div>
+  </div>
+  <div class="hl" style="margin-top:14px">&#128506;&#65039; <b>비유</b> &mdash; 단어 색인이 아니라 <b>주제 좌표</b>. "심장마비"로 물어도 "급성 심근경색" 문서가 나옵니다. 단어가 하나도 안 겹치는데 <b>좌표가 옆자리</b>이기 때문입니다.</div>
+  <div class="warn">&#128290; <b>기억할 숫자</b> &mdash; 임베딩 차원 보통 <b>768~4,096</b> · Anthropic의 <b>컨텍스추얼 리트리벌</b>은 잘못된 검색 비율을 <b class="g">67% 낮췄다</b></div>
+  <p class="sub" style="margin-top:10px;text-align:center"><small>상세 &rarr; <b>패턴 7 덱</b></small></p>
+  <aside>오늘날 프로덕션에 있는 대부분의 RAG 애플리케이션의 핵심이 이 패턴입니다.</aside>
+</section>
+
+<!-- 11 패턴8 -->
+<section class="slide" data-part="패턴 요약">
+  <h2><span class="g">패턴 8</span> 대규모 색인 운영 &mdash; 요약</h2>
+  <div class="grid2">
+    <div class="box"><h3 class="r">&#10060; 문제</h3><p style="margin:0"><b>중의성</b> · <b>데이터 최신성</b> · <b>상충하는 정보</b> · <b>임베딩 모델 지원 종료</b>. 장난감 문제에서는 안 보이던 것들</p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 해법</h3><p style="margin:0"><b>메타데이터</b>로 필터링 · 재순위화 · 정리. 그리고 <b>수명 주기를 통제할 수 있는</b> 임베딩 모델 선택</p></div>
+  </div>
+  <div class="big" style="margin-top:14px">색인이 커지면 문제는 <span class="y">못 찾는 것</span>이 아니라<br><span class="y">서로 다른 답이 다 찾아지는 것</span></div>
+  <div class="warn">&#128200; <b>실제 사례</b> &mdash; 고혈압 기준이 <b>140/90 → 130/80</b>(2017 AHA·ACC) → 2022년 AAFP는 다시 <b>140/90이 낫다</b>고 발표. 셋 다 색인에 있으면 <b class="r">같은 질문에 매번 다른 답</b>이 나옵니다.</div>
+  <p class="sub" style="margin-top:10px;text-align:center"><small>상세 &rarr; <b>패턴 8 덱</b></small></p>
+  <aside>그림 3-11이 이걸 그래프로 보여줍니다. 문서를 더 넣었는데 답이 나빠지는 구간이 생겨요.</aside>
+</section>
+
+<!-- 12 RAG가 필요없을 때 -->
+<section class="slide" data-part="서론">
+  <h2>&#129517; <span class="r">RAG를 안 써도 되는</span> 경우</h2>
+  <p>문서가 충분히 작다면 <b>검색 부분이 필요 없을 수도 있다.</b> 문서 전체를 프롬프트에 넣고 답을 생성하게 하면 된다.</p>
+  <div class="big"><span class="y">전체를 넣으면</span><br>청킹이나 검색에서 생기는 오류를 걱정할 필요가 없다</div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:26%">기준</th><th>내용 <small>(2025년 6월 집필 시점)</small></th></tr>
+    <tr><td><b>20만 토큰</b></td><td>약 <b>500쪽</b>. 대부분의 LLM 컨텍스트 윈도우에 무리 없이 들어간다 &rarr; <b class="g">RAG 불필요</b></td></tr>
+    <tr><td><b>200만 토큰</b></td><td>프런티어 모델의 최대치. <b>프랑스 세법 전체</b>를 담기에 얼추 충분하다</td></tr>
+  </table>
+  <div class="hl">&#128176; 비용은 <b>Prompt Caching</b>(8장 패턴 25)으로 잡습니다. 멀티모달 LLM이 <b>토큰화와 임베딩을 미리 계산</b>해 두고 질의마다 재사용하므로 합리적인 수준이 됩니다.</div>
+  <div class="warn">&#9888;&#65039; 다만 <b>구체적인 정보를 찾아야 할 때</b>는 적절한 겹침을 둔 <b>전략적 청킹이 더 나은 검색 성능</b>을 내는 경우가 많습니다.</div>
+  <aside>먼저 이걸 검토하라는 게 저자의 조언입니다. RAG는 복잡도가 큰 시스템이라 안 써도 되면 안 쓰는 게 낫습니다.</aside>
+</section>
+
+<!-- 13 3장→4장 -->
+<section class="slide" data-part="마무리">
+  <h2>&#128279; 3장 &rarr; <span class="g">4장</span></h2>
+  <div class="chain">
+    <div class="cell" style="border-color:var(--gr)"><small>3장 · 베이스</small><b class="g">인덱싱을<br>똑똑하게</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>4장 · 싱코페이션</small><b>검색과 생성을<br>똑똑하게</b></div>
+  </div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:22%">장</th><th>패턴</th></tr>
+    <tr><td><b class="g">3장</b></td><td>기본 RAG(6) · 의미 기반 색인(7) · 대규모 색인 운영(8)</td></tr>
+    <tr><td>4장</td><td>색인 인식 검색(9) · 노드 후처리(10) · 신뢰할 수 있는 생성(11) · 심층 탐색(12)</td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; 이 패턴들은 기본 RAG에 얹는 <b>애드온</b>으로 봐야 합니다. 그리고 <b>먼저</b> 적용해서 <b class="r">복잡도를 더하는 것이 측정 가능한 이득을 주는지</b> 신중히 평가해야 합니다.</div>
+  <div class="hl">&#128273; 저자의 경고 &mdash; 많은 경우 <b>임베딩 기반 검색기만 있고 BM25 같은 키워드 검색기가 없는 RAG는 부적절합니다.</b> 특정 제품명이나 품번을 찾을 때 헤매게 되거든요.</div>
+  <aside>마지막 줄이 실무에서 중요합니다. 임베딩이 좋다고 키워드 검색을 버리면 안 됩니다. 둘 다 있어야 해요.</aside>
+</section>
+
+<!-- 14 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#127925; 밑바닥을 <span class="g">받치는 저음</span></h1>
+    <div class="big" style="margin-top:24px">모델을 다시 가르치는 대신<br><span class="y">물어볼 때마다 필요한 자료를 찾아<br>같이 건네는 것</span><br><br>그것이 <span class="y">RAG</span></div>
+    <p class="sub" style="margin-top:22px">3장 서론 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 6 기본 RAG</b></p>
+  </div>
+  <aside>요약은 4장 끝에서 3·4장을 한꺼번에 합니다. 저자가 그렇게 설계했어요.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

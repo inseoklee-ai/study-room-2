@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>의미 기반 색인 · 패턴 7 (3장)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 3 &middot; Pattern 7</div>
+    <h1 style="margin:18px 0">의미 기반 <span class="g">색인</span></h1>
+    <p class="sub">Semantic Indexing &mdash; 키워드가 아니라 <b>의미</b>로 청크를 색인한다</p>
+  </div>
+  <aside>오늘날 프로덕션에 있는 대부분의 RAG 애플리케이션의 핵심을 이루는 패턴입니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 3.2의 다섯 절</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>3.2.1 문제</b> &mdash; 키워드가 실패하는 다섯 지점</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>3.2.2 해법</b> &mdash; 임베딩 · 시맨틱 청킹 · 이미지/비디오/표 · 전문 용어 · 컨텍스추얼 리트리벌 · RAPTOR</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>3.2.3 예제</b> &mdash; 표 데이터 인덱싱</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>3.2.4 고려사항과 대안</b> &mdash; 도메인 특화 모델 · 여섯 가지 한계</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>3.2.5 참고문헌</b></span></div>
+  </div>
+  <div class="hl">&#128161; <b>한 줄로</b> &mdash; 단어 대신 <b class="g">뜻의 좌표</b>로 찾는다.</div>
+  <aside>패턴 6의 첫 번째 한계 — "파열"과 "고장" 문제 — 를 정면으로 푸는 패턴입니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="3.2.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">3.2.1 문제</h2>
+    <div class="who">키워드로는 못 찾는 것들</div>
+  </div>
+  <aside>전통적 키워드 색인은 문서가 복잡해지거나, 이미지·표 같은 다른 미디어를 담거나, 여러 도메인에 걸쳐 있을 때 실패합니다.</aside>
+</section>
+
+<!-- 4 실패 사례 -->
+<section class="slide" data-part="3.2.1 문제">
+  <h2>&#10060; 못 찾는 <span class="r">구체적 사례</span></h2>
+  <div class="plabel">질의</div>
+  <pre>AI 시스템은 <b>의학 용어의 모호성</b>을 어떻게 처리하나요?
+(How do AI systems handle medical <b>terminology ambiguity</b>?)</pre>
+  <div class="plabel">지식 베이스의 정답 청크</div>
+  <div class="box"><p style="margin:0"><i><b>Artificial intelligence</b> 모델은 의료 정보를 정확히 처리하는 데 어려움을 겪는다. 환자 기록을 파싱하는 과정에서 이 시스템들은 <b>CHF</b> 같은 약어를 잘못 해석하는 일이 잦은데, CHF는 <b>울혈성 심부전</b>일 수도, <b>만성 심부전</b>일 수도 있으며 두 질환은 서로 다른 치료 접근을 요한다.</i></p></div>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; 키워드 색인으로는 <b class="r">아마 못 찾습니다.</b> 질의는 <b>"AI"</b>인데 청크는 <b>"Artificial Intelligence"</b>라 썼고, <b>"terminology ambiguity"</b>라는 말은 <b class="r">본문 어디에도 없습니다.</b></div>
+  <div class="hl">&#128269; <b>거짓 양성</b>도 문제입니다. <b>CHF</b>는 울혈성 심부전일 수도, <b>임계 열유속</b>(critical heat flux)일 수도, 심지어 <b>스위스 프랑</b>일 수도 있습니다 &mdash; 전부 <b>맥락과 전체 의미</b>에 달렸습니다.</div>
+  <aside>정답 청크가 지식 베이스에 분명히 있는데 못 찾습니다. 검색이 실패하면 생성은 손쓸 방법이 없어요.</aside>
+</section>
+
+<!-- 5 다섯 지점 -->
+<section class="slide" data-part="3.2.1 문제">
+  <h2>&#128203; 키워드가 실패하는 <span class="r">다섯 지점</span></h2>
+  <table class="t">
+    <tr><th style="width:24%">요소</th><th>내용</th></tr>
+    <tr><td><b>동의어와 대명사</b><br><small>synonyms and pronouns</small></td><td>모호성과 업계 은어(<i>AI</i> 같은)를 다루지 못한다. 청크가 <b>"대통령"</b>이라 쓰고 질의에 <b>대통령의 이름</b>이 들어 있으면 매칭되지 않는다</td></tr>
+    <tr><td><b>전체적인 의미</b><br><small>overall meaning</small></td><td>그 단어를 쓰지 않았을 뿐 <b>"기술 용어의 모호성에 관한 내용"</b>이라는 사실을 놓친다</td></tr>
+    <tr><td><b>다국어 대응</b><br><small>cross-language</small></td><td>문서가 영어이고 질의가 스페인어라면 <b>매칭이 아예 없거나 엉뚱한 것</b>이 걸린다</td></tr>
+    <tr><td><b>멀티모달 문서</b></td><td><b>이미지나 비디오</b>처럼 텍스트가 아닌 미디어를 색인하지 못한다</td></tr>
+    <tr><td><b>레이아웃 맥락</b><br><small>layout context</small></td><td>배치 자체에 담긴 의미를 무시한다 &mdash; 표라든가, <b>그림 캡션은 바로 위 이미지에 대한 설명</b>이라는 사실</td></tr>
+  </table>
+  <aside>다섯 개가 전부 "단어는 다르지만 뜻은 같다" 또는 "단어가 아예 없다"는 문제입니다.</aside>
+</section>
+
+<!-- 6 PART 2 -->
+<section class="slide" data-part="3.2.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">3.2.2 해법</h2>
+    <div class="who">임베딩 &mdash; 의미를 좌표로</div>
+  </div>
+  <aside>ML 모델로 텍스트를 고정 길이 벡터 표현으로 인코딩해서, 텍스트·이미지·기타 미디어의 의미를 담아냅니다.</aside>
+</section>
+
+<!-- 7 임베딩 -->
+<section class="slide" data-part="3.2.2 해법">
+  <h2>&#128506;&#65039; <span class="g">임베딩</span> &mdash; 뜻의 좌표</h2>
+  <p><b>임베딩</b>(embedding)은 텍스트·이미지 등 입력을 <b>수학적으로 표현</b>한 것. 단어·구절·문서를 <b>고차원 공간의 벡터</b>로 사상해 <b>의미</b>를 담아낸다. 청크를 이 벡터로 색인한 문서 저장소를 <b class="g">벡터 스토어</b>라 한다.</p>
+  <div class="grid2">
+    <div class="box"><h3>&#128290; ① 단어 색인</h3><p style="margin:0">"이 책에 <b>'심장'</b>이 몇 번 나옴"</p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#128506;&#65039; ② 주제 좌표</h3><p style="margin:0">"이 책은 <b>의학 – 순환기 – 응급</b> 구역의 이 지점"</p></div>
+  </div>
+  <div class="big" style="margin-top:14px">"심장마비"로 물어도 <span class="y">"급성 심근경색"</span> 문서가 나온다<br><small>단어가 하나도 안 겹치는데 <b>좌표가 옆자리</b>이기 때문</small></div>
+  <div class="hl">&#128161; LLM은 의미를 잘 대표하는 임베딩을 만드는 데 아주 능숙해졌는데, <b>그 능력이 곧 LLM 생성의 토대</b>이기 때문입니다.</div>
+  <aside>단순 키워드 매칭과 달리 임베딩은 어휘가 달라도 의미가 비슷한 내용을 벡터 공간에서 가까이 놓습니다.</aside>
+</section>
+
+<!-- 8 비교 -->
+<section class="slide" data-part="3.2.2 해법">
+  <h2>&#128202; 얼마나 <span class="g">극명한</span> 차이인가</h2>
+  <pre>chunks = [
+  "I really enjoyed the <b>film</b> we watched last night",
+  "The <b>movie</b> was <b>excellent</b>",
+  "I didn't like the documentary",
+  "The <b>cinematic</b> experience was remarkable"
+]
+query = "The <b>film</b> was <b>great</b>"</pre>
+  <div class="grid2" style="margin-top:12px">
+    <div class="box" style="border-color:var(--red)"><h3 class="r">&#10060; 키워드 (그림 3-4)</h3><p style="margin:0"><b>어느 문서도 실제로는 가깝지 않다.</b> 이유는 단순합니다 &mdash; <code>movie</code> &ne; <code>film</code>, <code>excellent</code> &ne; <code>great</code></p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 임베딩 (그림 3-5)</h3><p style="margin:0"><b>모든 점수가 높아진다.</b> 모두 영화 이야기이고 그중 하나는 질의와 아주 유사하다</p></div>
+  </div>
+  <pre style="margin-top:12px">model = SentenceTransformer('all-MiniLM-L6-v2')
+embedding_vectors = model.encode(chunks)
+query_embedding = model.encode([query])[0]</pre>
+  <aside>유사도가 1에 가까울수록 아주 유사한 문서입니다. 키워드 행렬은 대각선 말고는 거의 다 낮게 나와요.</aside>
+</section>
+
+<!-- 9 차원의 저주 -->
+<section class="slide" data-part="3.2.2 해법">
+  <h2>&#9888;&#65039; 차원을 <span class="r">무작정 늘릴 수 없는</span> 이유</h2>
+  <p>차원을 늘리면 더 많은 의미 정보를 담을 수 있지만 <b class="r">심각한 계산상의 한계</b>가 있다.</p>
+  <div class="big"><span class="y">N(차원) × M(임베딩 개수)</span>에 비례<br><small>최악의 경우 <b>N&sup2; 시간 복잡도</b></small></div>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; 이 <b>차원의 저주</b>(curse of dimensionality)는 프로덕션에서 <b class="r">상당한 성능 병목</b>을 만듭니다.</div>
+  <h3 style="margin-top:16px">&#9878;&#65039; 표현력과 계산 효율의 균형 &mdash; 세 가지</h3>
+  <ul class="pts">
+    <li>의미 관계를 충분히 담아내는 <b>최소한의 차원</b>을 쓴다</li>
+    <li>가능하면 <b>차원 축소</b> 기법을 적용한다</li>
+    <li>가능하면 <b>근사 최근접 이웃</b>(ANN) 방식을 쓴다</li>
+  </ul>
+  <div class="hl">&#128218; <b>책 한 권을 통째로 임베딩할 수는 없나?</b> &mdash; 대개 권장되지 않습니다. 여러 부분의 <b>뉘앙스를 잃고</b>, 결정적 정보를 잃고, 관련 정보를 찾아내는 것을 <b>방해</b>합니다. <b class="g">정보 밀도가 높고 내부적으로 일관된 청크</b>로 쪼개는 편이 낫습니다.</div>
+  <aside>실제 임베딩 차원은 보통 768~4,096개의 숫자입니다. 많을수록 섬세하지만 비교 계산이 그만큼 느려져요.</aside>
+</section>
+
+<!-- 10 시맨틱 청킹 -->
+<section class="slide" data-part="3.2.2 해법">
+  <h2>&#9986; <span class="g">시맨틱 청킹</span> &mdash; 다섯 가지 방식</h2>
+  <p>텍스트를 <b>임의의 길이가 아니라 의미 내용에 따라</b> 유의미한 단위로 나눈다.</p>
+  <table class="t">
+    <tr><th style="width:24%">방식</th><th>특징</th></tr>
+    <tr><td><b>겹침을 둔 길이 기반</b></td><td>가장 단순. 고정 길이로 자르되 구간끼리 겹치게. 경계를 넘는 맥락 보존에 도움되지만 <b class="r">여전히 맥락 덩어리를 갈라놓을 수 있다</b></td></tr>
+    <tr><td><b>문장 기반</b></td><td>크기 임계값까지 <b>완결된 문장</b>을 묶는다. 기본 의미는 보존하지만 <b class="r">주제 전환 포착에는 약하다</b></td></tr>
+    <tr><td><b>문단 기반</b></td><td>자연스러운 문단 구분을 경계로. <b>구조가 잡힌 문서</b>에 잘 맞는다</td></tr>
+    <tr><td><b>문서 구조 기반</b></td><td>마크다운·마크업의 구조로 하위 절 단위 분할 &mdash; 예: <b>2단계 제목</b> 절 단위</td></tr>
+    <tr><td><b class="g">의미 전환 기반</b></td><td>토픽 모델링(LDA, 비음수 행렬 분해)이나 하위 구간 임베딩으로 <b>의미의 전환점</b>을 찾아 나눈다 &rarr; 청크가 <b class="g">일관된 주제</b>를 갖도록 보장</td></tr>
+  </table>
+  <div class="warn">&#128161; LangChain의 <code>TextSplitting</code> 메서드들은 <b>프로덕션 용도로 권장되지는 않지만</b> 청킹 기능을 부트스트랩하는 <b>출발점</b>으로는 괜찮습니다.</div>
+  <aside>아래로 내려갈수록 정교하고 비쌉니다. 문서 구조가 잘 잡혀 있으면 네 번째만으로도 충분한 경우가 많아요.</aside>
+</section>
+
+<!-- 11 이미지 비디오 -->
+<section class="slide" data-part="3.2.2 해법">
+  <h2>&#127916; <span class="g">이미지</span>와 <span class="g">비디오</span> 다루기</h2>
+  <div class="box">
+    <h3>&#128444;&#65039; 이미지 &mdash; 세 가지 길</h3>
+    <ul class="pts" style="margin-top:6px">
+      <li><b>OCR</b>(광학 문자 인식) &mdash; 현대 도구는 문서에서 이미지를 추출해 <b>추출된 텍스트와 나란히</b> 미디어 폴더에 저장해 준다. 어떤 형식은 <b>대체 텍스트와 메타데이터</b>를 제공하므로 그것을 쓰면 된다</li>
+      <li><b>LLM으로 설명하게</b> &mdash; Llama-3.2-9B 같은 모델로 이미지를 설명시킨 뒤, <b>이미지를 그 텍스트 설명으로 대체</b>해 평소처럼 청킹·색인</li>
+      <li><b>직접 임베딩</b> &mdash; 이미지를 LLM에 넘겨 임베딩을 생성. 멀티모달 모델은 <b class="g">텍스트와 이미지의 벡터 공간이 의미적으로 겹치게</b> 해 준다</li>
+    </ul>
+  </div>
+  <div class="box" style="margin-top:12px">
+    <h3>&#127909; 비디오 &mdash; 두 축</h3>
+    <ul class="pts" style="margin-top:6px">
+      <li><b>전사</b>(transcribe)해 텍스트로 만든 뒤 <b>다른 텍스트와 똑같이</b> 처리·청킹·임베딩</li>
+      <li>일정 간격이나 <b>장면 전환 시점의 키프레임을 샘플링</b>해 낱장 이미지로 쪼갠 뒤 일반 이미지처럼 임베딩</li>
+    </ul>
+  </div>
+  <aside>비디오는 결국 "텍스트 + 이미지 여러 장"으로 환원됩니다. 새로운 기법이 필요한 게 아니에요.</aside>
+</section>
+
+<!-- 12 표 -->
+<section class="slide" data-part="3.2.2 해법">
+  <h2>&#128202; <span class="g">표</span> 다루기 &mdash; 네 가지 청킹</h2>
+  <p>표에는 연구 결과나 참가자 명단처럼 <b>표 형태로 보여 줄 만큼 중요한 데이터</b>가 담긴다. 먼저 <b>결측값을 처리</b>하고 서식이 일관된지 확인해야 한다.</p>
+  <table class="t">
+    <tr><th style="width:26%">전략</th><th>언제</th></tr>
+    <tr><td><b>표 단위</b></td><td>표가 <b>작을 때.</b> 가장 단순하지만 <b class="r">세밀한 결과를 주지는 못한다</b></td></tr>
+    <tr><td><b>표 단위 + 슬라이딩 윈도우</b></td><td><b>큰 표</b>에 잘 맞는다. <b class="g">헤더를 계속 추적해 각 청크에 붙여</b> 맥락을 더한다</td></tr>
+    <tr><td><b>행 단위</b></td><td>무작위 은행 거래 내역처럼 <b>행끼리 의미적으로 연결돼 있지 않은</b> 표</td></tr>
+    <tr><td><b>열 단위</b></td><td>시계열 측정값처럼 정보를 <b>"함께 두는" 편이 이득</b>인 표. 표가 크다면 개별 열을 임베딩</td></tr>
+  </table>
+  <div class="hl" style="margin-top:12px">&#127991;&#65039; 표 주변 텍스트를 청킹하기 전에 <b>표의 메타데이터를 텍스트 청크에 보존</b>하려고 노력하세요 &mdash; 표 이름, (아마도 <b>단위를 명시하고 있을</b>) 열 헤더 설명, 표 전체 설명.</div>
+  <aside>두 번째 전략의 "헤더를 계속 붙인다"가 핵심 기법입니다. 헤더 없는 행은 숫자 나열일 뿐이거든요.</aside>
+</section>
+
+<!-- 13 전문 용어 -->
+<section class="slide" data-part="3.2.2 해법">
+  <h2>&#127891; 업계 <span class="g">전문 용어</span> 다루기</h2>
+  <p>사용자가 <b>심장마비</b>로 검색하면 <b>급성 심근경색</b>이나 <b>심장경색</b>을 쓴 문서를 못 찾는다. 변호사가 <b>discovery</b>를 검색하면 <b>disclosure</b>나 <b>deposition</b>을 쓴 문서까지 나와야 마땅하다.</p>
+  <div class="plabel">동의어 확장(synonym expansion)</div>
+  <pre>What was the timeline for <b>discovery</b> in federal court?
+                    ↓
+What was the timeline for <b class="g">discovery|disclosure|deposition</b>
+in federal court?</pre>
+  <table class="t" style="margin-top:12px">
+    <tr><th style="width:30%">방법</th><th>특징</th></tr>
+    <tr><td><b>도메인 전용 전문 용어 사전</b></td><td>구현은 간단하지만 <b class="r">끊임없는 수작업 관리</b>가 필요</td></tr>
+    <tr><td><b>동시 출현 분석</b><br><small>cooccurrence analysis</small></td><td>통계 기법으로 변환 사전을 <b>부트스트랩</b></td></tr>
+    <tr><td><b>LLM으로 확장</b></td><td>편하지만 <b class="r">환각 가능성</b>에 주의</td></tr>
+  </table>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; <b>방향성에 주의</b> &mdash; 일부 동의어는 <b>한 방향으로만 성립</b>합니다. <b>ETF는 인덱스 펀드지만, 인덱스 펀드가 자동으로 ETF는 아닙니다.</b> 사전에 이 관계를 명시적으로 관리해 두세요.</div>
+  <div class="hl">&#128161; 임베딩은 형식적인 <b>렉시콘</b>(lexicon)을 불필요하게 만들지만, <b>동의어 확장에는 여전히 도움이 됩니다.</b> 질의 쪽을 확장하거나, 문서 쪽을 확장하거나(더 포괄적이지만 <b class="r">색인이 커진다</b>), 둘 다 할 수 있습니다.</div>
+  <aside>ETF 예시가 좋습니다. 동의어를 양방향으로 넣으면 인덱스 펀드 질문에 ETF 문서만 잔뜩 나오게 됩니다.</aside>
+</section>
+
+<!-- 14 컨텍스추얼 리트리벌 -->
+<section class="slide" data-part="3.2.2 해법">
+  <h2>&#128206; <span class="g">컨텍스추얼 리트리벌</span> &mdash; 청크의 미아 문제</h2>
+  <div class="grid2">
+    <div class="box" style="border-color:var(--red)"><h3 class="r">&#10060; 맥락 없는 청크</h3><p style="margin:0"><i>"회사의 손실이 전년 대비 10% 감소했다."</i></p><p style="margin:6px 0 0"><small><b>어느 회사인지, 언제 이야기인지 알 수 없다.</b> 좌표를 찍어도 "손실이 줄었다"는 일반적인 자리에 찍힐 뿐</small></p></div>
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 맥락을 붙인 청크</h3><p style="margin:0"><i><b>"이 청크는 2025년 4분기에 공개된 월마트의 재무 보고서다. 직전 분기 실적은 2% 증가했다.</b> 회사의 손실이 전년 대비 10% 감소했다."</i></p></div>
+  </div>
+  <pre style="margin-top:12px">&lt;document&gt; {{WHOLE_DOCUMENT}} &lt;/document&gt;
+Here is the chunk we want to situate within the whole document
+&lt;chunk&gt; {{CHUNK_CONTENT}} &lt;/chunk&gt;
+Please give a short succinct context to situate this chunk within
+the overall document for the purposes of improving search retrieval.
+Answer only with the succinct context and nothing else.</pre>
+  <div class="big" style="margin-top:12px">Anthropic 실측 &mdash; 여러 콘텐츠 도메인에 걸쳐<br><span class="y">잘못된 검색 비율을 67% 낮췄다</span></div>
+  <div class="hl">&#128176; 문서 내용이 프롬프트의 <b>맨 앞부분</b>이므로 <b>캐싱할 수 있어</b> 저렴합니다(8장 패턴 25). 맥락을 붙인 뒤 <b class="g">의미 벡터와 BM25 벡터 양쪽으로</b> 임베딩하면 가장 정확한 응답을 얻습니다.</div>
+  <aside>마지막 줄이 중요합니다. 임베딩만 쓰지 말고 BM25도 같이 쓰라는 것 — 3장 서론의 경고와 이어집니다.</aside>
+</section>
+
+<!-- 15 RAPTOR -->
+<section class="slide" data-part="3.2.2 해법">
+  <h2>&#127794; 계층적 청킹 &mdash; <span class="g">RAPTOR</span></h2>
+  <p>전통적 RAG는 <b>짧은 청크만 가져오므로</b> 전체 맥락에 대한 총체적 이해가 제한된다. 연구 논문이나 책 한 권 같은 <b>긴 문서</b>에서 골칫거리다. 청크를 키우면 <b class="r">임베딩 과정에서 뉘앙스가 사라진다.</b></p>
+  <div class="box">
+    <h3>&#128200; 처리 단계 &mdash; 아래에서 위로 뒤집힌 트리</h3>
+    <div class="chain" style="margin:8px 0 0">
+      <div class="cell"><small>1</small><b>작은 조각<br>임베딩</b></div><span class="ar">&rarr;</span>
+      <div class="cell"><small>2</small><b>군집화</b></div><span class="ar">&rarr;</span>
+      <div class="cell"><small>3</small><b>군집 요약</b></div><span class="ar">&#8630;</span>
+      <div class="cell" style="border-color:var(--gr)"><small>반복</small><b class="g">노드 하나<br>(트리 루트)</b></div>
+    </div>
+  </div>
+  <div class="box" style="margin-top:12px;border-color:var(--gr)">
+    <h3 class="g">&#128269; 추론 단계 &mdash; 트리를 타고 내려간다</h3>
+    <p style="margin:6px 0 0">1단계 노드 중 <b>가장 가까운 임베딩</b>을 찾고 &rarr; <b>그 노드에 딸린 2단계 노드들과만</b> 비교하고 &rarr; 계속 내려간다</p>
+  </div>
+  <div class="hl">&#128161; 각 청크와 요약 노드는 <b>저마다의 임베딩</b>이 필요하므로 이 과정은 <b>재귀적</b>이며 한 번에 끝나지 않습니다. 대신 <b class="g">여러 입도의 정보</b>를 얻습니다 &mdash; 고수준 요약 · 중간 요약 · 아주 구체적인 청크.</div>
+  <div class="warn">&#128073; RAPTOR = <b>Recursive Abstractive Processing for Tree-Organized Retrieval.</b> 이는 4장 패턴 9의 <b>GraphRAG의 단순화 버전</b>입니다.</div>
+  <aside>큰 그림과 세부를 동시에 주는 게 목적입니다. 요약 노드만 가져오면 뭉뚱그려지고, 말단 청크만 가져오면 맥락이 없죠.</aside>
+</section>
+
+<!-- 16 PART 3 -->
+<section class="slide" data-part="3.2.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">3.2.3 예제</h2>
+    <div class="who">표 데이터 인덱싱</div>
+  </div>
+  <aside>단순화를 위해 표 데이터의 색인과 질의에만 집중합니다.</aside>
+</section>
+
+<!-- 17 예제 코드 -->
+<section class="slide" data-part="3.2.3 예제">
+  <h2>&#128722; 상품 카탈로그 &mdash; <span class="g">하이브리드 임베딩</span></h2>
+  <pre>{'product_id': 2, 'name': 'Wireless Noise-Canceling Headphones',
+ 'description': '...', 'category': 'Electronics',
+ 'price': 349.99, 'in_store': True}</pre>
+  <div class="plabel">① 텍스트 필드를 이어 붙여 하나의 임베딩으로</div>
+  <pre>text = f"Product: {row['name']}. Description: {row['description']}.
+         Category: {row['category']}"
+embeddings.append(model.encode(text))</pre>
+  <div class="plabel">② 수치는 정규화 — 0~1 사이로</div>
+  <pre>scaler = StandardScaler()
+normalized_numeric = scaler.fit_transform(numeric_data)</pre>
+  <div class="warn">&#9888;&#65039; <b>왜 정규화하나?</b> 이 숫자를 <b>텍스트 임베딩과 합치게</b> 되기 때문입니다. 같은 스케일에 올려야 RAG가 텍스트 정보와 수치 정보를 <b class="g">제대로 함께 고려</b>합니다.<br><b class="r">프로덕션 필수</b> &mdash; 초기 설정 때 쓴 <b>scaler를 반드시 저장</b>해야 새 데이터에 <b>똑같은 변환</b>을 적용할 수 있습니다.</div>
+  <aside>scaler를 안 저장해서 나중에 새로 fit 하면 좌표계가 어긋납니다. 조용히 틀리는 종류의 버그예요.</aside>
+</section>
+
+<!-- 18 예제 결과 -->
+<section class="slide" data-part="3.2.3 예제">
+  <h2>&#128269; 결합과 <span class="g">질의</span></h2>
+  <pre>combined = np.<b>concatenate</b>([text_embeddings[i],
+                          numeric_data[i], boolean_data[i]])
+
+collection = client.get_or_create_collection(
+    name="product-catalog", metadata={<b>"hnsw:space": "cosine"</b>})
+collection.add(ids=ids, embeddings=create_hybrid_embeddings(...))</pre>
+  <div class="plabel">질의 쪽도 똑같이 이어 붙인다</div>
+  <pre>text_embedding = model.encode([query])[0]
+median_numeric = <b>calculate_median_values(df)</b>   <span class="g"># 수치 특성을 모르므로</span>
+boolean_embedding = np.array([1])            <span class="g"># 재고 있는 상품</span>
+query_embedding = np.concatenate([...])</pre>
+  <div class="plabel">결과 — "Top Notebook for Gaming and Work"</div>
+  <div class="box" style="border-color:var(--gr)"><p style="margin:0"><b>Gaming Laptop Pro</b> · Electronics · $2,499.99 · Rating 4.8 (156 reviews) · In Stock · <b>Distance 0.811</b></p></div>
+  <div class="hl">&#128161; 추론 시점에는 원하는 상품의 수치 특성을 알 수 없으므로 <b>전체 상품의 중앙값 벡터</b>를 씁니다. 이 단순화된 접근은 <b>4장 패턴 9 색인 인식 검색</b>에서 제대로 다뤄집니다.</div>
+  <aside>"노트북"이라 안 쓰고 "Notebook"으로 물었는데 Gaming Laptop이 나왔습니다. 임베딩이 일한 거예요.</aside>
+</section>
+
+<!-- 19 PART 4 -->
+<section class="slide" data-part="3.2.4 고려사항">
+  <div class="part">
+    <div class="pno">4</div>
+    <h2 style="margin:0">3.2.4 고려사항과 대안</h2>
+    <div class="who">도메인 특화 모델 &middot; 여섯 가지 한계</div>
+  </div>
+  <aside>범용 임베딩 모델로 미리 계산해 벡터 스토어에 넣어 두는 방식이 기본입니다. 대안이 둘 있습니다.</aside>
+</section>
+
+<!-- 20 대안 -->
+<section class="slide" data-part="3.2.4 고려사항">
+  <h2>&#128257; 두 가지 <span class="g">대안</span></h2>
+  <div class="box" style="border-color:var(--gr)">
+    <h3 class="g">&#127891; 도메인 특화 임베딩 모델</h3>
+    <p style="margin:6px 0 0">의료·법률·금융 등 <b>자기 업계 문헌으로 특화 사전학습된</b> 모델을 쓰면 <b class="g">검색 정밀도와 지연 시간이 극적으로 좋아질</b> 수 있다. 범용 모델이 놓치는 도메인 고유의 용어·관계·뉘앙스를 포착한다 &mdash; 의료 모델은 <b>"MI"가 "심근경색"</b>임을 이해하고 관련 심장 용어를 제대로 군집화한다.</p>
+    <p style="margin:8px 0 0"><b>부수 효과</b> &mdash; <b class="g">작은 임베딩 차원</b>으로 최적화할 수 있고, 차원이 작으면 유사도 계산이 빨라 <b>프로덕션 지연 시간이 좋아진다.</b></p>
+  </div>
+  <div class="box" style="margin-top:12px">
+    <h3>&#128209; 청킹이냐 긴 컨텍스트 윈도우냐</h3>
+    <p style="margin:6px 0 0"><b>20만 토큰(약 500쪽)</b>까지는 대부분의 LLM 컨텍스트에 들어가며 <b>RAG가 필요 없다.</b> 작은 코퍼스라면 RAG의 복잡도를 감당하지 않아도 된다.</p>
+    <p style="margin:8px 0 0"><b class="gold">그러나</b> &mdash; <b>구체적인 정보를 찾아야 할 때</b>는 적절한 겹침을 둔 전략적 청킹이 <b>더 나은 검색 성능</b>을 내는 경우가 많다. 효과적인 청킹은 <b>입도와 맥락 일관성</b>의 균형을 잡는다.</p>
+  </div>
+  <aside>도메인 특화 모델은 정밀도와 속도를 동시에 얻는 드문 선택지입니다. 해당 도메인이 명확하다면 우선 검토할 만해요.</aside>
+</section>
+
+<!-- 21 한계 1 -->
+<section class="slide" data-part="3.2.4 고려사항">
+  <h2>&#9888;&#65039; 한계 <span class="r">&#9312;~&#9314;</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">한계</th><th>내용</th></tr>
+    <tr><td><b class="r">고정 차원 표현의 제약</b></td><td>대부분 <b>768~4,096차원</b>으로 사상하며 본질적인 <b>정보 병목</b>이 생긴다. 복잡하고 미묘한 청크도 단순한 청크와 <b>같은 벡터 공간</b>에 압축돼야 하므로 깊이를 잃는다 &mdash; <b class="r">고도로 기술적이거나 다면적인 콘텐츠</b>에서 특히</td></tr>
+    <tr><td><b class="r">청킹의 난제</b></td><td>의미적 일관성이 깨지고 절 사이의 <b>상호 참조 연결</b>이 사라진다. 개념이 한 절에서 소개되고 다른 절에서 상술되면 청킹이 이를 <b>갈라놓는다.</b> 게다가 <b class="gold">최적 청크 크기 결정은 여전히 과학이라기보다 기예</b></td></tr>
+    <tr><td><b class="r">벡터 DB 확장성</b></td><td>수백만~수십억 임베딩이 되면 <b>ScaNN·Faiss</b> 같은 <b>ANN</b>을 써야 한다. 이는 <b>속도를 위해 정확도를 희생</b>하는 것이며, 재현율·정밀도·계산 효율 사이 트레이드오프가 생긴다</td></tr>
+  </table>
+  <aside>두 번째의 "기예"라는 표현이 정직합니다. 청크 크기에 정답 공식이 없어요.</aside>
+</section>
+
+<!-- 22 한계 2 -->
+<section class="slide" data-part="3.2.4 고려사항">
+  <h2>&#9888;&#65039; 한계 <span class="r">&#9315;~&#9317;</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">한계</th><th>내용</th></tr>
+    <tr><td><b class="r">시간 이해의 부재</b></td><td><b>시간 관계나 최신성</b>을 대체로 고려하지 않는다. 뉴스·시장·발전하는 연구는 시간 차원을 무시하면 잘못 표현된다. <b class="r">낡은 정보와 현재 정보를 구분하는 내재적 장치가 없다</b> &rarr; <b>패턴 8</b>의 주제</td></tr>
+    <tr><td><b class="r">추론 능력의 부재</b></td><td>의미 유사도는 포착해도 문서·사실을 가로지르는 <b>논리적 추론</b>은 못 한다. 여러 정보를 <b>논리적으로 연결해야 하는 질문</b>이 이 한계를 드러낸다</td></tr>
+    <tr><td><b class="r">텍스트·이미지 공유 공간</b></td><td>공유 벡터 공간에서 <b>제대로 정렬되지 않는</b> 경우가 많다. <b>"apple computers"</b> 질의가 기술 제품이 아니라 <b class="r">과일 사진</b>을 가져올 수도 있다</td></tr>
+    <tr><td><b class="r">표 데이터 표현</b></td><td><b>텍스트 임베딩이 수치 정보를 압도</b>한다. 512차원에 수치 열 둘을 붙이면 514차원이 되지만 <b class="r">추가된 두 차원은 완전히 묻혀 버린다</b></td></tr>
+  </table>
+  <div class="big" style="margin-top:12px">이런 한계에도 불구하고 &mdash;<br><span class="y">Semantic Indexing은 오늘날 프로덕션 RAG 대부분의 핵심</span></div>
+  <aside>마지막 줄을 저자가 굳이 붙인 이유가 있습니다. 한계를 여섯 개나 나열했지만 그래도 이게 표준이라는 거죠.</aside>
+</section>
+
+<!-- 23 PART 5 -->
+<section class="slide" data-part="3.2.5 참고문헌">
+  <h2>&#128218; 3.2.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:30%">출처</th><th>기여</th></tr>
+    <tr><td><b>Bengio 외 (2000)</b></td><td><b>임베딩이라는 아이디어</b>와 그것이 왜 그렇게 강력한지를 소개</td></tr>
+    <tr><td><b>Chris Olah (2014)</b></td><td>훌륭한 <b>시각적 설명</b></td></tr>
+    <tr><td><b>Schwaber-Cohen · Patel (2025)</b><br><small>Pinecone</small></td><td>LLM 애플리케이션에서 <b>청킹의 역할</b>을 설명</td></tr>
+    <tr><td><b>Docugami</b></td><td><b>지식 그래프 RAG</b> 애플리케이션에서 <b>계층적 청킹</b>을 활용</td></tr>
+  </table>
+  <div class="hl">&#128161; 임베딩 아이디어가 <b>2000년</b>에 나왔다는 게 흥미롭습니다. LLM이 등장하기 20년 전이죠 &mdash; 발상은 오래됐고, 그것을 잘 만들어 내는 <b>모델</b>이 최근에 생긴 것입니다.</div>
+  <aside>Chris Olah의 시각적 설명은 임베딩 공간이 어떻게 생겼는지 감을 잡는 데 지금도 최고의 자료입니다.</aside>
+</section>
+
+<!-- 24 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#128506;&#65039; 단어가 아니라 <span class="g">뜻의 좌표</span></h1>
+    <div class="big" style="margin-top:24px">"심장마비"로 물어도<br><span class="y">"급성 심근경색" 문서가 나온다</span><br><br>잘린 조각이 미아가 되지 않게<br><span class="y">출신을 적어 붙인다</span> &mdash; 컨텍스추얼 리트리벌</div>
+    <p class="sub" style="margin-top:22px">패턴 7 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 8 대규모 색인 운영</b></p>
+  </div>
+  <aside>다음 패턴은 이 색인이 수백만 개로 커졌을 때 생기는 문제를 다룹니다. 찾는 게 문제가 아니라, 서로 다른 답이 다 찾아지는 게 문제가 되죠.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>
