@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10.1 에이전트 워크플로 — 코파일럿과 에이전트</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 10 &middot; 10.1 ~ 10.1.2</div>
+    <h1 style="margin:18px 0">에이전트 <span class="g">워크플로</span></h1>
+    <p class="sub">Agentic Workflow &mdash; <b>코파일럿과 에이전트는 같은 자의 양 끝</b></p>
+  </div>
+  <aside>애플리케이션이 실제로 무엇을 하는지 보는 덱입니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>10.1</b> 에이전트 워크플로 &mdash; 수직 슬라이스와 "에이전트적"</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>10.1.1</b> 애플리케이션 실행하기 &mdash; 설치 &middot; 코파일럿 &middot; 에이전트</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>10.1.2</b> 애플리케이션이 하는 일 &mdash; 사람 피드백 줍기</span></div>
+  </div>
+  <div class="big" style="margin-top:18px">코파일럿과 에이전트가<br><span class="y">같은 코드</span>라는 점이<br>이 애플리케이션의 영리한 점</div>
+  <div class="hl" style="margin-top:16px">&#128161; 자율 모드의 결과는 <b class="g">"사람이 아무것도 안 고치고 Next만 계속 누른 코파일럿"</b>과 <b class="g">정확히 같습니다.</b></div>
+  <aside>그래서 코파일럿 모드만 설명하면 자율 모드는 자연히 따라옵니다.</aside>
+</section>
+
+<!-- 3 수직 슬라이스 -->
+<section class="slide" data-part="10.1 에이전트 워크플로">
+  <h2>&#127856; <span class="g">수직 슬라이스</span>란</h2>
+  <p>이 장에서 완전한 애플리케이션을 통째로 만들지는 않는다. 대신 하나의 고객 유스케이스에 대응하는 애플리케이션의 <b class="g">수직 슬라이스(vertical slice)</b>를 보여 준다.</p>
+  <div class="hl" style="margin-top:14px">&#127874; <b>비유</b> &mdash; 케이크를 만든다고 합시다. <b class="r">수평으로</b> 자르면 "스펀지 층만", "크림 층만" 같은 조각이 나옵니다. 반대로 <b class="g">수직으로</b> 한 조각을 자르면 스펀지 &middot; 크림 &middot; 딸기가 전부 들어간 <b class="g">작지만 완전한 케이크</b>가 됩니다.<br><br>
+    소프트웨어도 마찬가지입니다 &mdash; <b class="r">"로그인 기능 전부"</b>가 아니라 <b class="g">"주제를 넣으면 최종 글이 나오는 한 줄기"</b>를 화면부터 저장까지 통째로 만드는 것이죠.</div>
+  <div class="warn" style="margin-top:16px">&#128161; <b>생성형 AI에서 수직 슬라이스가 놓이는 자리</b> &mdash; 흔히 <b class="g">사람이 손으로 돌리던 워크플로가 AI 보조를 받거나 완전 자동화되어 가는 중인 지점</b>입니다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:24%">용어</th><th>뜻</th></tr>
+    <tr><td><b class="g">코파일럿</b><br><small>copilot</small></td><td><b>AI 보조 도구</b></td></tr>
+    <tr><td><b class="g">에이전트</b><br><small>agent</small></td><td><b>자율적으로 움직이는 AI</b></td></tr>
+    <tr><td><b class="g">에이전트적</b><br><small>agentic</small></td><td>이 <b class="g">스펙트럼 위에 있는 애플리케이션을 통틀어</b> 부르는 말</td></tr>
+  </table>
+  <div class="hl">&#128161; 그러니 GitHub 저장소에서 보여 주는 것은 <b class="g">에이전트 워크플로</b>입니다.</div>
+  <aside>코파일럿과 에이전트는 다른 물건이 아니라 사람 개입 정도의 차이입니다.</aside>
+</section>
+
+<!-- 4 두 모드 -->
+<section class="slide" data-part="10.1 에이전트 워크플로">
+  <h2>&#9878;&#65039; 코파일럿과 에이전트는 <span class="g">같은 자의 양 끝</span></h2>
+  <table class="t">
+    <tr><th style="width:22%">모드</th><th style="width:34%">누가 결정하나</th><th>이 장의 예</th></tr>
+    <tr><td><b class="g">코파일럿</b></td><td>AI가 추천 &rarr; <b class="g">사람이 확인 &middot; 수정</b></td><td><b>웹 화면</b>에서 Next를 눌러 가며 진행</td></tr>
+    <tr><td><b class="g">에이전트</b></td><td>AI가 <b class="g">끝까지 혼자</b></td><td><b>명령줄</b>에서 한 번 실행하면 결과가 나옴</td></tr>
+  </table>
+  <div class="big" style="margin-top:18px">둘이 <span class="y">같은 코드</span>다</div>
+  <div class="hl" style="margin-top:18px">&#127919; <b>이것이 왜 중요한가</b> &mdash; 자율 모드의 결과가 <b class="g">"사람이 아무것도 안 고치고 Next만 계속 누른 코파일럿"</b>과 같다는 것은, <b class="g">코파일럿에서 모은 사람 피드백이 그대로 자율 모드를 개선하는 데 쓰인다</b>는 뜻입니다.</div>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell"><small>지금</small><b>코파일럿</b><small>사람이 자주 고침</small></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>학습 후</small><b>덜 고침</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>결국</small><b class="g">에이전트</b><small>고칠 게 없음</small></div>
+  </div>
+  <div class="warn" style="margin-top:16px">&#128209; <b>10.2 요약이 말하는 것</b> &mdash; <b class="g">"지속적인 학습 프로그램을 통해 코파일럿 모드를 시간이 갈수록 더 자율적으로 만들어 가는 것."</b> 자율성은 <b class="g">스위치가 아니라 도착지</b>입니다.</div>
+  <aside>처음부터 자율로 만들지 않는다는 것이 이 설계의 요점입니다.</aside>
+</section>
+
+<!-- 5 그림 10-1 -->
+<section class="slide" data-part="10.1 에이전트 워크플로">
+  <h2>&#128506;&#65039; 패턴 23과 <span class="g">무엇이 다른가</span></h2>
+  <p>이 워크플로는 <b class="g">교육용 콘텐츠를 만드는 일</b>을 한다 &mdash; <b class="g">7장 패턴 23 Multiagent Collaboration</b>을 설명하며 살펴봤던 바로 그 유스케이스다.</p>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:30%">차이</th><th>내용</th></tr>
+    <tr><td><b class="g">검토 단계가 둘</b></td><td>그림 7-5와 달리 <b class="g">검토 단계가 하나가 아니라 둘</b>이다</td></tr>
+    <tr><td><b class="g">데이터가 그려져 있다</b></td><td><b class="g">오가는 데이터가 무엇인지</b>까지 그려 넣었다</td></tr>
+    <tr><td><b class="g">작가가 더 있다</b></td><td>콘텐츠 작성 팀에 작가가 몇 명 더 있는데, 그중 하나는 <b class="gold">이 책의 내용을 바탕으로 GenAI 주제의 글을 쓰는 작가</b></td></tr>
+    <tr><td><b class="r">프레임워크가 없다</b></td><td>패턴 23은 <b>AG2</b>를 썼지만, 여기서는 <b class="r">어떤 멀티에이전트 프레임워크도 쓰지 않는다</b></td></tr>
+  </table>
+  <div class="hl" style="margin-top:16px">&#128161; <b>세 번째 항목이 재미있습니다</b> &mdash; <b class="g">이 책 자체가 RAG 지식 베이스</b>로 들어가 있습니다. GenAI 작가 에이전트는 <b class="g">LlamaIndex로 이 책을 검색</b>해 글을 씁니다.</div>
+  <div class="warn">&#128209; <b>같은 유스케이스를 두 번 보는 이유</b> &mdash; 7장에서는 <b class="g">"프레임워크로 하면 이렇게 된다"</b>를, 10장에서는 <b class="g">"프레임워크 없이 하면 이렇게 된다"</b>를 보여 줍니다. <b class="g">비교하며 읽으라</b>는 뜻이죠.</div>
+  <aside>그림 10-1이 이 협업 구조를 그린 것입니다.</aside>
+</section>
+
+<!-- 6 설치 -->
+<section class="slide" data-part="10.1.1 실행하기">
+  <h2>&#128295; 10.1.1 &mdash; <span class="g">설치</span></h2>
+  <div class="plabel">가상 환경 안에서 의존성 설치</div>
+  <pre>python -m pip install -r requirements.txt</pre>
+  <p style="margin-top:10px">그다음 <b class="g">keys.env</b> 파일을 열어 자신의 <b class="g">Gemini API 키</b>를 넣는다. 없다면 <b>구글 AI Studio</b>에서 받을 수 있다.</p>
+  <div class="hl" style="margin-top:14px">&#128230; <b>파이썬 가상 환경을 쓰라</b> &mdash; 어떤 파이썬 프로젝트든 아주 다양한 외부 라이브러리가 필요하고, 그 라이브러리들은 흔히 <b class="g">특정 버전</b>을 요구하는데 <b class="r">그 버전이 다른 프로젝트에서 쓰던 것과 충돌</b>할 수 있다. 파이썬을 하나만 설치해 두고 쓰면 <b class="r">라이브러리들이 서로 부딪쳐 온갖 문제</b>를 일으킨다.</div>
+  <pre style="margin-top:12px">python -m venv agentic_ai/</pre>
+  <pre style="margin-top:8px">$ source agentic_ai/bin/activate
+(agentic_ai) $</pre>
+  <div class="warn" style="margin-top:12px">&#128209; 이 장의 나머지 명령들은 <b class="g">모두 이 셸 안에서</b> 실행합니다.</div>
+  <aside>가상 환경은 파이썬 라이브러리 버전을 독립적으로 유지하는 격리된 환경입니다.</aside>
+</section>
+
+<!-- 7 세 모델 -->
+<section class="slide" data-part="10.1.1 실행하기">
+  <h2>&#129504; <span class="g">세 가지 LLM 설정</span></h2>
+  <div class="hl">&#128161; <b>Gemini를 꼭 쓸 필요는 없습니다</b> &mdash; <code>utils/llms.py</code>에서 모델을 바꾸면 됩니다. 지원 목록은 <b class="g">PydanticAI 문서</b>에 있습니다.</div>
+  <pre style="margin-top:14px">BEST_MODEL="gemini-2.5-pro"
+DEFAULT_MODEL="gemini-2.5-flash"
+SMALL_MODEL="gemini-2.5-flash-lite-preview-06-17"</pre>
+  <div class="big" style="margin-top:18px">애플리케이션은 이 세 설정을 써서<br><span class="y">품질 &middot; 비용 &middot; 속도 사이의 트레이드오프</span>를<br>자리마다 다르게 잡는다</div>
+  <table class="t" style="margin-top:18px">
+    <tr><th style="width:28%">설정</th><th>이 앱에서 쓰이는 자리</th></tr>
+    <tr><td><b class="g">BEST_MODEL</b></td><td>품질이 결정적인 자리</td></tr>
+    <tr><td><b class="g">DEFAULT_MODEL</b></td><td><b>패널 간사 에이전트</b> &mdash; 요약 작업은 <b class="g">품질이나 속도 면에서 특별한 요구사항이 없다</b></td></tr>
+    <tr><td><b class="g">SMALL_MODEL</b></td><td><b>입력 가드레일</b> &mdash; 단순한 <b class="g">이진 판정</b>이라 큰 모델이 필요 없다</td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#128209; <b class="g">8장 패턴 24(SLM)</b>가 여기서 실전에 쓰입니다 &mdash; "모든 자리에 가장 좋은 모델"이 아니라 <b class="g">역할에 맞는 모델</b>을 씁니다. 9장 가드레일 절에서 <b class="g">"SLM을 써서 지연을 관리 가능한 범위로"</b>라고 한 권고 그대로죠.</div>
+  <aside>한 애플리케이션 안에서 모델을 세 개 쓰는 것이 이상하지 않습니다.</aside>
+</section>
+
+<!-- 8 로깅 -->
+<section class="slide" data-part="10.1.1 실행하기">
+  <h2>&#128221; 로깅이 <span class="g">세 파일로 나뉜다</span></h2>
+  <p>로깅 설정은 <b class="g">logging.json</b>에 있다. 기본값은 <code>INFO</code> 수준을 <b>콘솔</b>에 찍고, 특정 <code>DEBUG</code> 수준 메시지를 <b class="g">세 파일에 나눠</b> 남기는 것이다.</p>
+  <div class="chain" style="margin-top:16px">
+    <div class="cell"><small>프롬프트 &middot; 입출력</small><b class="g">prompts.log</b></div>
+    <div class="cell"><small>가드레일 발동</small><b class="g">guards.log</b></div>
+    <div class="cell"><small>사람 피드백</small><b class="g">feedback.log</b></div>
+  </div>
+  <div class="warn" style="margin-top:18px">&#9888;&#65039; <b>저자의 당부</b> &mdash; 이렇게 나눠 기록하는 이유는 <b class="g">이 장 뒤에서 설명</b>하므로 <b class="r">지금은 이 로거들을 바꾸지 말라.</b> 다만 <b class="g">콘솔의 INFO 임계값은 바꿔도 된다</b> &mdash; 더 낮추면 메시지가 줄고, 더 높이면 늘어난다.</div>
+  <div class="hl" style="margin-top:16px">&#128161; <b>왜 나눠 두는지 미리 말하면</b> &mdash; 세 파일이 각각 다른 일에 쓰입니다.</div>
+  <table class="t" style="margin-top:12px">
+    <tr><th style="width:28%">파일</th><th>나중에 무엇에 쓰이나</th></tr>
+    <tr><td><b class="g">prompts.log</b></td><td><b class="g">오프라인 평가와 사후 학습</b> (패턴 15 &middot; 20)</td></tr>
+    <tr><td><b class="g">guards.log</b></td><td><b class="g">특이한 공격 식별</b>, 실제 분포에 맞춘 <b class="g">모델 파인튜닝</b> (패턴 32)</td></tr>
+    <tr><td><b class="g">feedback.log</b></td><td><b class="g">사람 피드백 학습 데이터</b> (패턴 5 &middot; 15 &middot; 20)</td></tr>
+  </table>
+  <div class="warn">&#128209; <b>로그가 곧 학습 데이터</b>라는 점이 이 설계의 핵심입니다. 그래서 <b class="g">로깅 설정이 아키텍처의 일부</b>입니다.</div>
+  <aside>보통 로그는 디버깅용인데, 여기서는 자산입니다.</aside>
+</section>
+
+<!-- 9 두 실행 방법 -->
+<section class="slide" data-part="10.1.1 실행하기">
+  <h2>&#9654;&#65039; 두 가지 <span class="g">실행 방법</span></h2>
+  <div class="grid2">
+    <div class="box"><b class="g">&#128421;&#65039; 코파일럿 모드</b><br><br>
+      <pre style="margin:8px 0">python -m streamlit run streamlit_app.py</pre>
+      웹페이지가 뜬다. 최종 사용자는 이 인터페이스와 상호작용하며 워크플로를 진행하는데, <b class="g">보통은 Next 버튼을 누르는 것이 전부</b>다.<br><br>
+      워크플로의 <b>단계들</b>은 화면 <b class="g">왼쪽 창</b>에 나와 있다</div>
+    <div class="box"><b class="g">&#9889; 에이전트 모드</b><br><br>
+      <pre style="margin:8px 0">python cmdline_app.py</pre>
+      자율 에이전트가 워크플로를 실행한다.<br><br>
+      결과는 <b class="g">코파일럿 모드에서 사용자가 AI의 추천을 전부 받아들이고 아무것도 고치지 않은 채 각 페이지에서 Next만 눌렀을 때</b>와 같다</div>
+  </div>
+  <div class="big" style="margin-top:18px">그러므로 <span class="y">코파일럿 모드가 어떻게 동작하는지</span>를 이야기하면<br>자율 애플리케이션이 어떻게 동작할지는<br><span class="y">자연히 따라온다</span></div>
+  <div class="warn" style="margin-top:18px">&#128444;&#65039; <b>그림 10-2 ~ 10-7의 화면은 영어 그대로</b> &mdash; 독자가 직접 실행하게 될 <b class="g">예제 앱의 실제 화면</b>이라, 화면에 찍힌 <code>Select Topic</code> &middot; <code>Next</code> 같은 글자를 한국어로 바꾸면 <b class="r">독자가 보게 될 화면과 어긋납니다.</b></div>
+  <aside>이 정리본에서도 UI 문자열은 원문 그대로 뒀습니다.</aside>
+</section>
+
+<!-- 10 첫 단계 -->
+<section class="slide" data-part="10.1.2 하는 일">
+  <h2>&#9312; 10.1.2 &mdash; 워크플로의 <span class="g">첫 단계</span></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t">최종 사용자가 <b class="g">"Battle of the Bulge(벌지 전투)"</b> 같은 주제를 지정하고 <b>Next</b>를 누른다</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b class="g">작업 배정자(Task Assigner) 에이전트</b>가 그 주제를 처리한다</span></div>
+    <div class="st"><span class="n">3</span><span class="t">이 에이전트는 <b class="g">주제를 다루기에 가장 알맞은 작가를 고른다</b></span></div>
+  </div>
+  <div class="chain" style="margin-top:18px">
+    <div class="cell"><small>사용자 입력</small><b>Battle of<br>the Bulge</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gold)"><small>실행 중</small><b class="gold">find_writer(...)</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>제안</small><b class="g">HISTORIAN</b></div>
+  </div>
+  <div class="hl" style="margin-top:18px">&#128269; <b>화면에 찍히는 문자열</b> &mdash; <code>Assign Writer</code>(작가 배정), <code>Running find_writer(...)</code>(<code>find_writer</code> 실행 중), <code>Suggested option is HISTORIAN</code>(제안된 선택지는 역사 작가), <code>Choose Writer</code>(작가 선택)</div>
+  <div class="warn" style="margin-top:16px">&#128161; <b>"제안"이라는 단어가 중요합니다</b> &mdash; AI는 <b class="g">고르지 않고 제안</b>합니다. 사용자가 Next를 누르면 그 제안이 채택되고, <b class="g">다른 작가로 바꾸면 그 자체가 피드백</b>이 됩니다.</div>
+  <aside>기본값으로 벌지 전투는 역사 콘텐츠 작성 에이전트에게 배정됩니다.</aside>
+</section>
+
+<!-- 11 사람 피드백 -->
+<section class="slide" data-part="10.1.2 하는 일">
+  <h2>&#128100; 사람 피드백을 <span class="g">공짜로 줍는다</span></h2>
+  <div class="hl">&#128663; <b>비유</b> &mdash; 내비게이션이 "이 길로 가세요"라고 안내했는데 운전자가 다른 길로 꺾었다고 합시다. 내비게이션은 <b class="r">"왜 다른 길로 가셨나요?" 하고 설문을 돌리지 않습니다.</b> 그냥 그 <b class="g">꺾은 행동 자체</b>를 "내 추천이 틀렸다"는 신호로 기록합니다.</div>
+  <div class="big" style="margin-top:16px">사용자가 만들어 내는 <span class="y">모든 콘텐츠</span>에<br>이 패턴을 넣어야 한다<br><small>AI가 추천을 내놓고<br><b class="g">UI를 통해 암묵적으로 사람 피드백을 거둬들이는</b></small></div>
+  <table class="t" style="margin-top:18px">
+    <tr><th style="width:30%">기록되는 쌍</th><th>AI가 낸 것</th><th>사람이 바꾼 것</th></tr>
+    <tr><td><b class="g">작가 배정</b></td><td><code>MATH_WRITER</code></td><td><code>HISTORIAN</code></td></tr>
+    <tr><td><b class="g">초안</b></td><td>AI가 쓴 원문</td><td>사람이 고친 원문</td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; <b>둘 다 저장하는 것이 핵심입니다</b> &mdash; <b class="r">AI 것만 있으면 "정답"이 없고, 사람 것만 있으면 "무엇이 틀렸는지"를 모릅니다.</b> <b class="g">쌍으로 있어야</b> 나중에 학습에 쓸 수 있습니다.</div>
+  <div class="hl" style="margin-top:14px">&#127912; <b>그래서 UX 디자이너가 필요하다</b> &mdash; 저자는 <b class="g">"프로젝트 팀에는 좋은 UX 디자이너가 있어야 한다"</b>고 못 박습니다. <b class="g">피드백 수집이 빠짐없이, 그러면서도 사용자를 성가시게 하지 않도록</b> 만드는 일이 그의 몫입니다.<br><br>
+    사용자가 <b class="r">"피드백을 남기는 중"이라고 느끼는 순간 피드백은 줄어듭니다.</b> <b class="g">평소처럼 일했을 뿐인데 데이터가 쌓이는</b> 화면을 만들어야 합니다.</div>
+  <aside>기술 문서에서 UX 디자이너를 필수 인력으로 명시하는 것은 드문 일입니다.</aside>
+</section>
+
+<!-- 12 아티팩트 세 방식 -->
+<section class="slide" data-part="10.1.2 하는 일">
+  <h2>&#128196; <span class="g">아티팩트</span>를 고치는 세 가지 방식</h2>
+  <div class="hl">&#128161; <b>아티팩트</b>(artifact) &mdash; 이런 식으로 <b class="g">편집 가능한 결과물</b>을 부르는 말. 이 개념을 처음 내놓은 곳은 <b class="g">Anthropic</b>이다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:14%">선택지</th><th style="width:30%">방식</th><th>내용</th></tr>
+    <tr><td><b class="g">첫 번째</b><br><small>&#9989; 채택</small></td><td><b class="g">편집하기 쉬운 텍스트 상자</b></td><td>초안 기사를 텍스트 상자에 담아 보여 준다. 사용자는 <b class="g">초안 본문과 키워드 목록을 직접 고칠 수</b> 있다</td></tr>
+    <tr><td><b>두 번째</b></td><td>일반 텍스트 + <b>Edit 버튼</b></td><td>초안을 그냥 텍스트로 보여 주되 버튼을 두어 고칠 수 있게</td></tr>
+    <tr><td><b class="g">세 번째</b></td><td><b class="g">채팅 인터페이스의 명령</b></td><td>사용자가 에이전트에게 <b class="g">"전투가 벌어진 장소와 관련된 키워드를 더 넣어 줘"</b> 하고 요청</td></tr>
+  </table>
+  <div class="warn" style="margin-top:16px">&#9888;&#65039; <b>세 번째가 까다롭다</b> &mdash; 이런 명령은 <b class="g">해당 에이전트가 이미 쓰고 있던 프롬프트에 덧붙습니다.</b> 그러니 표적을 정확히 겨눈 편집이 가능하려면 애플리케이션이 <b class="g">각 사용자의 컨텍스트를 순서대로 추적</b>해야 합니다.</div>
+  <ul class="pts" style="margin-top:14px">
+    <li>그 사용자가 <b class="g">이전에 무슨 말을 했는지</b></li>
+    <li><b class="g">지금 무엇을 보고 있는지</b></li>
+    <li><b class="g">현재 프롬프트가 무엇인지</b></li>
+    <li><b class="g">이전 지시 중에 지금 이 아티팩트와 관련된 것</b>이 있는지</li>
+  </ul>
+  <div class="hl">&#128209; 여기에는 <b class="g">8장 패턴 28 Long-Term Memory</b>가 도움이 됩니다 &mdash; 특히 <b class="g">절차 기억</b>(사용자 지시)과 <b class="g">작업 기억</b>(현재 세션)이죠.</div>
+  <aside>세 방식 중 어느 것을 택하느냐가 곧 아키텍처 결정이 됩니다.</aside>
+</section>
+
+<!-- 13 UX 설계 원칙 -->
+<section class="slide" data-part="10.1.2 하는 일">
+  <h2>&#128207; UX 설계는 <span class="g">컨텍스트 범위</span>를 따라간다</h2>
+  <div class="big">UX 설계는 프롬프트가<br><span class="y">얼마나 넓은 컨텍스트를 담아야 하는지</span>에 따라<br>달라져야 한다</div>
+  <table class="t" style="margin-top:20px">
+    <tr><th style="width:44%">필요한 컨텍스트</th><th>채팅 프롬프트를 어디에</th></tr>
+    <tr><td><b class="g">워크플로의 현재 단계만</b> 있으면 된다면</td><td><b class="g">페이지 안</b>에 두라</td></tr>
+    <tr><td>컨텍스트가 <b class="g">워크플로 전체</b>를 포함해야 한다면</td><td><b class="g">사이드 패널</b>에 두라</td></tr>
+  </table>
+  <div class="hl" style="margin-top:20px">&#128161; <b>화면 배치가 곧 컨텍스트 범위의 선언입니다</b> &mdash; 사용자는 <b class="g">"이 입력창이 무엇을 알고 있는가"</b>를 <b class="g">위치로 짐작</b>합니다. 페이지 안의 입력창에 "아까 3단계에서 말한 거 반영해 줘"라고 쓰지는 않겠죠.</div>
+  <div class="warn" style="margin-top:16px">&#128209; <b>이 원칙이 값진 이유</b> &mdash; UX 조언처럼 보이지만 사실은 <b class="g">엔지니어링 조언</b>입니다. 사이드 패널을 두는 순간 <b class="g">워크플로 전체 상태를 프롬프트에 실어야</b> 하고, 그러면 <b class="r">컨텍스트 윈도와 비용 문제</b>(8장 패턴 28)가 따라옵니다.</div>
+  <aside>화면을 어디에 두느냐가 백엔드 부담을 결정합니다.</aside>
+</section>
+
+<!-- 14 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#128100; 고치는 <span class="g">행동 자체</span>가 데이터</h1>
+    <div class="big" style="margin-top:24px">사용자가 AI의 추천을<br><span class="y">고치는 행동 자체</span>가 학습 데이터다<br><br><small>화면을 <b class="g">그렇게 설계하라</b></small></div>
+    <p class="sub" style="margin-top:22px">10.1 ~ 10.1.2 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>시스템 아키텍처</b></p>
+  </div>
+  <aside>다음 덱에서 다섯 구성 요소를 하나씩 봅니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

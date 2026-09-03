@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10장 서론 — 조립 가능한 에이전트 워크플로</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 10 &middot; 마지막 장</div>
+    <h1 style="margin:18px 0">조립 가능한 <span class="g">에이전트 워크플로</span></h1>
+    <p class="sub">Composable Agentic Workflows &mdash; 아홉 개 장의 패턴을 <b>하나의 애플리케이션으로</b></p>
+  </div>
+  <aside>이 책의 마지막 장입니다. 새 패턴은 없습니다.</aside>
+</section>
+
+<!-- 2 이 덱의 자리 -->
+<section class="slide" data-part="표지">
+  <h2>&#128205; 이 덱은 <span class="g">10장 서론</span>입니다</h2>
+  <div class="warn">&#9888;&#65039; <b>10장은 구조가 다릅니다</b> &mdash; <b class="r">새 패턴을 소개하지 않으므로</b> 2~9장처럼 <b>패턴별 덱</b>을 만들 수 없습니다. 대신 <b class="g">책의 절 번호(10.1.1 ~ 10.1.4)</b>를 따라 나눴습니다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:36%">덱</th><th>다루는 범위</th></tr>
+    <tr><td><b class="gold">10장 서론</b> (이 덱)</td><td>들어가며 &middot; <b>불려 나오는 패턴 21개</b> &middot; 옮긴이 주</td></tr>
+    <tr><td><b>에이전트 워크플로</b></td><td><b>10.1</b> 개념 + <b>10.1.1</b> 실행하기 + <b>10.1.2</b> 하는 일</td></tr>
+    <tr><td><b>시스템 아키텍처</b></td><td><b>10.1.3</b> &mdash; 다섯 구성 요소</td></tr>
+    <tr><td><b>배포와 마무리</b></td><td><b>10.1.4</b> 배포 + <b>10.2</b> 요약 + 책 전체 마무리</td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">앞의 아홉 개 장에서 다룬 패턴들을<br><span class="y">하나의 애플리케이션으로 끌어모은다</span></div>
+  <div class="hl" style="margin-top:14px">&#127919; <b>목적</b> &mdash; 패턴들이 서로 어떻게 맞물려서 <b class="g">시간이 갈수록 더 좋아지는 프로덕션급 에이전트 애플리케이션</b>을 만들 수 있게 해 주는지 보여 주는 것.</div>
+  <div class="warn">&#128187; 이 장의 <b class="g">전체 코드는 책의 GitHub 저장소</b>에 있습니다. 좋아하는 파이썬 IDE로 열고 함께 따라오라고 저자가 권합니다.</div>
+  <aside>읽는 장이 아니라 따라 하는 장입니다.</aside>
+</section>
+
+<!-- 3 패턴 호출표 1 -->
+<section class="slide" data-part="불려 나오는 패턴">
+  <h2>&#128218; 불려 나오는 패턴 <span class="g">21개</span> <small>&mdash; 1부</small></h2>
+  <div class="hl">10장은 <b class="r">새 패턴을 소개하지 않습니다.</b> 대신 <b class="g">앞 장들의 패턴을 이름으로 호출</b>하며 <b class="g">어디에 끼워 넣는지</b>를 보여 줍니다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:10%">번호</th><th style="width:26%">원어</th><th>이 장에서 쓰이는 자리</th></tr>
+    <tr><td><b>1</b></td><td><b class="g">Logits Masking</b></td><td><b class="r">재시도 안티패턴</b>("될 때까지 다시")의 출처</td></tr>
+    <tr><td><b>2</b></td><td><b class="g">Grammar</b></td><td>에이전트가 <code>Article</code> 같은 <b class="g">구조화 출력</b>을 돌려주게</td></tr>
+    <tr><td><b>5</b></td><td><b class="g">Content Optimization</b></td><td><b class="g">사람 피드백</b>으로 생성물을 사람 취향에 맞춤</td></tr>
+    <tr><td><b>6</b></td><td><b class="g">Basic RAG</b></td><td>에이전트가 <b class="g">갱신된 데이터</b>에 접근할 때</td></tr>
+    <tr><td><b>9</b></td><td><b class="g">Index-Aware Retrieval</b></td><td>에이전트가 <b class="g">필요한 자료를 끌어올</b> 때</td></tr>
+    <tr><td><b>13</b></td><td><b class="g">Chain of Thought</b></td><td>에이전트가 <b class="g">행동 계획</b>을 세울 때</td></tr>
+    <tr><td><b>15</b></td><td><b class="g">Adapter Tuning</b></td><td>수집된 피드백으로 <b class="g">사후 학습</b></td></tr>
+    <tr><td><b>16</b></td><td><b class="g">Evol-Instruct</b></td><td><b class="g">복잡한 변형 데이터를 합성</b>해 학습 데이터 보강</td></tr>
+    <tr><td><b>17</b></td><td><b class="g">LLM-as-Judge</b></td><td><b class="g">입력 가드레일</b> 구현의 출발점</td></tr>
+    <tr><td><b>18</b></td><td><b class="g">Reflection</b></td><td>에이전트가 <b class="g">오류에서 회복</b>할 때</td></tr>
+    <tr><td><b>19</b></td><td><b class="g">Dependency Injection</b></td><td>에이전트를 <b class="g">독립적으로 개발 &middot; 테스트</b></td></tr>
+  </table>
+  <aside>패턴 번호는 장을 넘어 계속 이어집니다.</aside>
+</section>
+
+<!-- 4 패턴 호출표 2 -->
+<section class="slide" data-part="불려 나오는 패턴">
+  <h2>&#128218; 불려 나오는 패턴 <span class="g">21개</span> <small>&mdash; 2부</small></h2>
+  <table class="t">
+    <tr><th style="width:10%">번호</th><th style="width:26%">원어</th><th>이 장에서 쓰이는 자리</th></tr>
+    <tr><td><b>20</b></td><td><b class="g">Prompt Optimization</b></td><td>수집된 피드백으로 <b class="g">프롬프트 개선</b></td></tr>
+    <tr><td><b>21</b></td><td><b class="g">Tool Calling</b></td><td>에이전트가 <b class="g">외부 기능을 호출</b>할 때</td></tr>
+    <tr><td><b>23</b></td><td><b class="g">Multiagent Collaboration</b></td><td><b class="gold">이 장이 재현하는 바로 그 유스케이스</b></td></tr>
+    <tr><td><b>25</b></td><td><b class="g">Prompt Caching</b></td><td><b class="g">페이지 재렌더마다 LLM 호출이 나가지 않게</b></td></tr>
+    <tr><td><b>27</b></td><td><b class="g">Degradation Testing</b></td><td><b class="g">체계적 모니터링 프로그램</b>의 일부</td></tr>
+    <tr><td><b>28</b></td><td><b class="g">Long-Term Memory</b></td><td>사용자 지시를 <b class="g">다음 실행에도 이어 쓰기</b></td></tr>
+    <tr><td><b>29</b></td><td><b class="g">Template Generation</b></td><td><b class="g">위험과 창의성의 균형</b>을 잡을 때</td></tr>
+    <tr><td><b>30</b></td><td><b class="g">Assembled Reformat</b></td><td><b class="g">위험과 창의성의 균형</b>을 잡을 때</td></tr>
+    <tr><td><b>31</b></td><td><b class="g">Self-Check</b></td><td>오류 회복 + <b class="g">자동화 역설 완화</b></td></tr>
+    <tr><td><b>32</b></td><td><b class="g">Guardrails</b></td><td><b class="g">신뢰할 수 없는 입력 차단</b></td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; <b>21개가 호출되고 11개는 안 나옵니다</b> &mdash; 3 &middot; 4 &middot; 7 &middot; 8 &middot; 10 &middot; 11 &middot; 12 &middot; 14 &middot; 22 &middot; 24 &middot; 26. 이 유스케이스에 <b class="g">필요하지 않았을 뿐</b>이며, 다른 애플리케이션이라면 다른 조합이 됩니다.</div>
+  <aside>32개를 다 쓰는 것이 좋은 설계가 아니라는 점을 이 표가 보여 줍니다.</aside>
+</section>
+
+<!-- 5 어디에 몰려 있나 -->
+<section class="slide" data-part="불려 나오는 패턴">
+  <h2>&#127919; 패턴이 <span class="g">어디에 몰려 있나</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">구성 요소</th><th style="width:44%">하는 일</th><th>불려 나오는 패턴</th></tr>
+    <tr><td><b class="g">에이전트</b></td><td>워크플로의 <b>한 단계</b>를 실행. 서로 독립적이라 <b class="g">프레임워크도 제각각이어도 된다</b></td><td><b class="g">6 &middot; 9 &middot; 13 &middot; 18 &middot; 21 &middot; 29 &middot; 30 &middot; 31</b></td></tr>
+    <tr><td><b class="g">멀티에이전트<br>아키텍처</b></td><td>에이전트를 순서대로 엮음. <b class="g">프레임워크 없이 평범한 코드</b>로</td><td><b class="g">2 &middot; 25 &middot; 28</b></td></tr>
+    <tr><td><b class="g">거버넌스 &middot;<br>모니터링 &middot; 보안</b></td><td>입력 가드레일, 로깅, 성능 저하 테스트, 접근 통제</td><td><b class="g">17 &middot; 27 &middot; 32</b></td></tr>
+    <tr><td><b class="g">학습 파이프라인</b></td><td>UI 조작에서 <b class="g">사람 피드백을 줍고</b>, 성과와 엮어 사후 학습</td><td><b class="g">5 &middot; 15 &middot; 20</b></td></tr>
+    <tr><td><b class="g">데이터 프로그램</b></td><td>유기적 피드백의 <b class="r">다섯 가지 부족분</b>을 데이터 생성 &middot; 큐레이션으로 메움</td><td><b class="g">16 &middot; 31</b></td></tr>
+    <tr><td><b class="g">배포</b></td><td>에이전트별 <b class="g">독립 배포</b>. 모듈성 &middot; 유연성 &middot; 장애 격리 &middot; 독립 스케일링</td><td><b class="g">19</b></td></tr>
+  </table>
+  <div class="hl" style="margin-top:16px">&#128161; <b>이 표가 10장 전체의 지도입니다</b> &mdash; 책의 「10장 한눈에 보기」를 그대로 옮긴 것이며, <b class="g">이후 세 덱이 이 여섯 줄을 차례로 펼칩니다.</b></div>
+  <div class="warn">&#128209; <b>가장 많은 패턴이 "에이전트" 줄에 몰려 있습니다</b>(8개) &mdash; 2~9장의 대부분이 <b class="g">"에이전트 하나를 잘 만드는 법"</b>이었기 때문입니다. 나머지 줄들은 <b class="g">"그것들을 묶고 지키고 개선하는 법"</b>이죠.</div>
+  <aside>책 전체의 구조가 이 표에 압축돼 있습니다.</aside>
+</section>
+
+<!-- 6 다섯 구성요소 -->
+<section class="slide" data-part="불려 나오는 패턴">
+  <h2>&#127959;&#65039; 시스템 아키텍처 &mdash; <span class="g">다섯 조각</span></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b class="g">워크플로의 각 단계를 구현하는 에이전트들</b></span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b class="g">최종 사용자를 워크플로를 따라 밀고 나가는 멀티에이전트 아키텍처</b></span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b class="g">거버넌스 &middot; 모니터링 &middot; 보안 구성 요소</b></span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b class="g">AI 능력을 계속 개선하는 학습 파이프라인</b></span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b class="g">끊임없이 돌아가는 데이터 생성 &middot; 수집 &middot; 큐레이션 프로그램</b></span></div>
+  </div>
+  <div class="big" style="margin-top:18px">앞의 둘은 <span class="y">만드는 이야기</span><br>뒤의 셋은 <span class="y">유지하고 좋아지게 하는 이야기</span></div>
+  <div class="hl" style="margin-top:18px">&#128161; <b>비중이 말해 주는 것</b> &mdash; 5개 중 <b class="g">3개가 "배포 이후"</b>에 관한 것입니다. 이 책이 <b class="g">"프로덕션급"</b>이라는 말을 어떻게 이해하고 있는지가 여기서 드러납니다 &mdash; <b class="g">돌아가게 만드는 것보다 계속 좋아지게 만드는 것</b>이 더 큰 일입니다.</div>
+  <aside>세 번째 덱이 이 다섯 조각을 하나씩 다룹니다.</aside>
+</section>
+
+<!-- 7 유닉스 철학 -->
+<section class="slide" data-part="불려 나오는 패턴">
+  <h2>&#129513; 왜 <span class="g">"조립 가능"</span>인가</h2>
+  <div class="warn">&#128209; <b>패턴 23과 같은 유스케이스, 다른 방식</b> &mdash; 이 장의 워크플로는 <b class="g">7장 패턴 23에서 봤던 교육용 콘텐츠 만들기</b> 그대로입니다. 다만 <b class="r">어떤 멀티에이전트 프레임워크도 쓰지 않고</b> 만듭니다.</div>
+  <div class="big" style="margin-top:18px">가장 성공적인 구현들은<br><span class="r">복잡한 프레임워크가 아니라</span><br><span class="y">단순하고 조립 가능한 패턴</span>을 쓴다<br><small>&mdash; Anthropic, 효과적인 에이전트를 만드는 법</small></div>
+  <div class="hl" style="margin-top:18px">&#128295; 저자는 이것이 <b class="g">유닉스 철학</b>을 떠올리게 한다고 말합니다 &mdash; 작은 도구를 하나씩 잘 만들고 <b class="g">파이프로 잇는</b> 방식이죠.</div>
+  <div class="warn" style="margin-top:14px">&#127919; <b>목표</b> &mdash; 이 책에서 조립 가능한 패턴 묶음을 살펴봤으니, 이제 그것들로 <b class="g">LLM에도 클라우드에도 매이지 않는</b> 효과적인 멀티에이전트 &middot; 멀티스텝 워크플로를 만든다.</div>
+  <div class="hl">&#128161; <b>7장 패턴 23의 결론이 여기서 실행됩니다</b> &mdash; 그 절에서 저자들은 <b class="g">"단순하고 조합 가능한 패턴을 쓰라"</b>는 Anthropic의 권고를 인용하고 <b class="g">"단일 에이전트로 되면 그냥 그렇게"</b>라고 했습니다. 10장은 그 말대로 <b class="g">프레임워크를 걷어낸 구현</b>입니다.</div>
+  <aside>말만 하고 끝내지 않고 실제로 그렇게 만들어 보인 것이 이 장의 미덕입니다.</aside>
+</section>
+
+<!-- 8 옮긴이 주 -->
+<section class="slide" data-part="옮긴이 주">
+  <h2>&#128204; <span class="g">옮긴이 주</span> 두 가지</h2>
+  <div class="warn">&#128444;&#65039; <b>1. 그림 속 UI 문자열은 영어 그대로</b><br><br>
+    그림 <b>10-2 ~ 10-7</b>은 <b class="g">독자가 직접 실행하게 될 예제 앱의 실제 화면</b>입니다. 화면에 찍힌 <code>Select topic</code>, <code>Assign to Writer</code>, <code>HISTORIAN</code> 같은 글자는 <b class="g">그 앱이 실제로 출력하는 문자열</b>이라 <b class="r">한국어로 바꾸면 독자가 보게 될 화면과 어긋납니다.</b><br><br>
+    &rarr; UI 문자열은 <b class="g">원문 그대로</b> 두고, <b class="g">저자가 그림 위에 덧붙인 주석만</b>(그림 10-7의 초록 &middot; 파란 글씨) 옮겼습니다. 각 화면의 뜻은 <b class="g">캡션 괄호 안</b>에 붙였습니다.</div>
+  <div class="warn" style="margin-top:16px">&#128290; <b>2. 패턴 번호는 장을 넘어 이어진다</b><br><br>
+    이 책의 패턴 번호는 <b class="g">장별로 리셋되지 않고 1번부터 32번까지 이어집니다.</b> 10장은 새 패턴을 소개하지 않고 <b class="g">앞선 아홉 개 장의 패턴 21개를 이름으로 호출</b>합니다.<br><br>
+    &rarr; 어느 패턴이 무엇이었는지는 <b class="g">이 덱의 「불려 나오는 패턴」 표</b>를 보세요.</div>
+  <div class="hl" style="margin-top:16px">&#128161; 이 저장소의 덱에서는 <b class="g">패턴 번호가 나올 때마다 몇 장의 것인지 함께 적어</b> 두었습니다 &mdash; 예: <b>패턴 28</b>(8장), <b>패턴 17</b>(6장).</div>
+  <aside>스크린샷을 번역하지 않은 이유를 명시해 둔 대목입니다.</aside>
+</section>
+
+<!-- 9 10.2 요약 -->
+<section class="slide" data-part="10.2 요약">
+  <h2>&#128203; 10.2 <span class="g">요약</span></h2>
+  <p>이 장에서는 이 책 전체에서 다룬 설계 패턴들을 통합해 <b class="g">프로덕션급 에이전트 애플리케이션을 만드는 법</b>을 보여 주었다.</p>
+  <div class="steps" style="margin-top:14px">
+    <div class="st"><span class="n">1</span><span class="t"><b class="g">단순하고 조립 가능한 패턴</b> 위에서, 교육용 콘텐츠를 만드는 <b class="g">AI 보조 또는 완전 자동 워크플로</b>를 구성하는 법</span></div>
+    <div class="st"><span class="n">2</span><span class="t">애플리케이션을 <b class="g">코파일럿(AI 보조) 모드와 에이전트(자율) 모드 양쪽</b>으로 실행하는 것</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b class="g">지속적인 학습 프로그램</b>을 통해 코파일럿 모드를 <b class="g">시간이 갈수록 더 자율적으로</b> 만들어 가는 것</span></div>
+    <div class="st"><span class="n">4</span><span class="t">설치 과정, <b>LLM 설정</b>, <b>로깅 설정</b></span></div>
+    <div class="st"><span class="n">5</span><span class="t">핵심 아키텍처 구성 요소 &mdash; 개별 에이전트, <b class="g">멀티에이전트 오케스트레이션</b>, <b class="g">입력 가드레일</b>, <b class="g">학습 파이프라인의 결정적 역할</b>, <b class="g">튼튼한 데이터 프로그램의 중요성</b></span></div>
+  </div>
+  <div class="big" style="margin-top:18px">생성형 AI는 <span class="y">흥미롭고 강력한 기술</span>이며<br>이 책에서 다룬 패턴들은 그것을<br><span class="y">현실의 유스케이스에서 실용적이고 쓸 만하게</span> 만들어 준다</div>
+  <div class="hl" style="margin-top:16px">&#127881; <b>책의 마지막 문장</b><br><b class="g">"여러분이 이것으로 무엇을 만들지, 우리는 몹시 기대하고 있다."</b></div>
+  <aside>32개 패턴을 지나온 끝에 저자들이 남긴 말입니다.</aside>
+</section>
+
+<!-- 10 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#129513; 레고처럼 <span class="g">조립하라</span></h1>
+    <div class="big" style="margin-top:24px">프레임워크를 통째로 들여오는 대신<br><span class="y">작은 패턴들을 조립해</span><br>한 유스케이스를 관통하는 워크플로를 만든다<br><br><small>32개 중 <b class="g">필요한 21개만</b> 불러 썼다</small></div>
+    <p class="sub" style="margin-top:22px">10장 서론 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>에이전트 워크플로</b></p>
+  </div>
+  <aside>다음 덱에서 애플리케이션이 실제로 무엇을 하는지 봅니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

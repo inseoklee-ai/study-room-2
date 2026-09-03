@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10.1.4 배포와 마무리 — 32개 패턴 완주</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 10 &middot; 10.1.4 ~ 10.2</div>
+    <h1 style="margin:18px 0">배포와 <span class="g">마무리</span></h1>
+    <p class="sub">Deployment &amp; Summary &mdash; <b>조립 가능한 접근이 주는 일곱 가지 이점</b></p>
+  </div>
+  <aside>이 책의 마지막 덱입니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>10.1.4 배포</b> &mdash; 조립 가능한 접근의 일곱 가지 이점</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>10.2 요약</b> &mdash; 10장이 보여 준 것</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>책 전체 마무리</b> &mdash; 32개 패턴을 지나와서</span></div>
+  </div>
+  <div class="big" style="margin-top:18px">이 아키텍처는<br><span class="y">각 에이전트가 서로 독립적이며</span><br><span class="y">따로 배포될 수 있도록</span> 설계되었다</div>
+  <div class="hl" style="margin-top:16px">&#128161; 이런 <b class="g">조립 가능한 접근</b>은 <b class="r">모놀리식이거나 더 복잡한 아키텍처</b>에 비해 뚜렷한 이점을 줍니다 &mdash; 일곱 가지입니다.</div>
+  <aside>배포 이야기지만 사실은 아키텍처 선택의 정당화입니다.</aside>
+</section>
+
+<!-- 3 이점 1-3 -->
+<section class="slide" data-part="10.1.4 배포">
+  <h2>&#10024; 조립 가능한 접근의 이점 <span class="g">&#9312;~&#9314;</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">이점</th><th>내용</th></tr>
+    <tr><td><b class="g">모듈성과<br>재사용성</b><br><small>modularity and<br>reusability</small></td><td>각 구성 요소를 <b class="g">다른 애플리케이션에서 재사용</b>할 수 있고, 변화하는 비즈니스 요구나 서로 다른 고객에 맞춰 손쉽게 <b class="g">재구성 &middot; 버전 관리</b>할 수 있다. <b class="g">유연성 &middot; 확장성 &middot; 효율</b>이 함께 올라간다<br><br>&rarr; <b class="g">패턴 19 Dependency Injection</b>(6장)을 쓰면, 워크플로에서 <b class="g">앞선 에이전트의 출력에 의존하는 에이전트라도 독립적으로 개발하고 테스트</b>할 수 있다</td></tr>
+    <tr><td><b class="g">기술적 유연성</b><br><small>technical flexibility</small></td><td>조립 가능한 아키텍처에서는 <b class="g">필요마다 가장 좋은 도구</b>를 고를 수 있다. 덕분에 시스템을 <b class="g">크게 갈아엎지 않고도</b> 변화하는 시장 상황과 기술 요구에 <b class="g">빠르게 적응</b>할 수 있다</td></tr>
+    <tr><td><b class="g">표준 프로토콜 &middot;<br>도구 &middot; 패키지</b></td><td><b class="r">패턴을 쓴다는 것이 모든 것을 맨바닥부터 구현한다는 뜻은 아니다.</b> 설계가 열려 있으므로 표준 프로토콜과 라이브러리를 그대로 활용할 수 있다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128209; <b>패턴 19가 여기 나오는 이유</b> &mdash; 3단계 에이전트를 테스트하려면 <b class="r">1 &middot; 2단계를 먼저 돌려야</b> 합니다. <b class="g">가짜 부품(목)을 끼우면</b> 그럴 필요가 없어지죠. <b class="g">"독립 배포"의 전제가 "독립 테스트"</b>입니다.</div>
+  <aside>6장에서 배운 의존성 주입이 배포 전략의 근거가 됩니다.</aside>
+</section>
+
+<!-- 4 표준 도구들 -->
+<section class="slide" data-part="10.1.4 배포">
+  <h2>&#128295; 그대로 <span class="g">활용할 수 있는 것들</span></h2>
+  <p>집필 시점 기준으로 여기에는 다음이 있다.</p>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:24%">분류</th><th style="width:24%">이름</th><th>하는 일</th></tr>
+    <tr><td><b class="g">프레임워크</b></td><td><b class="g">PydanticAI</b></td><td><b class="g">LLM에 매이지 않게</b> 해 준다</td></tr>
+    <tr><td rowspan="2"><b class="g">패키지</b></td><td><b class="g">LlamaIndex</b></td><td><b class="g">RAG 시스템 구축</b> 같은 흔한 필요를 단순화</td></tr>
+    <tr><td><b class="g">Mem0</b></td><td><b class="g">장기 기억 관리</b>를 단순화 <small>(8장 패턴 28)</small></td></tr>
+    <tr><td rowspan="2"><b class="g">프로토콜</b></td><td><b class="g">MCP</b></td><td rowspan="2"><b class="g">내부 &middot; 외부 시스템과의 상호작용 방식을 표준화</b> <small>(7장 패턴 21 &middot; 23)</small></td></tr>
+    <tr><td><b class="g">A2A</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:16px">&#9888;&#65039; <b>다만</b> &mdash; 이렇게 재사용하는 기능들이 <b class="g">자기 워크플로와 매끄럽게 통합되는지는 반드시 확인하라.</b></div>
+  <div class="hl" style="margin-top:16px">&#128161; <b>이 표가 앞 장들과 이어집니다</b> &mdash; <b class="g">MCP</b>와 <b class="g">A2A</b>는 7장에서, <b class="g">Mem0</b>는 8장에서, <b class="g">LlamaIndex</b>는 3~4장 RAG 절에서 각각 다뤘습니다. <b class="g">"조립 가능"이 "맨바닥부터"를 뜻하지 않는다</b>는 것이 저자가 강조하는 지점입니다.</div>
+  <div class="big" style="margin-top:16px">패턴을 쓴다는 것이<br><span class="r">모든 것을 맨바닥부터 구현한다</span>는<br>뜻은 아니다</div>
+  <aside>패턴은 설계 원칙이지 구현 방식이 아니라는 뜻입니다.</aside>
+</section>
+
+<!-- 5 이점 4-7 -->
+<section class="slide" data-part="10.1.4 배포">
+  <h2>&#10024; 이점 <span class="g">&#9315;~&#9318;</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">이점</th><th>내용</th></tr>
+    <tr><td><b class="g">독립적인 스케일링</b><br><small>independent scaling</small></td><td>애플리케이션 전체가 아니라 <b class="g">개별 구성 요소를 수요에 따라</b> 확장할 수 있다. <b class="g">자원을 효율적으로 쓰고</b> 높은 부하를 더 잘 견디면서 <b class="g">인프라 비용은 줄어든다</b></td></tr>
+    <tr><td><b class="g">장애 격리</b><br><small>failure isolation</small></td><td>개별 구성 요소가 죽어도 <b class="g">그 장애가 그 자리에 갇힌다.</b> <b class="g">시스템 전체가 무너지지 않는다</b></td></tr>
+    <tr><td><b class="g">개발 가속</b><br><small>accelerated development</small></td><td>맨바닥부터 만드는 대신 <b class="g">여러 개의 작은 서비스를 조합</b>해 복잡한 애플리케이션을 빠르게 만들 수 있다. <b class="g">출시까지의 시간과 개발 비용이 크게 줄어든다</b></td></tr>
+    <tr><td><b class="g">보안과 컴플라이언스</b><br><small>security and compliance</small></td><td>이미 있는 <b class="g">접근 통제 &middot; 보안 &middot; 인프라 승인 체계에 얹어 갈 수</b> 있다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:16px">&#128161; <b>마지막 항목이 조직에서 가장 중요할 수 있습니다</b> &mdash; 새 아키텍처를 들여올 때 가장 오래 걸리는 것이 <b class="r">보안 승인</b>입니다. <b class="g">기존 체계에 얹어 갈 수 있다</b>는 것은 <b class="g">"승인을 다시 받지 않아도 된다"</b>는 뜻이죠.</div>
+  <div class="warn">&#128209; <b class="g">8장 패턴 24 &middot; 26</b>이 여기 걸립니다 &mdash; "독립적인 스케일링"은 <b class="g">에이전트마다 다른 모델과 다른 하드웨어</b>를 쓸 수 있다는 뜻이기도 합니다(가드레일은 SLM, 본문 작성은 큰 모델).</div>
+  <aside>일곱 이점 중 넷이 운영에 관한 것입니다.</aside>
+</section>
+
+<!-- 6 실제 배포 -->
+<section class="slide" data-part="10.1.4 배포">
+  <h2>&#9729;&#65039; 실제 <span class="g">배포</span>는 어떻게</h2>
+  <div class="big">전부 <span class="y">오픈소스 파이썬 구성 요소</span>로 되어 있어서<br>좋아하는 <span class="y">서버리스 애플리케이션 프레임워크</span>에<br>손쉽게 배포할 수 있다</div>
+  <div class="hl" style="margin-top:18px">&#128161; <b>언어 선택에 대한 저자의 솔직한 설명</b><br><br>
+    우리는 <b class="g">프런트엔드와 백엔드를 모두 파이썬</b>으로 만들었지만 &mdash; <b class="gold">주로 이 책의 언어가 파이썬이기 때문</b>이다.</div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:34%">구성</th><th>비고</th></tr>
+    <tr><td><b>파이썬 + 파이썬</b></td><td>이 책의 예제. <b class="gold">책의 언어가 파이썬이라서</b></td></tr>
+    <tr><td><b class="g">TypeScript + TypeScript</b></td><td><b class="g">흔한 방식</b></td></tr>
+    <tr><td><b class="g">TypeScript + 파이썬</b></td><td>언어를 섞어서 &mdash; <b class="g">프런트엔드는 TypeScript, 백엔드는 파이썬</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:16px">&#128209; <b>7장 A2A가 여기서 값을 합니다</b> &mdash; 언어를 섞는 구성이 가능한 이유가 <b class="g">A2A 같은 프로토콜로 에이전트를 웹 URL로 노출</b>할 수 있기 때문입니다. 8장 A2A 슬라이드에서 본 <b class="g">Pydantic(파이썬) &harr; Mastra(TypeScript)</b> 예제가 바로 이 구성이죠.</div>
+  <div class="hl">&#128161; Streamlit을 쓴 것은 <b class="g">예제를 짧게 유지하기 위한 선택</b>이지 권장 스택이 아닙니다.</div>
+  <aside>저자가 자기 선택의 이유를 "책이라서"라고 밝히는 점이 정직합니다.</aside>
+</section>
+
+<!-- 7 10장 한눈에 -->
+<section class="slide" data-part="10.2 요약">
+  <h2>&#128203; 10장 <span class="g">한눈에 보기</span></h2>
+  <table class="t">
+    <tr><th style="width:24%">구성 요소</th><th style="width:44%">하는 일</th><th>불려 나오는 패턴</th></tr>
+    <tr><td><b class="g">에이전트</b></td><td>워크플로의 <b>한 단계</b>를 실행. 서로 독립적이라 <b class="g">프레임워크도 제각각이어도 된다</b></td><td><b class="g">6 &middot; 9 &middot; 13 &middot; 18 &middot; 21 &middot; 29 &middot; 30 &middot; 31</b></td></tr>
+    <tr><td><b class="g">멀티에이전트<br>아키텍처</b></td><td>에이전트를 순서대로 엮음. <b class="g">프레임워크 없이 평범한 코드</b>로</td><td><b class="g">2 &middot; 25 &middot; 28</b></td></tr>
+    <tr><td><b class="g">거버넌스 &middot;<br>모니터링 &middot; 보안</b></td><td>입력 가드레일, 로깅, 성능 저하 테스트, 접근 통제</td><td><b class="g">17 &middot; 27 &middot; 32</b></td></tr>
+    <tr><td><b class="g">학습 파이프라인</b></td><td>UI 조작에서 <b class="g">사람 피드백을 줍고</b>, 성과와 엮어 사후 학습</td><td><b class="g">5 &middot; 15 &middot; 20</b></td></tr>
+    <tr><td><b class="g">데이터 프로그램</b></td><td>유기적 피드백의 <b class="r">다섯 가지 부족분</b>을 데이터 생성 &middot; 큐레이션으로 메움</td><td><b class="g">16 &middot; 31</b></td></tr>
+    <tr><td><b class="g">배포</b></td><td>에이전트별 <b class="g">독립 배포</b>. 모듈성 &middot; 유연성 &middot; 장애 격리 &middot; 독립 스케일링</td><td><b class="g">19</b></td></tr>
+  </table>
+  <div class="hl" style="margin-top:16px">&#128161; <b>32개 중 21개</b>가 이 애플리케이션 하나에 들어갔습니다. 나머지 11개(<b>3 &middot; 4 &middot; 7 &middot; 8 &middot; 10 &middot; 11 &middot; 12 &middot; 14 &middot; 22 &middot; 24 &middot; 26</b>)는 <b class="g">이 유스케이스에 필요하지 않았을 뿐</b>입니다.</div>
+  <aside>패턴 카탈로그를 다 쓰는 것이 목표가 아니라는 점이 중요합니다.</aside>
+</section>
+
+<!-- 8 10.2 요약 -->
+<section class="slide" data-part="10.2 요약">
+  <h2>&#128220; 10.2 &mdash; 이 장이 <span class="g">보여 준 것</span></h2>
+  <p>이 장에서는 이 책 전체에서 다룬 설계 패턴들을 통합해 <b class="g">프로덕션급 에이전트 애플리케이션을 만드는 법</b>을 보여 주었다.</p>
+  <div class="steps" style="margin-top:14px">
+    <div class="st"><span class="n">1</span><span class="t"><b class="g">단순하고 조립 가능한 패턴</b> 위에서 교육용 콘텐츠를 만드는 <b class="g">AI 보조 또는 완전 자동 워크플로</b>를 구성하는 법</span></div>
+    <div class="st"><span class="n">2</span><span class="t">애플리케이션을 <b class="g">코파일럿 모드와 에이전트 모드 양쪽</b>으로 실행하는 것</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b class="g">지속적인 학습 프로그램</b>을 통해 코파일럿 모드를 <b class="g">시간이 갈수록 더 자율적으로</b> 만들어 가는 것</span></div>
+    <div class="st"><span class="n">4</span><span class="t">설치 과정 &middot; <b>LLM 설정</b> &middot; <b>로깅 설정</b></span></div>
+    <div class="st"><span class="n">5</span><span class="t">핵심 아키텍처 구성 요소 &mdash; 개별 에이전트, 오케스트레이션, 입력 가드레일, <b class="g">학습 파이프라인의 결정적 역할</b>, <b class="g">튼튼한 데이터 프로그램의 중요성</b></span></div>
+  </div>
+  <div class="big" style="margin-top:18px">생성형 AI는 <span class="y">흥미롭고 강력한 기술</span>이며<br>이 책에서 다룬 패턴들은 그것을<br><span class="y">현실의 유스케이스에서 실용적이고 쓸 만하게</span><br>만들어 준다</div>
+  <div class="hl" style="margin-top:18px">&#127881; <b>책의 마지막 문장</b><br><br><b class="g">"여러분이 이것으로 무엇을 만들지, 우리는 몹시 기대하고 있다."</b></div>
+  <aside>32개 패턴을 지나온 끝에 저자들이 남긴 말입니다.</aside>
+</section>
+
+<!-- 9 열 개 장 되돌아보기 -->
+<section class="slide" data-part="책 전체 마무리">
+  <h2>&#128218; 열 개 장을 <span class="g">되돌아보며</span></h2>
+  <table class="t">
+    <tr><th style="width:8%">장</th><th style="width:30%">주제</th><th style="width:16%">패턴</th><th>한 줄로</th></tr>
+    <tr><td><b>1</b></td><td>패턴과 모델</td><td>&mdash;</td><td>토큰 &middot; 로짓 &middot; 에이전트적 &mdash; <b>공용어 만들기</b></td></tr>
+    <tr><td><b>2</b></td><td>콘텐츠 스타일의 제어</td><td><b class="g">1~5</b></td><td><b>무엇이 나올지</b>를 제약한다</td></tr>
+    <tr><td><b>3</b></td><td>지식 더하기: 베이스</td><td><b class="g">6~8</b></td><td>모델이 <b>모르는 것을 넣어 준다</b></td></tr>
+    <tr><td><b>4</b></td><td>지식 더하기: 싱코페이션</td><td><b class="g">9~12</b></td><td>넣어 준 지식을 <b>더 잘 꺼낸다</b></td></tr>
+    <tr><td><b>5</b></td><td>모델 능력 확장하기</td><td><b class="g">13~16</b></td><td>모델에게 <b>새로운 일을 가르친다</b></td></tr>
+    <tr><td><b>6</b></td><td>신뢰성 높이기</td><td><b class="g">17~20</b></td><td>확률적인 모델을 <b>믿을 수 있게</b></td></tr>
+    <tr><td><b>7</b></td><td>에이전트가 행동하게 하기</td><td><b class="g">21~23</b></td><td>말하는 AI에서 <b>행동하는 AI로</b></td></tr>
+    <tr><td><b>8</b></td><td>제약 다루기</td><td><b class="g">24~28</b></td><td>돌아가는 LLM을 <b>감당 가능한 LLM으로</b></td></tr>
+    <tr><td><b>9</b></td><td>안전장치 설치하기</td><td><b class="g">29~32</b></td><td>틀릴 자리를 <b>줄이고 &middot; 찾고 &middot; 막는다</b></td></tr>
+    <tr><td><b class="gold">10</b></td><td><b class="gold">조립 가능한 에이전트 워크플로</b></td><td><b class="gold">&mdash;</b></td><td><b class="gold">필요한 것만 골라 조립한다</b></td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; <b>흐름이 보입니다</b> &mdash; <b class="g">2~5장은 모델을 잘 쓰는 법</b>, <b class="g">6~7장은 믿고 맡기는 법</b>, <b class="g">8~9장은 실제로 내보내는 법</b>, <b class="g">10장은 그 전부를 엮는 법</b>.</div>
+  <aside>이 저장소의 45개 덱이 이 열 줄을 펼친 것입니다.</aside>
+</section>
+
+<!-- 10 반복되는 태도 -->
+<section class="slide" data-part="책 전체 마무리">
+  <h2>&#11088; 책 전체에서 <span class="g">반복된 태도</span></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b class="g">단순한 것을 먼저</b> &mdash; 패턴 23 <b>"단일 에이전트로 되면 그냥 그렇게"</b>, 패턴 30 <b>"먼저 패턴 29가 되는지 보라"</b>, 패턴 32 <b>"더 저렴하게 막을 방법이 있을지도"</b>, 10장 <b>"프레임워크 없이"</b></span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b class="g">측정할 수 없으면 개선할 수 없다</b> &mdash; 패턴 17 채점표, 패턴 27 저하 지점, 10장 <b>비즈니스 지표</b>(매력도 &middot; 몰입도 &middot; 기능적 성과)</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b class="g">위험은 없애는 게 아니라 옮기는 것</b> &mdash; 패턴 29는 <b>검토 가능한 24장 안으로</b>, 패턴 30은 <b>사실을 DB로</b>, 패턴 32는 <b>한 겹의 계층으로</b></span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b class="g">숫자로 판단하라</b> &mdash; 0.95<sup>8</sup> &asymp; 66%, 멀티에이전트 <b>40~80% 실패</b>, 연속 배칭 <b>20배</b>, 재시도 <b>0.1<sup>3</sup> = 0.1%</b></span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b class="g">사람을 설계에 넣어라</b> &mdash; human-in-the-loop, <b>UX 디자이너가 팀에 있어야 한다</b>, 자동화 역설 대응</span></div>
+  </div>
+  <div class="big" style="margin-top:18px">이 책이 반복해서 말한 것<br><span class="y">"화려한 것보다 확인 가능한 것"</span></div>
+  <aside>32개 패턴을 관통하는 다섯 가지 태도입니다.</aside>
+</section>
+
+<!-- 11 마무리 -->
+<section class="slide" data-part="책 전체 마무리">
+  <div class="cover">
+    <h1>&#127881; <span class="g">32개 패턴</span>, 여기까지</h1>
+    <div class="big" style="margin-top:24px">프레임워크를 통째로 들여오는 대신<br><span class="y">작은 패턴들을 조립해</span><br>한 유스케이스를 관통하는 워크플로를 만든다<br><br><small><b class="g">"여러분이 이것으로 무엇을 만들지,<br>우리는 몹시 기대하고 있다."</b></small></div>
+    <p class="sub" style="margin-top:22px">10장 &mdash; 완료 &nbsp;&middot;&nbsp; <b>『에이전트 시대의 AI 시스템 설계』 전체 완료</b></p>
+  </div>
+  <aside>1장부터 10장까지, 32개 패턴이 모두 끝났습니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>
