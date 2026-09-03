@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>리플렉션 · 패턴 18 (6장)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 6 &middot; Pattern 18</div>
+    <h1 style="margin:18px 0"><span class="g">리플렉션</span></h1>
+    <p class="sub">Reflection &mdash; 확정하기 전에 <b>스스로 평가하고 고쳐 쓴다</b></p>
+  </div>
+  <aside>Andrew Ng이 꼽은 네 개의 핵심 에이전트 패턴 중 하나입니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 6.2</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>6.2.1 문제</b> &mdash; API 호출은 무상태다</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>6.2.2 해법</b> &mdash; 비평 단계 끼워 넣기</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>6.2.3 예제</b> &mdash; 로고 디자인</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>6.2.4 고려사항</b> &mdash; 비용 대 품질</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>6.2.5 참고문헌</b></span></div>
+  </div>
+  <div class="warn">&#9888;&#65039; 흔히 <b>자기 반성(self-reflection)</b>이라 부르지만 정확한 표현이 아닙니다 &mdash; <b class="r">평가를 LLM이 해야 할 이유는 전혀 없고</b>, 하물며 <b class="r">콘텐츠를 생성한 그 LLM이 해야 할 이유는 더더욱 없습니다.</b></div>
+  <div class="hl">&#128161; 반성하고 개선하는 것은 <b class="g">AI 시스템 전체</b>이며, 응답을 생성하는 <b>파운데이션 모델 자체는 그대로</b>입니다.</div>
+  <aside>이 구분이 중요합니다. 모델을 바꾸는 게 아니라 시스템에 단계를 하나 더하는 거예요.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="6.2.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">6.2.1 문제</h2>
+    <div class="who">API 호출은 무상태다</div>
+  </div>
+  <aside>웹 인터페이스에서 되던 일이 API에서는 안 됩니다.</aside>
+</section>
+
+<!-- 4 무상태 -->
+<section class="slide" data-part="6.2.1 문제">
+  <h2>&#128274; 웹에서는 되는데 <span class="r">API에서는</span></h2>
+  <div class="grid2">
+    <div class="box" style="border-color:var(--gr)"><h3 class="g">&#9989; 웹 인터페이스 (ChatGPT · Perplexity)</h3><p style="margin:0">최적이 아니거나 틀린 응답이 오면 <b>후속 질문</b>을 던져 무엇이 잘못됐는지 말하거나 <b>구체적 변경을 제안</b>해서 앞선 응답을 고치게 할 수 있다</p></div>
+    <div class="box" style="border-color:var(--red)"><h3 class="r">&#10060; API 호출</h3><p style="margin:0"><b class="r">무상태(stateless)</b>다 &mdash; 이전 대화를 기억하지 않는다</p></div>
+  </div>
+  <div class="big" style="margin-top:16px">두 개의 질문</div>
+  <div class="steps" style="margin-top:14px">
+    <div class="st"><span class="n">1</span><span class="t">어떻게 LLM이 <b>피드백이나 비평에 반응해</b> 앞선 응답을 고치게 할 것인가?</span></div>
+    <div class="st"><span class="n">2</span><span class="t">앞선 응답을 고치는 데 쓸 수 있는 <b class="g">비평을 자동으로 생성</b>하려면 어떻게 해야 하는가?</span></div>
+  </div>
+  <div class="hl">&#128161; 두 번째가 핵심입니다. 사람이 매번 비평을 써 줄 수는 없으니 <b class="g">비평도 자동으로 만들어야</b> 합니다 &mdash; 여기서 <b>패턴 17</b>이 들어옵니다.</div>
+  <aside>첫 번째는 프롬프트에 이력을 붙이면 되지만, 두 번째가 진짜 문제입니다.</aside>
+</section>
+
+<!-- 5 PART 2 -->
+<section class="slide" data-part="6.2.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">6.2.2 해법</h2>
+    <div class="who">비평 단계 끼워 넣기</div>
+  </div>
+  <aside>한 번 호출하는 대신 두 번 이상 호출합니다.</aside>
+</section>
+
+<!-- 6 루프 -->
+<section class="slide" data-part="6.2.2 해법">
+  <h2>&#128260; <span class="g">퇴고 루프</span></h2>
+  <div class="chain">
+    <div class="cell"><small>1</small><b>사용자<br>프롬프트로 생성</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>2</small><b class="g">평가자에게<br><small style="color:var(--soft)">클라이언트가 아니라</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gold)"><small>3</small><b class="gold">비평으로<br>프롬프트 수정</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>4</small><b>재생성</b></div>
+    <span class="ar">&#8630;</span>
+  </div>
+  <p style="margin-top:14px">이 순환은 응답이 <b class="g">품질 기준선을 넘을 때까지</b> 반복된다.</p>
+  <table class="t">
+    <tr><th style="width:26%">평가자는 누구인가</th><th>내용</th></tr>
+    <tr><td><b>LLM</b></td><td>패턴 17 LLM-as-Judge처럼</td></tr>
+    <tr><td><b>외부 도구</b></td><td>컴파일러 · 샌드박스 등</td></tr>
+    <tr><td><b>사람</b></td><td>가능하다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:12px">&#128161; <b class="g">핵심</b> &mdash; 평가자는 <b>점수만 주는 것이 아니라</b> 응답이 <b class="g">어디서 모자라는지 설명하는 비평</b>을 제공합니다. 그 비평으로 <b>수정된 프롬프트</b>를 만듭니다.</div>
+  <aside>점수만으로는 고칠 수 없습니다. "어디가 왜 부족한지"가 있어야 다음 프롬프트를 만들 수 있어요.</aside>
+</section>
+
+<!-- 7 두 변형 -->
+<section class="slide" data-part="6.2.2 해법">
+  <h2>&#128295; 두 가지 <span class="g">사소한 변형</span></h2>
+  <div class="box">
+    <h3>&#9312; 최대 시도 횟수</h3>
+    <p style="margin:6px 0 0">무한 루프를 피하려면 <b>최대 재시도 횟수</b>를 정한다. <b class="g">재시도를 정확히 한 번만</b> 하는 특수한 경우가 꽤 흔한데, <b class="g">"충분히 좋다"가 무엇인지 정해야 하는 부담을 피할 수 있기</b> 때문이다.</p>
+    <p style="margin:8px 0 0">한 번만 재시도한다면 <b>제로샷 CoT</b>(패턴 13) 방식으로 <b>원래 답을 다시 검토해 달라</b>고 요청할 수 있다.</p>
+  </div>
+  <div class="box" style="margin-top:12px">
+    <h3>&#9313; 대화 상태</h3>
+    <p style="margin:6px 0 0">대화형 시스템에서는 평가자를 <b class="g">참가자 중 하나로</b> 취급할 수 있고, 그러면 비평은 <b>그 참가자가 보낸 메시지</b>가 된다. 이전 프롬프트에 <b>메시지 이력</b>(그대로든 요약이든)을 덧붙이는 것만으로 프롬프트를 수정할 수 있다.</p>
+    <pre style="margin-top:8px">for m in self._session_memory[message.session_id]:
+    if isinstance(m, <b>CodeReviewResult</b>):
+        messages.append(UserMessage(content=m.review,
+                                    source=<b>"Reviewer"</b>))
+    elif isinstance(m, CodeReviewTask):
+        messages.append(AssistantMessage(..., source=<b>"Coder"</b>))
+    elif isinstance(m, CodeWritingTask):
+        messages.append(UserMessage(content=m.task, source="User"))</pre>
+  </div>
+  <div class="hl">&#128161; 평가자를 <b>"Reviewer"라는 화자</b>로 두면, 무상태 문제가 <b class="g">대화 이력을 붙이는 문제</b>로 단순해집니다.</div>
+  <aside>Autogen 예시입니다. 코더와 리뷰어가 대화하는 구조로 만든 거죠.</aside>
+</section>
+
+<!-- 8 PART 3 -->
+<section class="slide" data-part="6.2.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">6.2.3 예제</h2>
+    <div class="who">로고 디자인 &mdash; 엔드투엔드</div>
+  </div>
+  <aside>이미지 생성에도 리플렉션이 적용된다는 걸 보여 주는 예제입니다.</aside>
+</section>
+
+<!-- 9 평가자 -->
+<section class="slide" data-part="6.2.3 예제">
+  <h2>&#9312; 좋은 <span class="g">평가자</span> 만들기</h2>
+  <p>첫 단계는 평가자를 만드는 것. <b>패턴 17</b>을 써서 로고용 채점 기준을 제공한다.</p>
+  <pre>{company}에 대해 제안된 다음 로고를 분석하라.
+다음 각 기준에 대해 <b>1~5점</b>으로 채점하라.
+  • 로고만 보고 <b>회사 이름</b>이 무엇인지 명확하다
+  • 로고와 이미지가 <b>이 회사가 하는 일에 적절</b>하다
+  • <b>잘 알려진 브랜드나 경쟁사와 충돌</b>하지 않는다
+  • 로고 디자인이 <b>군더더기 없고 깔끔</b>하다
+  • <b>눈에 띄고 알아보기 쉽다</b>
+점수의 이유를 설명하라.</pre>
+  <pre style="margin-top:10px">agent = Agent(CLAUDE,
+    model_settings = {<b>"temperature": 0</b>})   <span class="g"># LLM-as-Judge 이므로</span>
+result = agent.run_sync(prompt, ImageUrl(url="..."))</pre>
+  <div class="box" style="margin-top:12px"><h3>Pydantic 로고에 대한 응답 (발췌)</h3><p style="margin:6px 0 0"><i><b>적절성(4/5)</b>: 분홍색의 기하학적 <b>피라미드/삼각형</b> 심벌은 데이터 검증 라이브러리에 잘 어울린다. 이 형태는 <b>구조·검증·프레임워크</b>를 연상시킨다 &hellip; 다만 이 회사의 <b class="r">AI 에이전트 프레임워크나 Logfire 관측 플랫폼을 특별히 가리키지는 않아서</b> 만점을 주지 않았다.</i></p></div>
+  <aside>감점 이유까지 구체적으로 나옵니다. 이게 비평의 재료가 됩니다.</aside>
+</section>
+
+<!-- 10 임계값 문제 -->
+<section class="slide" data-part="6.2.3 예제">
+  <h2>&#9888;&#65039; <span class="r">임계값을 정하기가 어렵다</span></h2>
+  <pre>def score(self) -&gt; float:
+    return (10 * self.clarity +
+            10 * self.appropriateness +
+            <b>30 * self.no_conflicts</b> +
+            <b>30 * self.clean_design</b> +
+            20 * self.easy_to_recognize) / 500.0</pre>
+  <div class="grid2" style="margin-top:14px">
+    <div class="box"><h3>&#127993; PydanticAI 로고</h3><p style="margin:0;font-size:1.4rem"><b class="g">0.9</b>점</p></div>
+    <div class="box"><h3>&#127843; 초밥집 로고 (첫 시안)</h3><p style="margin:0;font-size:1.4rem"><b class="r">0.9</b>점</p></div>
+  </div>
+  <div class="big" style="margin-top:16px">놀랍게도 이건 <span class="y">흔한 문제</span>다</div>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; LLM은 후하게 채점하는 경향이 있어서 <b class="r">"쓸 만한" 디자인과 "훌륭한" 디자인을 구별할 수 있는 채점 기준을 만들기 어렵습니다.</b></div>
+  <div class="hl">&#128161; <b class="g">간단한 우회책</b> &mdash; 비평을 <b>정확히 한 라운드만</b> 돈다. 그러면 <b class="g">임계값이 필요 없다.</b></div>
+  <aside>패턴 17의 "관대함" 문제가 실제로 어떻게 나타나는지 보여 주는 사례입니다.</aside>
+</section>
+
+<!-- 11 비평 적용 -->
+<section class="slide" data-part="6.2.3 예제">
+  <h2>&#9313; 비평을 <span class="g">지시문으로</span> 바꾸기</h2>
+  <div class="plabel">비평 → 디자이너용 지시문 생성 프롬프트</div>
+  <pre>다음 피드백을 사용해, <b>로고 디자이너에게 되돌려 보낼</b>
+상세한 추가 지시문을 생성하라.
+{critique}</pre>
+  <div class="box" style="margin-top:12px;border-color:var(--gr)"><h3 class="g">생성된 지시문 (발췌)</h3><p style="margin:6px 0 0"><b>## 제안하는 개선 사항:</b><br><b>1. 독창성 높이기</b>(독창성 4/5 대응)<br>&nbsp;&nbsp;• 다른 초밥집과 차별화하기 위해 니기리 일러스트에 <b class="g">미묘하고 독특한 변주</b>를 더하는 것을 고려하라(<b>특징적인 칼자국</b>, 밥의 독특한 모양, 생선이 밥 위로 드리워지는 특유의 방식 등)<br>&nbsp;&nbsp;• Hiroshi만의 접근이나 전문성을 나타내는 <b>작고 단순한 요소</b>를 탐색하라</p></div>
+  <div class="hl" style="margin-top:12px">&#128161; 점수 <b>"4/5"</b>가 <b class="g">"이렇게 바꿔라"</b>는 실행 가능한 지시로 번역된 것에 주목하세요. 이것이 패턴 17과 18의 차이입니다.</div>
+  <aside>비평을 그대로 넘기지 않고 "디자이너가 읽을 지시문"으로 한 번 변환하는 게 요령입니다.</aside>
+</section>
+
+<!-- 12 재생성 -->
+<section class="slide" data-part="6.2.3 예제">
+  <h2>&#9314; <span class="g">재생성</span></h2>
+  <pre>def design_logo(company, company_description, output_filename,
+                <b>previous_logo</b>, <b>changes_to_make</b>) -&gt; str:
+    prompt = f"""
+        Here's a proposed logo image for {company}.
+        Please <b>edit the image</b> and make the following changes.
+        <b>Return only the final image</b> after all edits.
+        {changes_to_make}"""
+    previous_image = Image.open(previous_logo)
+    contents = [prompt, <b>previous_image</b>]
+
+    response = client.models.generate_content(model=GEMINI,
+        contents=contents,
+        config=types.GenerateContentConfig(
+            response_modalities=['TEXT', 'IMAGE']))</pre>
+  <pre style="margin-top:10px"><span class="g"># 여러 시안 생성</span>
+def regenerate(n=3):
+    for x in range(n):
+        design_logo(..., previous_logo=image_file,
+                    changes_to_make=extra_instruction)</pre>
+  <div class="hl" style="margin-top:12px">&#127912; 결과 &mdash; 시안 중 하나에서 <b class="g">평가자가 제안한 변경 사항 일부가 반영</b>됐습니다. 최초 로고(Gemini)와 리플렉션 한 라운드 뒤 로고를 나란히 보면 차이가 보입니다.</div>
+  <div class="warn">&#128161; <b>모델 조합</b> &mdash; 이미지 생성은 <b>Gemini</b>, 비평은 <b class="g">Claude</b>. 서로 다른 모델을 쓴 것이 <b>자기 편향 회피</b>입니다.</div>
+  <aside>이전 이미지와 변경 지시를 함께 넘겨 "편집"하게 하는 게 핵심입니다. 처음부터 다시 그리게 하면 안 돼요.</aside>
+</section>
+
+<!-- 13 PART 4 -->
+<section class="slide" data-part="6.2.4 고려사항">
+  <div class="part">
+    <div class="pno">4</div>
+    <h2 style="margin:0">6.2.4 고려사항</h2>
+    <div class="who">비용 대 품질</div>
+  </div>
+  <aside>AI 시스템이 더 복잡하고 중대한 과업을 맡게 되면서 반성 능력은 믿을 만한 성능의 필수 조건이 되었습니다.</aside>
+</section>
+
+<!-- 14 왜 결정적인가 -->
+<section class="slide" data-part="6.2.4 고려사항">
+  <h2>&#9989; 왜 <span class="g">점점 더 결정적</span>인가</h2>
+  <table class="t">
+    <tr><th style="width:26%">이유</th><th>내용</th></tr>
+    <tr><td><b>품질과 견고함</b></td><td>결과를 사용자에게 내놓기 <b class="g">전에</b> 오류를 잡아낸다. 검토 과정을 <b>로깅</b>해 두면 <b class="g">엣지 케이스와 잠재적 실패 모드</b>를 파악하는 데도 도움이 된다</td></tr>
+    <tr><td><b>추론·계획 한계의 완화</b></td><td>추론 과정의 <b>반복적 정련</b>. 새롭고 열린 결말의 과업에서는 <b class="g">미리 접근법을 계획하는 것보다, 일단 한 번 해 보고 어떻게 개선할지 판단하는 것</b>이 대개 더 쉽다</td></tr>
+    <tr><td><b>투명성</b></td><td><b>명시적인 추론 흔적</b>을 남기며, 이것이 <b class="g">설명 가능성</b>을 높인다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; 두 번째가 5장 패턴 14(생각의 나무)와 대비됩니다 &mdash; ToT는 <b>미리 여러 계획을 세워 비교</b>하고, 리플렉션은 <b class="g">일단 만들고 고친다</b>는 쪽입니다.</div>
+  <aside>Andrew Ng의 네 에이전트 패턴 중 하나라는 게 이 패턴의 위상을 보여 줍니다.</aside>
+</section>
+
+<!-- 15 비용 -->
+<section class="slide" data-part="6.2.4 고려사항">
+  <h2>&#9878;&#65039; 트레이드오프 &mdash; <span class="r">비용 대 품질</span></h2>
+  <div class="warn">&#9888;&#65039; LLM 추론 호출을 <b class="r">여러 번</b> 하므로 계산 비용과 지연이 늘어납니다. 게다가 많은 프런티어 API 제공자가 <b class="r">가용성</b> 문제로 씨름하는 중이라, 첫 호출을 성공시키는 데만도 <b>재시도 전략</b>이 필요한 경우가 많습니다 &rarr; 리플렉션은 <b class="r">테일 레이턴시를 수용 가능한 한계 너머로</b> 밀어 올릴 수 있습니다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:24%">유스케이스</th><th>판단</th></tr>
+    <tr><td><b class="g">코드 생성</b></td><td>구문 오류와 논리적 버그를 줄인다. 한 라운드의 상대 비용은 <b class="g">빌드가 깨졌을 때의 비용에 비하면 무시할 만해서</b> <b>여러 단계의 반성</b>을 포함하는 경우가 많다 &mdash; 평가 단계에 <b>컴파일러나 샌드박스</b>까지 끌어들인다</td></tr>
+    <tr><td><b class="r">챗봇 · 실시간 게임 엔진</b></td><td>반성이 <b class="r">받아들일 수 없는 지연</b>을 더할 수 있다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:12px">&#128161; 문제의 특성, 가용 시간, 기대되는 품질 개선의 <b class="g">비즈니스 임팩트</b>에 근거해 <b>반성 깊이를 조절하는 자기 나름의 휴리스틱</b>을 개발해 두세요.</div>
+  <div class="warn">&#127919; 여러 시안을 <b>마지막 단계까지 미룰 필요가 없습니다</b> &mdash; 첫 단계부터 여러 시안을 만들고 <b class="g">빔 서치 비슷하게</b> 각 단계마다 부진한 후보를 쳐낼 수도 있습니다. 물론 <b class="r">비용은 더 늘어납니다.</b></div>
+  <aside>코드 생성이 리플렉션의 최적 유스케이스인 이유가 명확합니다. 실패 비용이 크고 자동 평가자가 있으니까요.</aside>
+</section>
+
+<!-- 16 평가 -->
+<section class="slide" data-part="6.2.4 고려사항">
+  <h2>&#127919; <span class="g">평가를 제대로 하기</span></h2>
+  <div class="big">리플렉션 패턴에서<br><span class="y">가장 중요한 부분은 평가 단계</span>다</div>
+  <p style="margin-top:16px">그러니 평가가 <b>견고하고</b>, 무엇이 응답을 <b class="g">목적에 부합하게</b> 만드는지를 제대로 짚어 내는지 확인하라.</p>
+  <div class="box" style="margin-top:14px;border-color:var(--gr)">
+    <h3 class="g">&#9989; 자기 편향 피하기</h3>
+    <p style="margin:6px 0 0">LLM은 자기 작업물을 후하게 평가하지만, <b class="g">실제 작업을 한 LLM과 다른 LLM으로 평가</b>하면 피할 수 있다.</p>
+    <div class="chain" style="margin:10px 0 0">
+      <div class="cell"><small>생성</small><b>Gemini<br><small style="color:var(--soft)">로고 이미지</small></b></div>
+      <span class="ar">&rarr;</span>
+      <div class="cell" style="border-color:var(--gr)"><small>비평</small><b class="g">Claude</b></div>
+    </div>
+  </div>
+  <div class="hl" style="margin-top:12px">&#128209; 관대함 문제를 우회하는 다른 권고들은 <b>패턴 17의 「고려사항」</b>을 보세요 &mdash; 거친 척도 · 직접 비교 · 그룹 보상 · 기대치 낮추기.</div>
+  <aside>평가가 나쁘면 리플렉션은 잘못된 방향으로 고쳐 씁니다. 안 하느니만 못할 수도 있어요.</aside>
+</section>
+
+<!-- 17 PART 5 -->
+<section class="slide" data-part="6.2.5 참고문헌">
+  <h2>&#128218; 6.2.5 <span class="g">참고문헌</span> &mdash; 심리학에서 출발</h2>
+  <div class="chain">
+    <div class="cell"><small>1979</small><b>인지 모니터링<br><small style="color:var(--soft)">Flavell</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>2018</small><b>마음 이론 RL<br><small style="color:var(--soft)">Rabinowitz 외</small></b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell" style="border-color:var(--gr)"><small>2023~</small><b class="g">Reflexion ·<br>자기 정련</b></div>
+  </div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:30%">출처</th><th>기여</th></tr>
+    <tr><td><b>Flavell (1979)</b></td><td>심리학의 <b>메타인지 향상을 위한 인지 모니터링</b> &mdash; 출발점</td></tr>
+    <tr><td><b>Rabinowitz 외 (2018)</b></td><td><b>마음 이론의 강화학습</b></td></tr>
+    <tr><td><b>Shinn 외 (2023)</b></td><td><b class="g">Reflexion</b> &mdash; 언어적 피드백</td></tr>
+    <tr><td><b>Madaan 외 (2023)</b></td><td><b>자기 정련</b>(self-refine)</td></tr>
+    <tr><td><b>Asai 외 (2023)</b></td><td><b>Self-RAG</b> &mdash; RAG 시스템에서 품질과 사실성을 높이는 데 <small>(4장 패턴 11에서 다룸)</small></td></tr>
+    <tr><td><b>Dou 외 (2024)</b></td><td>생성된 <b>코드의 버그</b>를 줄이는 데</td></tr>
+    <tr><td><b>Amazon</b></td><td>생성된 <b class="g">상품 리스팅</b>이 완전하고 정확한지 보장. 검증용 LLM은 <b>리스팅 성과에 부정적 영향을 주는 특성</b>도 함께 찾아낸다</td></tr>
+  </table>
+  <div class="hl">&#128161; 뿌리가 <b class="g">1979년 심리학</b>이라는 게 흥미롭습니다 &mdash; "자기 생각을 관찰하는 능력"이라는 인간의 메타인지 개념이 AI로 옮겨온 것입니다.</div>
+  <aside>Amazon 사례에서 검증용 LLM이 "성과에 부정적인 특성"까지 찾아낸다는 게 인상적입니다. 오류 검출을 넘어서죠.</aside>
+</section>
+
+<!-- 18 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#9999;&#65039; 제출 전에 <span class="g">퇴고</span></h1>
+    <div class="big" style="margin-top:24px">채점 + <span class="y">고쳐 쓰기 루프</span><br><br><small>그 채점 자리에 보통 <b>LLM-as-Judge</b>가 들어간다<br>임계값이 어려우면 <b>딱 한 라운드만</b> 돌면 된다</small></div>
+    <p class="sub" style="margin-top:22px">패턴 18 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 19 의존성 주입</b> (그런데 이걸 어떻게 테스트하지?)</p>
+  </div>
+  <aside>생성 → 평가 → 재생성 체인이 생겼습니다. 다음 패턴은 이런 체인을 어떻게 테스트할 것인가를 다룹니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

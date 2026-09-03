@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>심판자 LLM · 패턴 17 (6장)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 6 &middot; Pattern 17</div>
+    <h1 style="margin:18px 0">심판자 <span class="g">LLM</span></h1>
+    <p class="sub">LLM-as-Judge &mdash; <b>사람 평가</b>와 <b>자동 지표</b> 사이의 중간 지대</p>
+  </div>
+  <aside>2장 패턴 5, 4장 패턴 10, 5장 패턴 14·16에서 "평가한다"고만 하고 넘어갔던 자리가 전부 이 패턴입니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="g">구조</span> <small>&mdash; 책 6.1</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>6.1.1 문제</b> &mdash; 열린 결말 과업의 평가, 전통적 접근 셋의 한계</span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>6.1.2 해법</b> &mdash; 프롬프팅 / ML / 파인튜닝 세 방식</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>6.1.3 예제</b> &mdash; 투표 안내문 평가</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>6.1.4 고려사항</b> &mdash; 불일치 · 관대함 · 편향</span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>6.1.5 참고문헌</b></span></div>
+  </div>
+  <div class="hl">&#128161; <b>한 줄로</b> &mdash; <b class="g">채점표를 만들어 LLM에게 넘기고</b>, 데이터가 쌓이면 채점표 자체를 보정해 나간다.</div>
+  <aside>효과적인 평가는 GenAI를 제대로 쓰기 위한 기본기입니다. 견고한 평가가 없으면 출력이 기준을 충족하는지 판단할 길이 없어요.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="6.1.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">6.1.1 문제</h2>
+    <div class="who">열린 결말 과업을 어떻게 평가하나</div>
+  </div>
+  <aside>쥐덫의 성능은 쥐를 몇 마리 잡았는지 세면 됩니다. 마케팅 콘텐츠는 그럴 수가 없죠.</aside>
+</section>
+
+<!-- 4 세 접근의 한계 -->
+<section class="slide" data-part="6.1.1 문제">
+  <h2>&#10060; 전통적 접근 <span class="r">셋의 한계</span></h2>
+  <table class="t">
+    <tr><th style="width:22%">접근</th><th>장점</th><th>한계</th></tr>
+    <tr><td><b>성과 측정</b><br><small>기업 평가의 <b class="gold">황금 기준</b></small></td><td>브로슈어가 이끌어 낸 <b>매출 증가</b>로 알 수 있어야 한다</td><td>매출 증가는 <b class="r">수많은 요인 탓</b>으로 돌릴 수 있다. 어떤 두 고객도, 어떤 두 날도 같지 않다 &rarr; 그래서 <b class="g">성과 프록시</b>(참여도·클릭)를 쓴다</td></tr>
+    <tr><td><b>사람의 평가</b></td><td>콘텐츠를 <b class="g">실제로 배포하지 않고도</b> 할 수 있다</td><td><b class="r">확장하기 어렵다</b> &mdash; 비싸고, 시간이 많이 들고, <b>개인 편향</b>의 영향을 받고, <b>전문가 가용성</b>에 묶인다</td></tr>
+    <tr><td><b>자동 지표</b><br><small>BLEU · ROUGE</small></td><td><b class="g">체계적으로 계산</b>되는 점수. 참조 답안과 공유하는 <b>n-gram</b>을 찾는 방식</td><td><b class="r">의미 · 뉘앙스 · 사실 정확성을 포착 못 한다.</b> 그리고 <b class="r">이끌어 내려는 성과와 무관</b>하다 &mdash; 중장비 판매용 카피에 맞게 <b>BLEU를 커스터마이즈할 수 없다</b></td></tr>
+  </table>
+  <div class="big" style="margin-top:14px">세 접근의 <span class="y">장점만 결합</span>하고 싶다<br><small>성과의 좋은 프록시 · 배포 없이 가능 · 체계적 계산<br><b>+ 빠르고 확장 가능하고 커스터마이즈 가능</b></small></div>
+  <aside>다중 슬롯머신 같은 접근으로 프록시 테스트 시간을 줄일 수도 있습니다.</aside>
+</section>
+
+<!-- 5 PART 2 -->
+<section class="slide" data-part="6.1.2 해법">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">6.1.2 해법</h2>
+    <div class="who">프롬프팅 &middot; ML &middot; 파인튜닝</div>
+  </div>
+  <aside>세 방식 모두 프롬프팅을 품고 있습니다. 보통 프롬프팅으로 시작한 뒤 ML이나 파인튜닝으로 개선해 나가요.</aside>
+</section>
+
+<!-- 6 세 방식 -->
+<section class="slide" data-part="6.1.2 해법">
+  <h2>&#127891; 세 방식 &mdash; <span class="g">글짓기 대회 심사</span> 비유</h2>
+  <div class="chain">
+    <div class="cell" style="border-color:var(--gr)"><small>1</small><b class="g">프롬프팅</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>2</small><b>ML</b></div>
+    <span class="ar">&rarr;</span>
+    <div class="cell"><small>3</small><b>파인튜닝</b></div>
+  </div>
+  <table class="t" style="margin-top:16px">
+    <tr><th style="width:18%">방식</th><th style="width:34%">비유</th><th>필요한 것 · 쓸 때</th></tr>
+    <tr><td><b class="g">프롬프팅</b></td><td>심사위원에게 <b>채점표를 건네고</b> "이대로 매겨 주세요"</td><td><b>채점 기준 글 하나</b> &mdash; <b class="g">거의 항상 여기서 시작</b></td></tr>
+    <tr><td><b>ML</b></td><td>항목별 점수를 모아 <b>실제 수상작 데이터</b>와 대조해 "이 항목은 사실 별로 안 중요하더라"를 학습</td><td><b>과거 성과 데이터</b> &mdash; "이 점수가 <b>진짜 매출로 이어지나?</b>"를 알고 싶을 때</td></tr>
+    <tr><td><b>파인튜닝</b></td><td>심사위원을 <b>우리 대회 전문가들의 채점 이력으로 재교육</b></td><td><b>사람 전문가의 채점 이력</b> &mdash; 기준을 <b class="g">글로 쓰기 어려울 때</b>(설득력, 의료 판단)</td></tr>
+  </table>
+  <div class="hl">&#128161; ML 방식은 프롬프팅의 <b>출력을 ML 모델로</b> 보내고, 파인튜닝 방식은 프롬프팅에 쓰이던 <b>LLM을 어댑터 튜닝(패턴 15)으로 갈아 끼웁니다.</b></div>
+  <aside>세 방식이 배타적이지 않고 발전 단계에 가깝습니다.</aside>
+</section>
+
+<!-- 7 프롬프팅 -->
+<section class="slide" data-part="6.1.2 해법">
+  <h2>&#9312; <span class="g">프롬프팅</span> &mdash; 채점 기준 만들기</h2>
+  <pre>기사와 요약이 주어진다. 다음 각 기준에 대해 <b>1~5 범위</b>의 점수를 매겨라.
+- 사실 정확성   - 핵심 논점의 완결성
+- 간결성        - 명료성
+<b>각 점수마다 간단한 근거를 함께 제시하라.</b>
+기사 {article} / 요약 {summary} / 점수:</pre>
+  <div class="warn" style="margin-top:12px">&#128274; <b class="r">Temperature를 0으로 설정</b>해야 합니다 &mdash; 같은 입력에 호출할 때마다 다른 점수를 돌려주는 일을 막아야 하니까요. 재현성이 절대적이라면 <b>클라이언트 캐싱이나 서버 쪽 프롬프트·컨텍스트 캐싱</b>도 도움이 됩니다.</div>
+  <h3 style="margin-top:16px">&#128295; 일관성을 높이는 두 가지</h3>
+  <ul class="pts">
+    <li><b>입력 데이터를 더 자기 완결적으로 전처리</b> &mdash; 대화형 답변을 평가할 때는 <b>대화의 턴을 충분히 포함</b>시키고 에이전트의 답변을 요약해 두는 것이 중요할 수 있다</li>
+    <li><b class="g">보정 기준을 더 자세히 풀어 쓰기</b> &mdash; 그냥 "사실 정확성"이라 쓰지 말고 <b>그것이 나에게 무엇을 의미하는지</b> 설명</li>
+  </ul>
+  <div class="box" style="margin-top:12px"><h3>풀어 쓴 예 &mdash; 사실 정확성</h3><p style="margin:6px 0 0"><b>1점</b> 요약의 정보 중 <b>하나라도 기사를 잘못 표현</b>하면<br><b>5점</b> 요약의 <b>모든 진술이 기사에 근거</b>하고 있으면</p></div>
+  <aside>완결성은 1/3/5로 세 단계, 명료성은 "고등학교 1학년생이 이해하기 쉬우면 5점"처럼 구체적으로 씁니다.</aside>
+</section>
+
+<!-- 8 세 질문 -->
+<section class="slide" data-part="6.1.2 해법">
+  <h2>&#10067; 평가 접근을 고를 때 <span class="g">세 질문</span></h2>
+  <table class="t">
+    <tr><th style="width:24%">질문</th><th>선택지</th></tr>
+    <tr><td><b>무엇을 평가하는가?</b></td><td>한 편에 <b>점수를 매긴다</b> / 둘 중 어느 쪽이 나은지 <b>고른다</b> / 하나는 <b class="g">참조 답안</b>(현재의 비-LLM 시스템이 만든)일 수도 / <b>순위를 매겨야 할 목록</b>일 수도</td></tr>
+    <tr><td><b>점수를 어떻게 쓸 것인가?</b></td><td><b>이진값 · 수치 · 순위 · 범주값</b>. 실제 <b>성과</b>와 정렬? 사람의 <b>선호</b>와 정렬? &rarr; 결국 <b class="g">점수를 어떻게 쓸 것인가</b>로 귀결. <b class="g">의사결정을 내릴 계획이면 이진값이 최선</b> &mdash; 점수를 그 결정의 정확성과 명확히 묶을 수 있으므로</td></tr>
+    <tr><td><b>사람은 어떻게 개입하는가?</b></td><td>사람이 점수를 쓴다면 <b>해석 가능해야</b> 하므로 <b>설명을 함께</b> 생성. 평가를 <b>여러 단계</b>로 만들고 피드백을 줄 수도. 심지어 LLM이 일부(혹은 전부) 피드백을 주는 대화형 <b class="g">"교차 심문"</b>이 될 수도</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; 이 세 질문의 답에 근거해 <b class="g">채점 기준을 다듬으세요.</b> 수치 척도가 유일한 방법이 아닙니다.</div>
+  <aside>두 번째 질문의 "이진값이 최선"이 뒤의 고려사항 절과 이어집니다. 거친 척도가 일관성에 좋아요.</aside>
+</section>
+
+<!-- 9 ML -->
+<section class="slide" data-part="6.1.2 해법">
+  <h2>&#9313; <span class="g">ML</span> &mdash; 성과를 예측하는 단일 점수로</h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>프롬프팅용 채점 기준 만들기</b> &mdash; 행동 유도 문구의 명확성 · 가치 제안 전달 · 고객 프로필 적합성 · <b>제품 고유함과 경쟁사 차별화</b></span></div>
+    <div class="st"><span class="n">2</span><span class="t"><b>과거 데이터 수집</b> &mdash; <b class="g">CRM</b>을 뒤진다. 영업 담당자가 브로슈어를 보낸 사례를 찾아, 고객이 <b>30일 이내에 구매했는지</b> 기록</span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>분류 모델 학습</b> &mdash; 프롬프팅으로 점수를 매기고 각 점수에 <b class="g">구매 여부라는 성과</b>를 붙인다 &rarr; 채점 기준값 + 최종 성과 데이터셋</span></div>
+  </div>
+  <div class="big" style="margin-top:16px">ML 모델이 알아서 <span class="y">중요하지 않은 기준</span>이나<br><span class="y">LLM이 일관성 없게 매기는 기준</span>을 깎아내린다</div>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; 단, <b class="r">과적합(overfitting)만 하지 않는다면</b>입니다 &mdash; 학습 데이터의 <b>노이즈와 무작위 변동까지 학습</b>해 버려 새 데이터에 일반화가 안 되는 현상. 보통 <b>학습 가능한 파라미터 수에 비해 데이터가 너무 적을 때</b> 일어납니다.</div>
+  <div class="hl">&#128161; 보통 <b>프롬프팅으로 시작</b>한 뒤, 성과를 어느 정도 측정하고 나서 원하는 성과를 "예측"하는 점수를 낼 수 있게 되면 <b class="g">ML 방식으로 옮겨 갑니다.</b></div>
+  <aside>채점 기준을 사람이 잘 못 골랐어도 ML이 자동으로 보정해 준다는 게 이 방식의 매력입니다.</aside>
+</section>
+
+<!-- 10 파인튜닝 -->
+<section class="slide" data-part="6.1.2 해법">
+  <h2>&#9314; <span class="g">파인튜닝</span> &mdash; 기준을 글로 못 쓸 때</h2>
+  <div class="big">무엇이 마케팅 콘텐츠를<br><span class="y">"설득력 있게"</span> 만드는가?</div>
+  <p style="margin-top:16px">이런 <b class="r">보정 기준을 글로 쓰는 일이 어려울 수 있다.</b> 그럴 때는 &mdash;</p>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t">사람 전문가에게 <b class="g">LLM-as-Judge와 동일한 채점 기준</b>으로 콘텐츠에 주석을 달고 점수를 매기게 한다</span></div>
+    <div class="st"><span class="n">2</span><span class="t">그러면 <b>이상적인 입력-응답 쌍</b>의 집합이 생긴다</span></div>
+    <div class="st"><span class="n">3</span><span class="t">이것으로 <b class="g">어댑터 튜닝(5장 패턴 15)</b>을 수행해, 사람 전문가와 <b>비슷한 점수를 내는 모델</b>을 만든다</span></div>
+  </div>
+  <div class="hl" style="margin-top:14px">&#127973; <b>언제 잘 통하나</b> &mdash; LLM이 <b class="g">사람이 하는 방식을 모방하기를 원하는</b> 상황. 이를테면 <b>환자 기록에 의료 진단 체크리스트를 적용</b>하는 경우 &mdash; 의료 표준에 부합하고 <b>전문가가 관찰 결과를 해석하는 방식과 일치</b>하게 만들고 싶을 때.</div>
+  <aside>5장 패턴 15의 "특화 과제를 가르친다"에 정확히 해당하는 용례입니다.</aside>
+</section>
+
+<!-- 11 PART 3 -->
+<section class="slide" data-part="6.1.3 예제">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">6.1.3 예제</h2>
+    <div class="who">투표 안내문 평가</div>
+  </div>
+  <aside>미국 2022년 워싱턴주 주민발의 안내문의 찬성·반대 논거를 평가합니다.</aside>
+</section>
+
+<!-- 12 세 접근 실패 -->
+<section class="slide" data-part="6.1.3 예제">
+  <h2>&#128683; 여기서 전통적 접근이 <span class="r">실패하는 방식</span></h2>
+  <p>찬성·반대 논거가 각각 더 많은 사람을 그 방향으로 투표하게 만들 만큼 <b class="g">설득력 있기</b>를 바란다고 하자.</p>
+  <table class="t">
+    <tr><th style="width:22%">접근</th><th>왜 실패하나</th></tr>
+    <tr><td><b>성과 측정</b></td><td>성과는 <b>선거 결과</b>지만, 논거의 품질을 <b class="r">당파성 · 총기 소유에 대한 기존 견해 · 최근 세간 이목을 끈 사건 · 유력 후보의 지지 표명</b> 같은 외부 요인과 떼어 내기 어렵다</td></tr>
+    <tr><td><b>사람의 평가</b></td><td>총기나 정신질환처럼 <b class="r">감정적으로 격앙된 주제</b>에서는 극단적으로 편향된다. 대규모 포커스 그룹을 꾸리고 <b>기존 편향을 검사</b>하고 <b>통계적 보정</b>까지 해야 한다</td></tr>
+    <tr><td><b>자동 지표</b></td><td>n-gram을 재는 BLEU·ROUGE가 <b class="r">설득력과 어떤 상관을 갖는지 불분명</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:14px">&#128161; 그리고 주민발의 선거는 매번 다른 질문을 다루고, 안내 책자에는 논거가 <b class="r">딱 두 개(찬성 하나, 반대 하나)</b>만 실립니다 &mdash; ML·파인튜닝 방식을 쓰려면 상당한 <b>통계적 엄밀성</b>이 필요합니다. 그래서 <b class="g">프롬프팅 방식</b>을 택합니다.</div>
+  <aside>데이터가 적을 때 왜 프롬프팅이 유일한 선택인지 보여 주는 사례입니다.</aside>
+</section>
+
+<!-- 13 채점 기준 -->
+<section class="slide" data-part="6.1.3 예제">
+  <h2>&#128203; <span class="g">채점 기준</span> &mdash; 수십 년의 연구에서</h2>
+  <p>유권자 교육 자료에 대한 수십 년의 연구가 낳은 <b>모범 실천</b>을 기준 집합으로 묶는다.</p>
+  <table class="t">
+    <tr><th style="width:26%">기준</th><th>내용</th></tr>
+    <tr><td><b>유권자를 중심에</b></td><td>발의안이 <b>자신에게 어떤 영향</b>을 줄지 이해하기 쉬운가. <b class="g">사회경제적 지위와 교육 수준이 다른 유권자</b>를 고려</td></tr>
+    <tr><td><b>정보를 피라미드로</b></td><td>가장 <b>본질적인 정보가 먼저</b>, 비본질적 세부와 설명이 마지막</td></tr>
+    <tr><td><b>이해 가능성</b></td><td>쉬운 말과 단순한 문장, <b>전문 용어 최소화</b></td></tr>
+    <tr><td><b>명료성</b></td><td><b>행동 유도가 명확</b>한가. 유권자는 <b>왜</b> 찬성/반대해야 하는가?</td></tr>
+    <tr><td><b class="g">미결정층을 겨냥</b></td><td>미결정 유권자를 기울게 할 추가 정보 &mdash; <b>권위 있는/중립적 단체의 지지 표명</b>이나 <b>경쟁 대안과의 구체적 비교</b></td></tr>
+  </table>
+  <div class="box" style="margin-top:12px;border-color:var(--gr)"><h3 class="g">&#9989; GPT-4o-mini 응답 (발췌)</h3><p style="margin:0"><i><b>3. 이해 가능성: 4</b> &mdash; 표현이 대체로 쉬운 말이고 문장이 직설적이다. 다만 일부 독자는 <b>"민사 보호 명령"</b> 같은 용어를 다소 법률적으로 느낄 수 있다. 그런 표현을 피하거나 <b class="g">간단한 정의를 붙이면</b> 전체 이해도가 나아질 것이다.</i></p></div>
+  <aside>점수만 주는 게 아니라 구체적 개선 제안까지 나옵니다. 이게 다음 패턴(리플렉션)의 재료가 되죠.</aside>
+</section>
+
+<!-- 14 PART 4 -->
+<section class="slide" data-part="6.1.4 고려사항">
+  <div class="part">
+    <div class="pno">4</div>
+    <h2 style="margin:0">6.1.4 고려사항</h2>
+    <div class="who">심판자 LLM의 세 가지 버릇</div>
+  </div>
+  <aside>하나의 핵심 약점(불일치)과 몇 가지 편향을 안고 있습니다.</aside>
+</section>
+
+<!-- 15 불일치 -->
+<section class="slide" data-part="6.1.4 고려사항">
+  <h2>&#127922; 버릇 &#9312; &mdash; <span class="r">불일치</span></h2>
+  <div class="warn">&#9888;&#65039; 캐싱, Temperature=0, 같은 랜덤 시드로 줄일 수 있지만 <b class="r">생성 자체를 못 박는 것만으로는 부족합니다.</b> 우리가 원하는 것은 <b class="g">비슷한 출력이 비슷한 점수를 받는 것</b>이니까요.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:22%">접근</th><th>내용</th></tr>
+    <tr><td><b class="g">거친 점수</b></td><td><b>아주 세분화된 점수를 만들지 마라.</b> 1~5는 괜찮지만 <b class="r">1~10이나 1~100은 훨씬 심각</b>해진다. 논리적 극단까지 밀면 &mdash; <b class="g">이진(예/아니오) 질문일 때 최선의 결과</b></td></tr>
+    <tr><td><b>복수 기준</b></td><td>단일 종합 점수 대신 <b>여러 채점 기준</b>을 세운다 &mdash; 이것은 <b class="g">CoT(패턴 13)의 한 형태</b>. <b>퓨샷</b>으로 각 기준을 보정하면 더 개선된다. 때로는 <b>참조 결과 하나</b>만 제공해도 호출 간 점수가 일관되게 유지된다</td></tr>
+    <tr><td><b>복수 평가</b></td><td><b>여러 LLM이 평가</b>하게 한다. 각 LLM이 서로 다른 <b class="g">이해관계자 역할</b>을 맡을 때 유용 &mdash; 이것을 <b class="g">LLM-as-jury</b>(배심원 LLM)라 부른다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:12px">&#128161; 조합도 가능합니다 &mdash; <b>이진 질문을 던지면서도 뉘앙스 있는 채점</b>을 얻으려면 LLM-as-jury와 결합하세요. 이를 <b class="g">폴링(polling)</b>이라 부릅니다.</div>
+  <aside>이진 질문 여러 개를 배심원단에게 던져 표결로 뉘앙스를 만드는 방식입니다.</aside>
+</section>
+
+<!-- 16 관대함 -->
+<section class="slide" data-part="6.1.4 고려사항">
+  <h2>&#127891; 버릇 &#9313; &mdash; <span class="r">관대함</span></h2>
+  <div class="big">모든 학생에게 <span class="y">A와 B</span>를 주는 교수처럼</div>
+  <div class="warn" style="margin-top:14px">&#9888;&#65039; 이것이 비결정적 성격과 겹치면 &mdash; <b class="r">두 콘텐츠의 출력 점수를 비교해 순위를 정하는 일은 피해야</b> 합니다.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:26%">대처</th><th>내용</th></tr>
+    <tr><td><b class="g">직접 비교시키기</b></td><td>점수끼리 비교하지 말고 <b class="g">두 콘텐츠를 맞대어 비교</b>하게 한다 &mdash; <b>2장 패턴 5 콘텐츠 최적화</b>에서 한 것이 바로 이것</td></tr>
+    <tr><td><b>그룹 보상</b></td><td>DeepSeek의 <b class="g">GRPO</b>(그룹 상대 정책 최적화) &mdash; 여러 응답을 <b>동시에 생성해 함께 채점</b>하고, 각 응답에 <b>그룹 평균으로 정규화된</b> 점수를 부여</td></tr>
+    <tr><td><b>기대치 낮추기</b></td><td>점수를 <b class="g">문제를 짚어 내는 데에만</b> 쓴다 &mdash; RAG의 <b>컨텍스트 손실</b> 같은 기술적 문제. 평소 0.95가 나오던 것과 대비되어 <b class="r">0점</b>이 나온다</td></tr>
+  </table>
+  <div class="hl">&#128161; 세 번째가 실용적입니다 &mdash; <b>"좋은지"를 묻지 말고 "망가졌는지"를 물으면</b> 관대함이 오히려 신호가 됩니다.</div>
+  <aside>평소 0.95, 문제 있으면 0점. 이런 극단적 대비라면 관대해도 판별이 됩니다.</aside>
+</section>
+
+<!-- 17 편향 -->
+<section class="slide" data-part="6.1.4 고려사항">
+  <h2>&#127917; 버릇 &#9314; &mdash; <span class="r">편향</span></h2>
+  <table class="t">
+    <tr><th style="width:22%">편향</th><th>내용</th></tr>
+    <tr><td><b class="r">자기 편향</b><br><small>self-bias</small></td><td>자기 자신의 응답을 평가할 때 <b>지나치게 후한 점수</b>를 준다 &rarr; <b class="g">콘텐츠를 만든 LLM과 다른 LLM으로 평가</b>하는 편이 낫다</td></tr>
+    <tr><td><b class="r">잘 쓰인 글 선호</b></td><td>자기 편향은 LLM이 <b>자기 학습 데이터처럼 보이는 콘텐츠를 선호</b>하는 현상의 한 사례. 그래서 <b class="r">잘 쓰인 글</b>(퍼플렉시티가 낮은 글)을 <b class="r">부정확하더라도</b> 못 쓰였지만 정확한 글보다 선호한다</td></tr>
+    <tr><td><b class="r">길이 편향</b></td><td>같은 세부를 담고 있어도 <b>긴 리뷰를 간결한 리뷰보다</b> 선호</td></tr>
+    <tr><td><b class="r">위치 편향</b></td><td>긴 텍스트의 <b>중간에 있는 정보를 놓치고</b>, <b>처음이나 끝</b>에 있는 정보를 선호</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; 이 문제들 때문에 비용이 더 낮은 <b class="g">파인튜닝된 소형 언어 모델</b>(PandaLM 등)을 검토할 만합니다. 멀티모달 응답 같은 특정 과업에는 <b>PatronusAI</b>를, 업계 특화 커스텀 지표에도 쓸 수 있습니다.</div>
+  <div class="warn">&#9989; 다만 <b>프런티어 모델은 이 패턴에서 꽤 잘 동작하는 편</b>이고, 대개는 더 찾아볼 필요가 없습니다.</div>
+  <aside>부정확해도 매끄러운 글을 선호한다는 게 특히 위험합니다. 사실 확인 용도로 쓸 때 조심해야 해요.</aside>
+</section>
+
+<!-- 18 유의점 -->
+<section class="slide" data-part="6.1.4 고려사항">
+  <h2>&#9888;&#65039; <span class="r">유의점</span> &mdash; 설명을 요구하는 것의 대가</h2>
+  <div class="plabel">우리가 프롬프트에 넣었던 문장</div>
+  <pre>각 점수마다 <b>간단한 근거를 함께 제시하라</b></pre>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; 이렇게 하면 <b class="g">해석 가능성</b>을 얻지만, <b class="r">모델의 평가 성능과 편향 완화에 대체로 부정적인 영향을 준다</b>는 증거가 있습니다. <b>자기 설명이라는 과정이 오히려 더 깊은 편향을 끌어들이는</b> 것일 수도 있습니다.</div>
+  <div class="hl" style="margin-top:12px">&#128161; 설명이 필요 없다면 &mdash; 가장 확률 높은 점수를 고르는 대신 <b class="g">생성된 분포에 대해 확률 가중 평균 점수</b>를 취할 수 있습니다. 다만 이것이 <b class="r">CoT 접근과 다소 이상한 방식으로 상호작용</b>하니 주의하세요.</div>
+  <div class="big" style="margin-top:14px">평가는 <span class="y">성과를 측정하는 것이 최선</span>이지만<br><span class="y">교란 변수</span>를 전부 떼어 내기 어렵다</div>
+  <div class="warn">&#127919; 그런 상황에서는 <b class="g">비즈니스 목표와 정렬된, 이해하기 쉬운 KPI 집합</b>에 근거해 판단하는 것이 차선입니다. 물론 <b class="r">지표를 게임하려는 적대적 행위자</b>를 조심해야 하고요. 그러니 <b class="g">채점 기준을 성과나 KPI의 프록시가 되도록</b> 만드세요.</div>
+  <aside>설명을 요구하는 게 항상 좋은 게 아니라는 지적이 반직관적입니다. 사람이 읽어야 할 때만 요구하세요.</aside>
+</section>
+
+<!-- 19 PART 5 -->
+<section class="slide" data-part="6.1.5 참고문헌">
+  <h2>&#128218; 6.1.5 <span class="g">참고문헌</span></h2>
+  <div class="hl">&#128161; 2022~2023년에 걸쳐 커뮤니티는 <b class="g">자생적으로</b> 깨달았습니다 &mdash; 프런티어 LLM이 지시를 따르는 능력에서 충분히 좋아져 <b>임의의 채점 기준으로 콘텐츠를 평가하는 데 쓸 수 있다</b>는 것을.</div>
+  <table class="t" style="margin-top:14px">
+    <tr><th style="width:30%">출처</th><th>기여</th></tr>
+    <tr><td><b>Bai 외 (2023)</b></td><td>저자들이 찾은 <b>첫 학술적 언급</b> &mdash; 이 패턴을 <b class="g">Language-Model-as-an-Examiner</b>라 불렀다</td></tr>
+    <tr><td><b>Shankar 외 (2024)</b></td><td><b>정렬과 일관성</b>의 필요를 논함</td></tr>
+    <tr><td><b>Balog · Metzler · Qin (2025)</b></td><td>LLM-as-Judge와 얽힌 <b>여러 편향과 유의점</b></td></tr>
+    <tr><td><b>Hamel Husain (2024)</b><br><b>Eugene Yan (2025)</b></td><td>저명한 <b>실무자</b>들이 다룬 실무적 고려사항</td></tr>
+    <tr><td><b>Gu 외 (2025)</b></td><td>기법과 변형, 관련 난제에 대한 <b class="g">포괄적 서베이</b></td></tr>
+  </table>
+  <div class="warn" style="margin-top:12px">&#127970; <b>실무 사례</b> &mdash; <b>DoorDash</b>는 LLM 기반 Dasher 지원 자동화에 구현 · <b>AWS</b>는 Amazon Bedrock의 모델 평가에 사용 · <b>Acrolinx</b>는 <b class="g">브랜드 목소리 일관성</b> 유지를 위한 AI 가드레일로 구현</div>
+  <aside>학술 논문보다 실무자 블로그가 먼저 앞서간 드문 패턴입니다.</aside>
+</section>
+
+<!-- 20 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#9878;&#65039; 채점표를 <span class="g">건네라</span></h1>
+    <div class="big" style="margin-top:24px">심판자 LLM은<br><span class="y">후하고 흔들리고 제 편을 든다</span><br><br><small>척도를 <b>거칠게</b>, 비교는 <b>맞대어</b>, 채점은 <b>남의 모델</b>로</small></div>
+    <p class="sub" style="margin-top:22px">패턴 17 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 18 리플렉션</b> (점수에 "어떻게 고치라는 건데"를 붙이면)</p>
+  </div>
+  <aside>이 패턴이 만든 채점 기준과 비평이 다음 패턴의 입력이 됩니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>

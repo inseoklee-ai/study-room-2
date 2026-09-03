@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>의존성 주입 · 패턴 19 (6장)</title>
+<style>
+  :root{
+    --bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;
+    --bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#17140f;--bg2:#201b14;--card:#221d16;--ink:#ece5d8;--soft:#a89e8c;
+    --line:#3a3126;--gr:#7fb3a2;--gr2:#5d9384;--gold:#d9b877;--red:#d68a6c;--bl:#7fa3d0;--bl2:#5f83b0;--pp:#b79bd6;--gy:#9c9486;
+    --sh:0 2px 6px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--bg:#faf8f4;--bg2:#f2ede4;--card:#fff;--ink:#2a2723;--soft:#6b6357;
+    --line:#e3dacb;--gr:#3f6b5f;--gr2:#2c4d44;--gold:#c8a15a;--red:#a65a3f;--bl:#3a5a8c;--bl2:#2b4570;--pp:#6b4d8c;--gy:#8a8378;
+    --sh:0 2px 6px rgba(60,50,30,.07),0 10px 30px rgba(60,50,30,.07);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .deck{height:100vh;display:grid;place-items:center;padding:54px 38px 74px}
+  .slide{display:none;width:100%;max-width:1020px;animation:in .25s ease}
+  .slide.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(1.9rem,4.8vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2{font-size:clamp(1.35rem,3.1vw,2.05rem);font-weight:800;letter-spacing:-.015em;margin-bottom:16px;line-height:1.28}
+  h3{font-size:clamp(1rem,1.9vw,1.25rem);font-weight:750;margin-bottom:10px}
+  p{font-size:clamp(.94rem,1.5vw,1.1rem);color:var(--soft);margin-bottom:12px}
+  b{color:var(--ink)} i{color:var(--soft)}
+  .g{color:var(--gr);font-weight:750} .gold{color:var(--gold);font-weight:750} .r{color:var(--red);font-weight:750} .b{color:var(--bl);font-weight:750} .p{color:var(--pp);font-weight:750}
+  small{font-size:.86em}
+
+  .cover{text-align:center}
+  .cover .kick{color:var(--gr);letter-spacing:.28em;font-size:.78rem;font-weight:700;text-transform:uppercase}
+  .cover .sub{margin-top:20px;color:var(--soft);font-size:1.02rem}
+  .part{text-align:center;padding:30px 0}
+  .part .pno{display:inline-grid;place-items:center;width:70px;height:70px;border-radius:21px;
+    background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:20px}
+  .part .who{margin-top:18px;display:inline-block;background:var(--bg2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 17px;font-size:.87rem;color:var(--soft)}
+
+  ul.pts{list-style:none;display:grid;gap:11px}
+  ul.pts li{position:relative;padding-left:29px;font-size:clamp(.92rem,1.52vw,1.1rem);color:var(--soft)}
+  ul.pts li::before{content:"\203A";position:absolute;left:8px;color:var(--gr);font-weight:800;font-size:1.2em;line-height:1}
+  ul.pts li b{color:var(--ink)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 21px;box-shadow:var(--sh)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .hl{background:var(--bg2);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .hl b{color:var(--gr)}
+  .warn{background:var(--bg2);border-left:4px solid var(--red);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin-top:15px;font-size:clamp(.9rem,1.5vw,1.06rem)}
+  .warn b{color:var(--red)}
+  .big{background:linear-gradient(135deg,var(--gr),var(--gr2));color:#fff;border-radius:18px;
+    padding:24px 26px;text-align:center;font-size:clamp(1.02rem,2.1vw,1.5rem);font-weight:750;line-height:1.5}
+  .big .y{color:var(--gold)}
+  .big small{opacity:.85;font-weight:400;display:block;margin-top:8px;font-size:.7em}
+
+  .chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+    text-align:center;box-shadow:var(--sh);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+  .cell small{display:block;color:var(--soft);font-size:.7rem;margin-bottom:3px;font-weight:700}
+  .cell b{font-size:.9rem}
+  .ar{color:var(--gr);font-size:1.25rem;font-weight:700;display:flex;align-items:center}
+
+  .steps{display:grid;gap:9px}
+  .st{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:12px 16px;box-shadow:var(--sh)}
+  .st .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--gr);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .st .t{font-size:clamp(.9rem,1.5vw,1.05rem)}
+
+  .qa{display:grid;gap:9px}
+  .qa .q{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gr);
+    border-radius:0 12px 12px 0;padding:11px 16px;font-size:clamp(.86rem,1.45vw,1.02rem)}
+  .qa .q b{color:var(--gr)}
+  .qa .q.a{border-left-color:var(--gold)}
+  .qa .q.a b{color:var(--gold)}
+
+  table.t{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1.3vw,.96rem);margin-top:4px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  table.t th{background:var(--bg2);color:var(--ink);font-weight:750}
+  table.t td{color:var(--soft)}
+  table.t td b,table.t th b{color:var(--ink)}
+  table.t tr td:first-child{color:var(--ink);font-weight:700}
+
+  .bars{display:grid;gap:7px;margin:12px 0}
+  .brow{display:flex;align-items:center;gap:10px}
+  .brow .lb{flex:none;width:80px;text-align:right;font-size:.84rem;color:var(--ink);font-weight:700}
+  .brow .bx{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--gr),var(--gr2))}
+  .brow .bx.d{background:linear-gradient(90deg,var(--gold),var(--red))}
+  .brow .vv{font-size:.78rem;color:var(--soft)}
+
+  pre{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gr);border-radius:0 12px 12px 0;
+    padding:12px 15px;font-family:"SF Mono",Consolas,"D2Coding",monospace;font-size:clamp(.72rem,1.1vw,.9rem);
+    color:var(--ink);overflow:auto;max-height:54vh;white-space:pre;line-height:1.5;margin:8px 0}
+  code{font-family:Consolas,"D2Coding",monospace;background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--gr)}
+  .plabel{font-size:.78rem;color:var(--soft);font-weight:700;margin:6px 0 2px}
+
+  .bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gr),var(--gold));transition:width .25s;z-index:20}
+  .topL{position:fixed;top:13px;left:19px;font-size:.74rem;color:var(--soft);letter-spacing:.06em;z-index:15}
+  .topR{position:fixed;top:10px;right:17px;display:flex;gap:6px;z-index:15}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--soft);border-radius:16px;
+    padding:5px 12px;font-size:.73rem;cursor:pointer}
+  .btn:hover{border-color:var(--gr);color:var(--gr)}
+  .pg{position:fixed;bottom:13px;right:19px;font-size:.77rem;color:var(--soft);z-index:15}
+  .nav{position:fixed;bottom:10px;left:19px;display:flex;gap:6px;z-index:15}
+  .notes{position:fixed;left:0;right:0;bottom:0;background:var(--gr2);color:#fff;padding:13px 22px 15px;
+    font-size:.87rem;line-height:1.6;display:none;z-index:18;max-height:36vh;overflow-y:auto}
+  .notes.on{display:block}
+  .notes .lab{color:var(--gold);font-weight:800;font-size:.69rem;letter-spacing:.14em;display:block;margin-bottom:4px}
+  aside{display:none}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="topL" id="topL"></div>
+<div class="topR">
+  <button class="btn" onclick="tgN()">&#128209; 학습노트 (S)</button>
+  <button class="btn" onclick="tgT()">&#127763;</button>
+</div>
+<div class="nav"><button class="btn" onclick="go(-1)">&larr;</button><button class="btn" onclick="go(1)">&rarr;</button></div>
+<div class="pg" id="pg"></div>
+
+<div class="deck" id="deck">
+<!-- 1 표지 -->
+<section class="slide" data-part="표지">
+  <div class="cover">
+    <div class="kick">Chapter 6 &middot; Pattern 19</div>
+    <h1 style="margin:18px 0">의존성 <span class="gold">주입</span></h1>
+    <p class="sub">Dependency Injection &mdash; 어느 단계든 <b>목으로 갈아 끼울 수 있게</b></p>
+  </div>
+  <aside>소프트웨어 공학에서는 오래된 패턴인데, 과학 배경에서 온 많은 AI 엔지니어들은 이를 모릅니다.</aside>
+</section>
+
+<!-- 2 구조 -->
+<section class="slide" data-part="표지">
+  <h2>&#128203; 이 덱의 <span class="gold">구조</span> <small>&mdash; 책 6.3</small></h2>
+  <div class="steps">
+    <div class="st"><span class="n">1</span><span class="t"><b>6.3.1 문제</b> &mdash; GenAI 앱을 테스트하기 어려운 세 이유</span></div>
+    <div class="st" style="border-color:var(--gold)"><span class="n" style="background:var(--gold)">2</span><span class="t"><b class="gold">6.3.2 예제</b> &mdash; 마케팅 문구 개선 <b>(해법보다 먼저!)</b></span></div>
+    <div class="st"><span class="n">3</span><span class="t"><b>6.3.3 해법</b> &mdash; 목으로 갈아 끼우기</span></div>
+    <div class="st"><span class="n">4</span><span class="t"><b>6.3.4 고려사항</b></span></div>
+    <div class="st"><span class="n">5</span><span class="t"><b>6.3.5 참고문헌</b></span></div>
+  </div>
+  <div class="warn">&#9888;&#65039; <b class="gold">이 패턴만 순서가 다릅니다.</b> 저자가 <b>"예제를 먼저 논하면 해법이 더 잘 이해될 것"</b>이라고 명시했기에, 이 덱도 <b class="g">책의 실제 순서</b>를 그대로 따릅니다.</div>
+  <div class="hl">&#128161; <b>한 줄로</b> &mdash; 체인의 각 단계를 <b class="g">인자로 받는 함수</b>로 만들어 두면, 앞 단계를 가짜로 갈아 끼우고 <b>뒷 단계만 시험</b>할 수 있다.</div>
+  <aside>문제를 겪어 봐야 해법이 와닿는 종류의 패턴입니다.</aside>
+</section>
+
+<!-- 3 PART 1 -->
+<section class="slide" data-part="6.3.1 문제">
+  <div class="part">
+    <div class="pno">1</div>
+    <h2 style="margin:0">6.3.1 문제</h2>
+    <div class="who">GenAI 앱은 테스트하기 어렵다</div>
+  </div>
+  <aside>일반 소프트웨어보다 GenAI에서 더 절실한 이유가 있습니다.</aside>
+</section>
+
+<!-- 4 세 이유 -->
+<section class="slide" data-part="6.3.1 문제">
+  <h2>&#10060; 테스트하기 어려운 <span class="r">세 이유</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">이유</th><th>내용</th></tr>
+    <tr><td><b class="r">비결정적이다</b></td><td>대부분의 API나 통계 모델과 달리 <b class="r">정확히 같은 입력으로 호출해도 매번 다른 출력</b>이 나온다 &rarr; 합성 입력을 넣고 <b>기대 출력과 대조하는 방식으로 검증할 수 없다</b></td></tr>
+    <tr><td><b class="r">모델이 빠르게 바뀐다</b></td><td><b>업그레이드 일정을 알 수 없는</b> 모델 위에 짓는다. 날짜 기준으로 고정하면 버전은 못 박지만 <b class="r">역량 향상의 이득을 놓친다.</b> <b class="g">프롬프트가 길고 상세할수록 기반 기술의 변화에 더 취약</b></td></tr>
+    <tr><td><b class="r">LLM에 종속되지 않아야</b></td><td>둘 이상의 환경(온프레미스와 구글, AWS와 Azure)에서 쓰려면 여러 모델에서 동작해야 한다. 프레임워크(PydanticAI · LangChain)가 <b class="g">코드는 이식 가능하게</b> 만들어 주지만 <b class="r">프롬프트를 이식 가능하게 만들어 주지는 않는다</b></td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">특히 어려운 것은 <span class="y">LLM 호출의 체인</span><br><small>한 모델의 출력이 <b>다음 모델의 입력 컨텍스트에 박힌다</b></small></div>
+  <div class="hl">&#10067; 체인의 <b class="g">각 단위를 서로 독립적으로</b> 어떻게 개발하고 테스트할 것인가?</div>
+  <aside>이 질문을 붙들고 예제로 넘어갑니다.</aside>
+</section>
+
+<!-- 5 PART 2 -->
+<section class="slide" data-part="6.3.2 예제">
+  <div class="part">
+    <div class="pno">2</div>
+    <h2 style="margin:0">6.3.2 예제</h2>
+    <div class="who">마케팅 문구 개선 &mdash; 두 단계 체인</div>
+  </div>
+  <aside>O'Reilly 책의 마케팅 설명문을 LLM으로 개선합니다. 패턴 13 CoT와 패턴 18 Reflection을 결합한 예이기도 합니다.</aside>
+</section>
+
+<!-- 6 1단계 -->
+<section class="slide" data-part="6.3.2 예제">
+  <h2>&#9312; 1단계 &mdash; <span class="gold">비평 생성</span></h2>
+  <pre>@dataclass
+class <b>Critique</b>:
+    target_audience: List[str]
+    improvements: List[str]
+
+def critique(in_text: str) -&gt; Critique:
+    prompt = """You are an expert marketer for technology books.
+    Identify the <b>target audience by roles</b> (eg: Data Analyst)
+    Suggest <b>exactly 5 ways</b> that the *marketing description*
+    can be improved ...
+    <b>Do not suggest improvements to the book itself.</b>"""
+    agent = Agent(GEMINI, <b>result_type=Critique</b>)
+    return agent.run_sync([prompt, in_text]).data</pre>
+  <div class="box" style="margin-top:12px"><h3>『Machine Learning Design Patterns』에 대한 응답</h3><p style="margin:6px 0 0"><b>대상 독자</b>: 데이터 과학자, 머신러닝 엔지니어, AI 연구자<br><b>제안 5가지</b>: ① "데이터 과학자" 대신 <b>더 구체적인 직함</b> ② <b>실용적 응용</b>과 업무 효율 개선 부각 ③ <b>확장성·유지보수성</b> 강조 ④ <b class="r">트러블슈팅·디버깅을 다루는 절을 포함하라</b> ⑤ <b>추천사·지지 문구</b> 추가</p></div>
+  <div class="hl" style="margin-top:12px">&#128161; 맞는 것처럼 보입니다. 그런데 <b class="g">정말 맞는가?</b></div>
+  <aside>구조화된 출력(2장 패턴 2)을 쓴 것에도 주목하세요. Critique이 데이터클래스입니다.</aside>
+</section>
+
+<!-- 7 1단계 테스트 -->
+<section class="slide" data-part="6.3.2 예제">
+  <h2>&#129514; 1단계 <span class="gold">테스트</span>하기</h2>
+  <div class="warn">&#128683; 결과를 "눈으로 대충 보고" 판단하는 데 기대고 싶지 않습니다 &mdash; 이것을 비하해서 <b class="r">바이브 체킹(vibe checking)</b>이라고 부릅니다.</div>
+  <p style="margin-top:12px">사람의 피드백 &mdash; <b>명시적</b>(좋아요/싫어요)과 <b>암묵적</b>(제안 목록을 보여 주고 어느 것을 고르는지 보는 것) &mdash; 은 제품 설계에서 나름의 자리가 있지만, 그래도 <b class="g">테스트 스위트로 코드의 정확성을 테스트</b>하고 싶습니다.</p>
+  <pre style="margin-top:12px">def assert_critique(critique: Critique):
+    <b>assert</b> len(critique.improvements) &gt; 3, "Should have 4+ improvements"
+    <b>assert</b> len(critique.target_audience) &gt; 0, "Should have 1+ role"</pre>
+  <div class="hl" style="margin-top:12px">&#128209; 더 <b class="g">뉘앙스 있는 검사</b>에는 <b>패턴 17 LLM-as-Judge</b>를 쓸 수 있습니다. 예컨대 <b>네 번째 제안</b>은 뒤표지가 아니라 <b class="r">책 자체에 내용을 추가하라는 권고</b>처럼 읽힙니다 &mdash; 프롬프트가 <b>"Do not suggest improvements to the book itself"</b>라고 했는데도요.</div>
+  <div class="warn">&#128197; 단언 코드를 <b class="g">정기적으로 실행하는 테스트 스위트</b>에 넣어 두세요 &mdash; 배포 전마다, 혹은 <b>커밋할 때마다</b>.</div>
+  <aside>지시를 어긴 제안이 섞여 들어온 걸 사람 눈으로 잡았습니다. 이런 걸 자동으로 잡으려면 LLM-as-Judge가 필요하죠.</aside>
+</section>
+
+<!-- 8 2단계 -->
+<section class="slide" data-part="6.3.2 예제">
+  <h2>&#9313; 2단계 &mdash; <span class="gold">제안 구현</span></h2>
+  <pre>@dataclass
+class <b>Improvement</b>:
+    change: str
+    reason: str
+    modified_marketing_description: str
+
+def improve(marketing_text: str, <b class="r">c: Critique</b>) -&gt; Improvement:
+    prompt = """... Pick <b>one change</b> from the list that best meets:
+    - does not require changing <b>the book itself</b>
+    - will make the book <b>much more appealing</b>
+    - requires only <b>1-5 lines</b> to be changed
+    ... {marketing_text} {c}"""
+    agent = Agent(GEMINI, result_type=Improvement)
+    return agent.run_sync(prompt).data</pre>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; <b class="r">이 함수의 입력 중 하나가 1단계에서 생성된 <code>Critique</code> 객체</b>입니다.</div>
+  <div class="box" style="margin-top:12px"><h3>응답</h3><p style="margin:6px 0 0"><b>변경</b>: "데이터 과학자" 대신 더 구체적인 직함 사용<br><b>이유</b>: 대상 독자에 ML 엔지니어와 AI 연구자가 포함되므로 &hellip; <b>한 줄만 수정</b>하면 되고 책 자체를 바꿀 필요가 없다<br><b>새 설명문</b>: <i>&hellip; <b class="g">머신러닝 엔지니어와 AI 연구자</b>가 흔한 문제를 다루도록 돕는 &hellip;</i></p></div>
+  <aside>다시 한번, 맞는 것처럼 보입니다. 그런데 정말 맞는가?</aside>
+</section>
+
+<!-- 9 막다른 길 -->
+<section class="slide" data-part="6.3.2 예제">
+  <h2>&#128683; 2단계 테스트 &mdash; <span class="r">막다른 길</span></h2>
+  <pre>def assert_improvement(improvement, orig_text, c: Critique):
+    assert improvement.change <b>in c.improvements</b>,
+           "Chosen change not in original list"
+    nlines_changed = ...  <span class="g"># difflib</span>
+    assert nlines_changed &gt; 0 and nlines_changed &lt;= 5,
+           f"{nlines_changed} lines changed, not 1-5"</pre>
+  <div class="warn" style="margin-top:12px">&#9888;&#65039; <b>그런데 여기서 문제가 생깁니다.</b> 두 번째 단계에 넘길 <code>Critique</code> 객체를 얻으려면 <b class="r">1단계의 LLM을 반드시 호출해야</b> 합니다.</div>
+  <pre style="margin-top:12px">def improvement_chain(a_text):
+    a_critique = <b class="r">critique(a_text)</b>        <span class="g"># ← LLM 호출이 강제된다</span>
+    improved = improve(a_text, a_critique)
+    assert_improvement(improved, a_text, a_critique)</pre>
+  <div class="big" style="margin-top:14px">2단계를 1단계와 <span class="y">독립적으로 테스트할 방법이</span><br><span class="y">없어 보인다</span></div>
+  <div class="hl">&#10067; 정말로 없을까요?</div>
+  <aside>여기까지가 문제 제기입니다. 다음이 해법이에요.</aside>
+</section>
+
+<!-- 10 PART 3 -->
+<section class="slide" data-part="6.3.3 해법">
+  <div class="part">
+    <div class="pno">3</div>
+    <h2 style="margin:0">6.3.3 해법</h2>
+    <div class="who">목으로 갈아 끼우기</div>
+  </div>
+  <aside>2단계를 개발·테스트하는 동안 1단계를 하드코딩된 결과를 반환하는 목 구현으로 대체합니다.</aside>
+</section>
+
+<!-- 11 목 -->
+<section class="slide" data-part="6.3.3 해법">
+  <h2>&#128295; 핵심 &mdash; 함수를 <span class="gold">인자로 받게</span></h2>
+  <div class="big">다른 구성 요소를 개발·테스트하는 동안<br>LLM 호출과 외부 도구를 <span class="y">가벼운 목으로 대체하라</span></div>
+  <pre style="margin-top:16px">def improvement_chain(
+      in_text: str,
+      <b class="g">critique_fn: Callable[[str], Critique] = critique</b>,
+      <b class="g">improve_fn: Callable[[str, Critique], Improvement] = improve</b>
+        ) -&gt; Improvement:
+    c = <b>critique_fn</b>(in_text)
+    assert_critique(c)
+    improved = <b>improve_fn</b>(in_text, c)
+    assert_improvement(improved, in_text, c)
+    return improved</pre>
+  <div class="hl" style="margin-top:12px">&#128161; 이 체인은 이 함수들에 <b class="g">의존한다(depends)</b>. 체인을 호출할 때 다른 구현 &mdash; 여기서는 목 &mdash; 을 <b class="g">주입한다(inject)</b>. <b>이것이 이 패턴의 이름이 된 이유</b>입니다.</div>
+  <div class="warn">&#9989; 기본값이 진짜 <code>critique()</code> 함수이므로 <b class="g">체인의 기본 동작은 두 단계 모두 LLM을 호출하는 것</b>입니다 &mdash; 평소 사용에는 아무 변화가 없습니다.</div>
+  <aside>기법이 이것뿐입니다. 기본값을 둔 함수 인자 하나로 끝나요.</aside>
+</section>
+
+<!-- 12 목 구현 -->
+<section class="slide" data-part="6.3.3 해법">
+  <h2>&#127917; <span class="gold">목 구현</span> 만들기</h2>
+  <pre>def <b>mock_critique</b>(in_text: str) -&gt; Critique:
+    print(f"Using mock to critique text")
+    return Critique(
+        target_audience = """AI Engineers, Machine Learning
+                             Engineers, Software Engineers""".split(','),
+        improvements = """
+Use more precise language to define the problems the book solves.
+Add specific examples of how the design patterns have been used...
+Highlight the benefits of using design patterns...
+Emphasize the book's practical approach...
+Include testimonials from data scientists...
+        """.strip().split('\n'))</pre>
+  <pre style="margin-top:12px"><span class="g"># 체인에서 진짜 대신 목을 쓴다</span>
+improved = improvement_chain(mldp_text, <b class="g">critique_fn=mock_critique</b>)</pre>
+  <div class="hl" style="margin-top:12px">&#128161; <b class="g">시그니처가 같아야</b> 합니다 &mdash; <code>str</code>을 받아 <code>Critique</code>를 반환. 그래야 갈아 끼울 수 있습니다.</div>
+  <div class="warn">&#128209; 이 목 하나로 <b>2단계를 몇 번이고 빠르게·공짜로·똑같은 입력으로</b> 테스트할 수 있게 됩니다.</div>
+  <aside>비결정성·비용·지연이 한꺼번에 사라집니다. 그게 목의 값어치죠.</aside>
+</section>
+
+<!-- 13 assert -->
+<section class="slide" data-part="6.3.3 해법">
+  <h2>&#128204; 파이썬 <code>assert</code>의 <span class="g">성질</span></h2>
+  <table class="t">
+    <tr><th style="width:30%">상황</th><th>동작</th></tr>
+    <tr><td><b><code>-O</code> 플래그</b>로 실행</td><td>모든 단언이 <b class="g">꺼진다</b> &rarr; <b>코드 자체를 바꾸지 않고</b> 개발 중엔 켜고 <b class="g">프로덕션에선 끌 수 있다</b></td></tr>
+    <tr><td><b>Pytest</b> 환경</td><td><code>assert</code> 문이 <b class="g">데코레이트되어</b> 단언이 실패한 <b>호출 스택의 상세 정보</b>를 제공한다</td></tr>
+  </table>
+  <div class="big" style="margin-top:16px">같은 코드가 &mdash;<br>개발에선 <span class="y">엄격하게</span>, 프로덕션에선 <span class="y">가볍게</span></div>
+  <div class="hl" style="margin-top:14px">&#128161; 그래서 체인 안에 <code>assert_critique</code>, <code>assert_improvement</code>를 <b class="g">그대로 넣어 둬도</b> 프로덕션 성능에 부담이 없습니다.</div>
+  <aside>파이썬을 쓴다면 이 성질을 알고 쓰는 것과 모르고 쓰는 것의 차이가 큽니다.</aside>
+</section>
+
+<!-- 14 PART 4 -->
+<section class="slide" data-part="6.3.4 고려사항">
+  <h2>&#9888;&#65039; 6.3.4 <span class="g">고려사항</span></h2>
+  <table class="t">
+    <tr><th style="width:26%">항목</th><th>내용</th></tr>
+    <tr><td><b>목 함수 vs 목 객체</b></td><td>여기서는 <b>목 함수</b>를 예로 들었지만 <b>추상 클래스와 상속</b>으로 목 <b>객체</b>를 만들 수도 있다. 자기가 쓰는 언어(Go · TypeScript)에서 <b class="g">관용적인 방식</b>으로 하라</td></tr>
+    <tr><td><b class="r">목 값을 잡기 어려울 때</b></td><td>단계 사이의 <b>상호작용이 늘어날수록</b> 하드코딩된 목 값을 제대로 잡기 어려워진다. 예제에서는 제안들이 <b class="g">충분히 일반적이어서</b> 하드코딩된 지시문이 다양한 책에 잘 통했다. 그렇지 않으면 <b class="r">어떤 목 객체를 반환할지 고르는 일 자체가 난제</b>가 된다</td></tr>
+    <tr><td><b>외부 함수도</b></td><td>LLM 호출 외에도, 개발·테스트 중에 <b class="g">네트워크 지연과 서비스 가용성에 휘둘리지 않도록</b> 외부 함수를 목으로 대체할 수 있다</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#128161; 두 번째가 실무적 한계입니다 &mdash; <b>목이 현실을 대표하지 못하면</b> 테스트를 통과해도 프로덕션에서 깨집니다.</div>
+  <aside>목을 너무 특수하게 만들면 그 목에만 맞는 코드가 됩니다. 균형이 필요해요.</aside>
+</section>
+
+<!-- 15 PART 5 -->
+<section class="slide" data-part="6.3.5 참고문헌">
+  <h2>&#128218; 6.3.5 <span class="g">참고문헌</span></h2>
+  <table class="t">
+    <tr><th style="width:30%">출처</th><th>기여</th></tr>
+    <tr><td><b>Fowler (2024)</b></td><td>소프트웨어 공학에서 Dependency Injection은 <b class="g">오래된 패턴</b>이며, <b>Spring</b> 같은 엔터프라이즈 프레임워크는 이 개념 위에 지어져 있다</td></tr>
+  </table>
+  <div class="warn" style="margin-top:16px">&#9888;&#65039; 그러나 <b class="r">과학 배경에서 온 많은 AI 엔지니어들은 이를 모릅니다.</b></div>
+  <div class="big" style="margin-top:14px">집필 시점에<br>Dependency Injection을 <span class="y">네이티브로 지원하는</span><br>GenAI 프레임워크는 <span class="y">없다</span></div>
+  <div class="hl" style="margin-top:14px">&#128161; <b>Pydantic이 근접</b>해 있습니다 &mdash; 프롬프트와 도구를 에이전트에 의존성 주입할 수 있지만, <b class="r">에이전트 자체를 주입하지는 못합니다.</b> 저자들은 <b class="g">이것이 바뀌기를 바란다</b>고 적었습니다.</div>
+  <div class="warn">&#128295; 즉 지금은 <b class="g">직접 손으로 구현</b>해야 합니다. 다행히 기법이 단순해서 부담은 크지 않습니다.</div>
+  <aside>참고문헌이 하나뿐인 이유가 있습니다. 새로운 아이디어가 아니라 잊힌 아이디어를 가져온 거예요.</aside>
+</section>
+
+<!-- 16 GenAI에서 왜 -->
+<section class="slide" data-part="마무리">
+  <h2>&#128161; 일반 소프트웨어보다 <span class="g">GenAI에서 더 절실한</span> 이유</h2>
+  <table class="t">
+    <tr><th style="width:24%">이유</th><th>설명</th></tr>
+    <tr><td><b class="r">비결정적</b></td><td>같은 입력에 매번 다른 출력 &mdash; <b>기대값 비교 테스트가 원천적으로 안 됨</b></td></tr>
+    <tr><td><b class="r">비싸고 느림</b></td><td>테스트 한 번 돌릴 때마다 <b>API 요금과 네트워크 지연</b></td></tr>
+    <tr><td><b class="r">모델이 바뀜</b></td><td><b>내가 안 고쳤는데</b> 어제 되던 게 오늘 깨짐</td></tr>
+  </table>
+  <div class="hl" style="margin-top:14px">&#127981; <b>비유</b> &mdash; 자동차 조립 라인에서 <b>2번 공정</b>만 시험하고 싶은데, 2번은 1번이 만든 부품이 있어야 돌아갑니다. 1번을 매번 돌리자니 <b class="r">느리고 비싸고, 게다가 나올 때마다 부품이 조금씩 다릅니다.</b> 그래서 <b class="g">미리 만들어 둔 표준 부품 하나</b>를 넣고 2번만 시험합니다.</div>
+  <div class="big" style="margin-top:14px">그 표준 부품이 <span class="y">목(mock)</span>이다</div>
+  <aside>세 이유 모두 일반 소프트웨어에는 없거나 약한 문제입니다. 그래서 GenAI에서 이 패턴의 값어치가 더 큽니다.</aside>
+</section>
+
+<!-- 17 마무리 -->
+<section class="slide" data-part="마무리">
+  <div class="cover">
+    <h1>&#128295; 가짜 부품을 <span class="gold">끼워라</span></h1>
+    <div class="big" style="margin-top:24px">체인의 각 단계를<br><span class="y">인자로 받는 함수</span>로 만들어 두면<br><br>앞 단계를 <span class="y">가짜로 갈아 끼우고</span><br>뒷 단계만 시험할 수 있다</div>
+    <p class="sub" style="margin-top:22px">패턴 19 &mdash; 여기까지 &nbsp;&middot;&nbsp; 다음 &mdash; <b>패턴 20 프롬프트 최적화</b></p>
+  </div>
+  <aside>테스트할 수 있게 됐으니, 다음은 프롬프트 자체를 자동으로 다듬는 이야기입니다.</aside>
+</section>
+</div>
+
+<div class="notes" id="notes"><span class="lab">학습 노트</span><div id="noteTxt"></div></div>
+
+<script>
+  var S=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  function draw(){
+    S.forEach(function(s,n){s.classList.toggle('on',n===i)});
+    document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+S.length;
+    document.getElementById('topL').textContent=S[i].dataset.part||'';
+    var a=S[i].querySelector('aside');
+    document.getElementById('noteTxt').textContent=a?a.textContent:'(노트 없음)';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  function go(d){i=Math.min(S.length-1,Math.max(0,i+d));draw()}
+  function tgN(){document.getElementById('notes').classList.toggle('on')}
+  function tgT(){var r=document.documentElement,d=r.getAttribute('data-theme');
+    var dark=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark')}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1)}
+    else if(e.key==='Home'){i=0;draw()} else if(e.key==='End'){i=S.length-1;draw()}
+    else if(e.key==='s'||e.key==='S'){tgN()}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  });
+  document.getElementById('deck').addEventListener('click',function(e){
+    if(e.target.closest('.btn'))return;
+    go(e.clientX < innerWidth*0.32 ? -1 : 1);
+  });
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  if(h>0&&h<=S.length)i=h-1;
+  draw();
+</script>
+</body>
+</html>
