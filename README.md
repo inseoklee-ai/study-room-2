@@ -18,6 +18,7 @@
 | **덱 구성 원칙** | **장 서론 1덱 + 패턴 1덱.** 패턴 덱은 책 구조대로 문제 → 해법 → 예제 → 고려사항과 대안 → 참고문헌 |
 | **읽기용 텍스트 노트** | `notes/chNN.md` — 요약·표·코드·자가점검 문항 |
 | **스터디 토론노트** | `notes/chNN-discussion.md` — 책에 답이 없는 질문들을 우리 프로젝트에 붙여 답한 것 |
+| **실습 기록** | `notes/*-lab.md` — 예제 노트북을 실제로 돌린 기록 (환경 문제·실측 시간·결과) |
 
 **슬라이드 조작키** — `←` `→` 이동 · `S` 학습노트(발표자 노트) 토글 · `F` 전체화면 · 화면 좌/우 클릭으로도 이동
 
@@ -77,7 +78,7 @@
   🖥️ [웹 슬라이드](https://inseoklee-ai.github.io/study-room-2/ch02-1-logits-masking/) (23장) · 📑 [개념 · 코드 해설 · CPU 실습 기록](notes/ch02-pattern01-logit-masking.md)
   예제 노트북 4개 중 **1개 완료** (`0_logits_masking` ✅ / 나머지 3개 ⏳)
 - **패턴 2 문법** — 부탁하지 말고 못 박아라
-  🖥️ [웹 슬라이드](https://inseoklee-ai.github.io/study-room-2/ch02-2-grammar/) (25장) · 📑 [개념 정리 · 자가점검 6문항](notes/ch02-pattern02-grammar.md)
+  🖥️ [웹 슬라이드](https://inseoklee-ai.github.io/study-room-2/ch02-2-grammar/) (25장) · 📑 [개념 정리 · 자가점검 6문항](notes/ch02-pattern02-grammar.md) · 🔬 [**실습 기록**](notes/ch02-pattern02-grammar-lab.md) — 노트북 1/3 완주
   예제 노트북 3개 **모두 예정** (`1_applying_grammar` · `2a_json_mode` · `2b_structured_data` ⏳)
 - **패턴 3 스타일 전이** — 규칙 대신 예시
   🖥️ [웹 슬라이드](https://inseoklee-ai.github.io/study-room-2/ch02-3-style-transfer/) (17장)
@@ -554,7 +555,8 @@ study-room-2/
    ├─ ch01.md                       # 1장 텍스트 학습노트
    ├─ ch01-discussion.md            # 1장 토론노트
    ├─ ch02-pattern01-logit-masking.md   # 패턴 1 개념 + 실습 기록
-   └─ ch02-pattern02-grammar.md         # 패턴 2 개념 정리
+   ├─ ch02-pattern02-grammar.md
+   └─ ch02-pattern02-grammar-lab.md         # 패턴 2 개념 정리
 ```
 
 각 슬라이드는 **의존성 없는 단일 HTML 파일**입니다. 빌드도, 설치도 필요 없이 파일을 열면 바로 동작합니다.
