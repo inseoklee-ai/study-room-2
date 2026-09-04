@@ -75,7 +75,7 @@
 - 🗺️ **2장 서론** — 스타일이 제멋대로인 문제 · 표 2-1 실측 · 다섯 패턴 지도 · 결정 트리
   🖥️ [웹 슬라이드](https://inseoklee-ai.github.io/study-room-2/ch02-0-intro/) (14장)
 - **패턴 1 로짓 마스킹** — 부탁이 아니라 차단
-  🖥️ [웹 슬라이드](https://inseoklee-ai.github.io/study-room-2/ch02-1-logits-masking/) (23장) · 📑 [개념 · 코드 해설 · CPU 실습 기록](notes/ch02-pattern01-logit-masking.md)
+  🖥️ [웹 슬라이드](https://inseoklee-ai.github.io/study-room-2/ch02-1-logits-masking/) (23장) · 📑 [개념 정리](notes/ch02-pattern01-logit-masking.md) · 🔬 [**실습 기록**](notes/ch02-pattern01-logit-masking-lab.md) — 노트북 1/4
   예제 노트북 4개 중 **1개 완료** (`0_logits_masking` ✅ / 나머지 3개 ⏳)
 - **패턴 2 문법** — 부탁하지 말고 못 박아라
   🖥️ [웹 슬라이드](https://inseoklee-ai.github.io/study-room-2/ch02-2-grammar/) (25장) · 📑 [개념 정리 · 자가점검 6문항](notes/ch02-pattern02-grammar.md) · 🔬 [**실습 기록**](notes/ch02-pattern02-grammar-lab.md) — 노트북 1/3 완주
@@ -554,7 +554,8 @@ study-room-2/
 └─ notes/
    ├─ ch01.md                       # 1장 텍스트 학습노트
    ├─ ch01-discussion.md            # 1장 토론노트
-   ├─ ch02-pattern01-logit-masking.md   # 패턴 1 개념 + 실습 기록
+   ├─ ch02-pattern01-logit-masking.md
+   ├─ ch02-pattern01-logit-masking-lab.md   # 패턴 1 개념 + 실습 기록
    ├─ ch02-pattern02-grammar.md
    └─ ch02-pattern02-grammar-lab.md         # 패턴 2 개념 정리
 ```
