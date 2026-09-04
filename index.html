@@ -53,6 +53,16 @@
   .soon{color:var(--soft);font-size:.74rem}
   .pj{font-size:.68rem;color:var(--gold);border:1px solid var(--gold);border-radius:10px;padding:2px 7px;font-weight:700}
 
+  .subnotes{display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 4px 34px}
+  .subnote{display:inline-flex;align-items:center;gap:6px;background:var(--card);
+    border:1px solid var(--line);border-radius:9px;padding:5px 11px;font-size:.79rem;
+    color:var(--soft);text-decoration:none;transition:border-color .15s,color .15s}
+  .subnote:hover{border-color:var(--gr);color:var(--gr)}
+  .subnote b{color:var(--ink);font-weight:700}
+  .subnote .ic{font-size:.9rem;line-height:1}
+  .subnote.lab{border-left:3px solid var(--gold)}
+  .subnote.doc{border-left:3px solid var(--gr)}
+  @media(max-width:640px){.subnotes{margin-left:8px}}
   .lessons{display:grid;gap:8px;margin:8px 0 2px 38px}
   .lesson{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--line);
     border-radius:12px;padding:11px 15px;text-decoration:none;color:inherit;transition:border-color .15s,transform .1s}
@@ -122,11 +132,17 @@
       <span class="t">1장 복습 <small style="color:var(--soft)">&mdash; 요약 · 용어집 · 자가점검 13문항</small></span>
       <span class="meta"><span class="done">23장</span></span>
     </a>
+    <div class="subnotes">
+      <a class="subnote doc" href="https://github.com/inseoklee-ai/study-room-2/blob/main/notes/ch01.md"><span class="ic">&#128209;</span><b>1장 학습노트</b> 마크다운 원본</a>
+    </div>
     <a class="lesson" href="ch01-4-discussion/">
       <span class="ln">4</span>
       <span class="t">책에 답이 없는 여섯 질문 <small style="color:var(--soft)">&mdash; 토론노트</small></span>
       <span class="meta"><span class="done">30장</span></span>
     </a>
+    <div class="subnotes">
+      <a class="subnote doc" href="https://github.com/inseoklee-ai/study-room-2/blob/main/notes/ch01-discussion.md"><span class="ic">&#128172;</span><b>1장 토론노트</b> 마크다운 원본</a>
+    </div>
   </div>
 </section>
 
@@ -144,16 +160,19 @@
       <span class="t">패턴 1 로짓 마스킹 <small style="color:var(--soft)">&mdash; 부탁이 아니라 차단</small></span>
       <span class="meta"><span class="done">23장</span></span>
     </a>
+    <div class="subnotes">
+      <a class="subnote doc" href="https://github.com/inseoklee-ai/study-room-2/blob/main/notes/ch02-pattern01-logit-masking.md"><span class="ic">&#128209;</span><b>본문 정리</b> 개념 &middot; 코드 해설</a>
+      <a class="subnote lab" href="https://github.com/inseoklee-ai/study-room-2/blob/main/notes/ch02-pattern01-logit-masking.md#3-실습-기록--겪은-문제-6가지"><span class="ic">&#128300;</span><b>실습 기록</b> 노트북 1/4</a>
+    </div>
     <a class="lesson" href="ch02-2-grammar/">
       <span class="ln">2</span>
       <span class="t">패턴 2 문법 <small style="color:var(--soft)">&mdash; 부탁하지 말고 못 박아라</small></span>
       <span class="meta"><span class="done">25장</span></span>
     </a>
-    <a class="lesson" href="https://github.com/inseoklee-ai/study-room-2/blob/main/notes/ch02-pattern02-grammar-lab.md">
-      <span class="ln">&#128300;</span>
-      <span class="t">패턴 2 <b>실습 기록</b> <small style="color:var(--soft)">&mdash; GBNF &middot; outlines &middot; GPU 전환 &middot; 노트북 1/3</small></span>
-      <span class="meta"><span class="done">실습</span></span>
-    </a>
+    <div class="subnotes">
+      <a class="subnote doc" href="https://github.com/inseoklee-ai/study-room-2/blob/main/notes/ch02-pattern02-grammar.md"><span class="ic">&#128209;</span><b>본문 정리</b> BNF &middot; JSON &middot; 스키마</a>
+      <a class="subnote lab" href="https://github.com/inseoklee-ai/study-room-2/blob/main/notes/ch02-pattern02-grammar-lab.md"><span class="ic">&#128300;</span><b>실습 기록</b> 노트북 1/3</a>
+    </div>
     <a class="lesson" href="ch02-3-style-transfer/">
       <span class="ln">3</span>
       <span class="t">패턴 3 스타일 전이 <small style="color:var(--soft)">&mdash; 규칙 대신 예시</small></span>
